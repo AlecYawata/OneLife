@@ -7,6 +7,7 @@
 #include "minorGems/ui/event/ActionListener.h"
 #include "minorGems/util/SimpleVector.h"
 
+
 #include "minorGems/game/game.h"
 
 
@@ -878,10 +879,25 @@ class LivingLifePage : public GamePage {
         // in the map at its destination.
         // inExtraIndex is its index in the mMapExtraMovingObjects vectors
         void endExtraObjectMove( int inExtraIndex );
-        
 
+		
         char mUsingSteam;
         char mZKeyDown;
+
+        
+        // FOVMOD NOTE:  Change 1/1 - Take these changes during the merge process
+        void changeHUDFOV(float newScale = 1.0f);
+
+        // NAMEMOD NOTE:  Change 1/1 - Take these lines during the merge process
+        const char *findRandomFirstName( char *inString );
+        const char *findRandomLastName( char *inString );
+
+        // LINEAGEFERTILITYMOD NOTE:  Change 1/1 - Take these changes during the merge process
+        void lineageFertilityPanel( LiveObject* ourLiveObject, char displayPanel = true );
+        char* getFertilityStatus( LiveObject* targetObject );
+
+        // AGEMOD NOTE:  Change 1/1 - Take these changes during the merge process
+        void agePanel( LiveObject* ourLiveObject, char displayPanel = true );
 
     };
 

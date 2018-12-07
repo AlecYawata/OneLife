@@ -78,11 +78,13 @@ double secondsPerYear = 60.0;
 #define PERSON_OBJ_ID 12
 
 
+#include "../gameSource/ageControl.h"
+
 int minPickupBabyAge = 10;
 
 int babyAge = 5;
 
-double forceDeathAge = 60;
+double forceDeathAge = age_death;
 
 
 double minSayGapInSeconds = 1.0;
@@ -1730,7 +1732,7 @@ char isFertileAge( LiveObject *inPlayer ) {
                     
     char f = getFemale( inPlayer );
                     
-    if( age >= 14 && age <= 40 && f ) {
+    if( age >= age_fertile && age <= age_old && f ) {
         return true;
         }
     else {
@@ -1743,26 +1745,26 @@ char isFertileAge( LiveObject *inPlayer ) {
 
 int computeFoodCapacity( LiveObject *inPlayer ) {
     int ageInYears = lrint( computeAge( inPlayer ) );
-    
+
     int returnVal = 0;
     
-    if( ageInYears < 44 ) {
+    if( ageInYears < (age_old + 4) ) {
         
         if( ageInYears > 16 ) {
             ageInYears = 16;
             }
         
-        returnVal = ageInYears + 4;
+        return ageInYears + 4;
         }
     else {
-        // food capacity decreases as we near 60
-        int cap = 60 - ageInYears + 4;
+        // food capacity decreases as we near age_death
+        int cap = age_death - ageInYears + 4;
         
         if( cap < 4 ) {
             cap = 4;
             }
         
-        returnVal = cap;
+        return cap;
         }
 
     return ceil( returnVal * inPlayer->foodCapModifier );
@@ -4292,7 +4294,7 @@ int processLoggedInPlayer( Socket *inSock,
         newObject.isEve = true;
         newObject.lineageEveID = newObject.id;
         
-        newObject.lifeStartTimeSeconds -= 14 * ( 1.0 / getAgeRate() );
+        newObject.lifeStartTimeSeconds -= age_fertile * ( 1.0 / getAgeRate() );
 
         
         int femaleID = getRandomFemalePersonObject();
@@ -6425,6 +6427,15 @@ void setNoLongerDying( LiveObject *inPlayer,
 
 
 
+void sanityCheckSettings(const char *inSettingName) {
+    FILE *fp = SettingsManager::getSettingsFile( inSettingName, "r" );
+	if( fp == NULL ) {
+		fp = SettingsManager::getSettingsFile( inSettingName, "w" );
+	}
+    fclose( fp );
+}
+
+
 int main() {
 
     memset( allowedSayCharMap, false, 256 );
@@ -6481,6 +6492,13 @@ int main() {
     
 
 
+
+    sanityCheckSettings( "lifespanMultiplier" );
+    lifespan_multiplier = SettingsManager::getFloatSetting( "lifespanMultiplier" , 1.0f );
+    SettingsManager::setSetting( "lifespanMultiplier" , lifespan_multiplier );
+    age_old = (int)( 40 * lifespan_multiplier );
+    age_death = (int)( 60 * lifespan_multiplier );
+    forceDeathAge = age_death;
 
     minFoodDecrementSeconds = 
         SettingsManager::getFloatSetting( "minFoodDecrementSeconds", 5.0f );
