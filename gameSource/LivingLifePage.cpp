@@ -3396,6 +3396,10 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
         targetX = inObj->actionTargetX;
         targetY = inObj->actionTargetY;
         }
+    else {
+        setClothingHighlightFades( inObj->clothingHighlightFades );
+        }
+    
                 
     if( inObj->curAnim != eating &&
         inObj->lastAnim != eating &&
@@ -3957,6 +3961,10 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
         inSpeakersPos->push_back( pos );
         }
 
+    if( inObj->id == ourID ) {
+        setClothingHighlightFades( NULL );
+        }
+    
     return returnPack;
     }
 
@@ -9228,6 +9236,24 @@ void LivingLifePage::step() {
         else {
             mHomeSlipPosTargetOffset.y = mHomeSlipHideOffset.y;
             }
+
+        int cm = ourObject->currentMouseOverClothingIndex;
+        if( cm != -1 ) {
+            ourObject->clothingHighlightFades[ cm ] 
+                += 0.2 * frameRateFactor;
+            if( ourObject->clothingHighlightFades[ cm ] >= 1 ) {
+                ourObject->clothingHighlightFades[ cm ] = 1.0;
+                }
+            }
+        for( int c=0; c<NUM_CLOTHING_PIECES; c++ ) {
+            if( c != cm ) {
+                ourObject->clothingHighlightFades[ c ]
+                    -= 0.1 * frameRateFactor;
+                if( ourObject->clothingHighlightFades[ c ] < 0 ) {
+                    ourObject->clothingHighlightFades[ c ] = 0;
+                    }
+                }
+            }
         }
 
 
@@ -11536,6 +11562,13 @@ void LivingLifePage::step() {
                 o.heldFrozenRotFrameCountUsed = false;
                 o.clothing = getEmptyClothingSet();
                 
+                o.currentMouseOverClothingIndex = -1;
+                
+                for( int c=0; c<NUM_CLOTHING_PIECES; c++ ) {
+                    o.clothingHighlightFades[c] = 0;
+                    }
+                
+
                 o.somePendingMessageIsMoreMovement = false;
 
                 
@@ -16952,6 +16985,10 @@ void LivingLifePage::pointerMove( float inX, float inY ) {
         }
 
     char overNothing = true;
+
+    LiveObject *ourLiveObject = getOurLiveObject();
+
+    ourLiveObject->currentMouseOverClothingIndex = -1;
     
     if( destID == 0 ) {
         if( p.hitSelf ) {
@@ -16963,7 +17000,6 @@ void LivingLifePage::pointerMove( float inX, float inY ) {
             
             overNothing = false;
             
-            LiveObject *ourLiveObject = getOurLiveObject();
             
             if( p.hitClothingIndex != -1 ) {
                 if( p.hitSlotIndex != -1 ) {
@@ -16977,6 +17013,9 @@ void LivingLifePage::pointerMove( float inX, float inY ) {
                                          p.hitClothingIndex );
                     mCurMouseOverID = c->id;
                     }
+                
+                ourLiveObject->currentMouseOverClothingIndex =
+                    p.hitClothingIndex;
                 }
             }
         if( p.hitOtherPerson ) {
