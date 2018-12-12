@@ -1839,6 +1839,16 @@ void drawFrame( char inUpdate ) {
                                 
                 currentGamePage->base_makeActive( true );
                 }
+            else if( existingAccountPage->checkSignal( "tutorial1" ) ) {
+                livingLifePage->runTutorial(1);
+
+                startConnecting();
+                }
+            else if( existingAccountPage->checkSignal( "tutorial2" ) ) {
+                livingLifePage->runTutorial(2);
+
+                startConnecting();
+                }
             }
         else if( currentGamePage == getServerAddressPage ) {
             if( getServerAddressPage->isResponseReady() ) {

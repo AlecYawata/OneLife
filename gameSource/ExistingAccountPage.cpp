@@ -45,6 +45,8 @@ ExistingAccountPage::ExistingAccountPage()
           mPasteButton( mainFont, 0, -80, translate( "paste" ), 'v', 'V' ),
           mDisableCustomServerButton( mainFont, 0, 220, 
                                       translate( "disableCustomServer" ) ),
+          mTutorial1Button( mainFont, 400, 160, translate( "tutorial1" ) ),
+          mTutorial2Button( mainFont, 400, 80, translate( "tutorial2" ) ),
           mLoginButton( mainFont, 400, 0, translate( "loginButton" ) ),
           mFriendsButton( mainFont, 400, -80, translate( "friendsButton" ) ),
           mFamilyTreesButton( mainFont, 400, -160, translate( "familyTrees" ) ),
@@ -79,6 +81,8 @@ ExistingAccountPage::ExistingAccountPage()
         mKeyField.setText( accountKey );
         }
 
+    setButtonStyle( &mTutorial1Button );
+    setButtonStyle( &mTutorial2Button );
     setButtonStyle( &mLoginButton );
     setButtonStyle( &mFriendsButton );
     setButtonStyle( &mFamilyTreesButton );
@@ -97,6 +101,8 @@ ExistingAccountPage::ExistingAccountPage()
     mFields[1] = &mKeyField;
 
     
+    addComponent( &mTutorial1Button );
+    addComponent( &mTutorial2Button );
     addComponent( &mLoginButton );
     addComponent( &mFriendsButton );
     addComponent( &mFamilyTreesButton );
@@ -113,6 +119,9 @@ ExistingAccountPage::ExistingAccountPage()
 
     addComponent( &mViewAccountButton );
     
+    mTutorial1Button.addActionListener( this );
+    mTutorial2Button.addActionListener( this );
+
     mLoginButton.addActionListener( this );
     mFriendsButton.addActionListener( this );
     mFamilyTreesButton.addActionListener( this );
@@ -184,6 +193,8 @@ void ExistingAccountPage::makeActive( char inFresh ) {
     mFPSMeasureDone = false;
     
     mLoginButton.setVisible( false );
+    mTutorial1Button.setVisible( false );
+    mTutorial2Button.setVisible( false );
     mFriendsButton.setVisible( false );
     
     int skipFPSMeasure = SettingsManager::getIntSetting( "skipFPSMeasure", 0 );
@@ -191,6 +202,8 @@ void ExistingAccountPage::makeActive( char inFresh ) {
     if( skipFPSMeasure ) {
         mFPSMeasureDone = true;
         mLoginButton.setVisible( true );
+        mTutorial1Button.setVisible( true );
+        mTutorial2Button.setVisible( true );
         mFriendsButton.setVisible( true );
         }
 
@@ -302,6 +315,12 @@ void ExistingAccountPage::step() {
 void ExistingAccountPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mLoginButton ) {
         processLogin( true, "done" );
+        }
+    else if( inTarget == &mTutorial1Button ) {
+        processLogin( true, "tutorial1" );
+        }
+    else if( inTarget == &mTutorial2Button ) {
+        processLogin( true, "tutorial2" );
         }
     else if( inTarget == &mClearAccountButton ) {
         SettingsManager::setSetting( "email", "" );
@@ -517,6 +536,8 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
 
             if( !fpsFailed ) {
                 mLoginButton.setVisible( true );
+                mTutorial1Button.setVisible( true );
+                mTutorial2Button.setVisible( true );
                 
                 int pastSuccess = 
                     SettingsManager::getIntSetting( "loginSuccess", 0 );

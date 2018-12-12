@@ -2226,14 +2226,15 @@ LivingLifePage::LivingLifePage()
     int tutorialDone = SettingsManager::getIntSetting( "tutorialDone", 0 );
     
     if( ! tutorialDone ) {
-        mTutorialNumber = 1;
+//        mTutorialNumber = 1;
         }
     }
 
 
 
 
-void LivingLifePage::runTutorial() {
+void LivingLifePage::runTutorial(int tutorialNum) {
+    mTutorialNumber = tutorialNum;
     mForceRunTutorial = true;
     }
 
@@ -16184,14 +16185,13 @@ void LivingLifePage::makeActive( char inFresh ) {
     int tutorialDone = SettingsManager::getIntSetting( "tutorialDone", 0 );
     
     if( ! tutorialDone ) {
-        mTutorialNumber = 1;
+//        mTutorialNumber = 1;
         }
     else {
-        mTutorialNumber = 0;
+//        mTutorialNumber = 0;
         }
     
     if( mForceRunTutorial ) {
-        mTutorialNumber = 1;
         mForceRunTutorial = false;
         }
     

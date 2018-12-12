@@ -398,7 +398,7 @@ class LivingLifePage : public GamePage {
         void clearMap();
         
         // enabled tutorail next time a connection loads
-        void runTutorial();
+        void runTutorial(int tutorialNum = 1);
         
 
         char isMapBeingPulled();
