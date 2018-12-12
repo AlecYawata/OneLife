@@ -19142,15 +19142,20 @@ void LivingLifePage::agePanel( LiveObject* ourLiveObject, char displayPanel ) {
 	if ( ! displayPanel ) return;
 	setDrawColor( 1, 1, 1, 1 );
 	doublePair agePos = { lastScreenViewCenter.x + ( 85 * gui_fov_effective_scale ), 
-						  lastScreenViewCenter.y - ( 300 * gui_fov_effective_scale ) };
+						  lastScreenViewCenter.y - ( 320 * gui_fov_effective_scale ) };
 	if( gui_fov_scale_hud > 0 ) {
 		agePos.x = lastScreenViewCenter.x + 85;
 		agePos.y = lastScreenViewCenter.y - 300 - gui_fov_offset_y;
 	}
-	drawSprite( mYumSlipSprites[2], agePos, 1.4 * gui_fov_effective_scale );
+	drawSprite( mYumSlipSprites[2], agePos, 3.0 * gui_fov_effective_scale );
 	setDrawColor( 0, 0, 0, 1 );
-	char *ageString = autoSprintf( "AGE: %d", (int)computeCurrentAge( ourLiveObject ) );
-	agePos.y += 18 * gui_fov_effective_scale;
+
+    char *ageString = autoSprintf( "AGE: %d", (int)computeCurrentAge( ourLiveObject ) );
+
+    double lifeTime = ourLiveObject->age / ourLiveObject->ageRate + game_getCurrentTime() - ourLiveObject->lastAgeSetTime - (ourLiveObject->lineage.size() > 0 ? 0 : 14 / ourLiveObject->ageRate);
+    ageString = autoSprintf( "AGE: %d(%d:%02d.%01d)", (int)computeCurrentAge( ourLiveObject ), (int)(lifeTime/60), ((int)lifeTime)%60, (int)(lifeTime*10) - ((int)lifeTime)*10 );
+
+	agePos.y += 40 * gui_fov_effective_scale;
 	handwritingFont->drawString( ageString, agePos, alignCenter);
 }
 	
@@ -19182,6 +19187,7 @@ char* LivingLifePage::getFertilityStatus( LiveObject* targetObject ) {
 
 void LivingLifePage::lineageFertilityPanel( LiveObject* ourLiveObject, char displayPanel ) {
 	if ( ! displayPanel ) return;
+    return;
 	setDrawColor( 1, 1, 1, 1 );
 	doublePair fertPos = { lastScreenViewCenter.x + ( 685 * gui_fov_effective_scale ), 
 						   lastScreenViewCenter.y + ( 305 * gui_fov_effective_scale ) };
