@@ -342,6 +342,7 @@ reborn "GET REBORN"
 tutorial "TUTORIAL"
 tutorial1 "HDC RTA"
 tutorial2 "TUTORIAL EX"
+tutorial5 "Burner Pump"
 restartTutorial "RESTART TUTORIAL"
 
 menu "MENU"

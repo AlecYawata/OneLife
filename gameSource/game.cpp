@@ -1,4 +1,4 @@
-int versionNumber = 177;
+int versionNumber = 180;
 int dataVersionNumber = 0;
 int clientVersionNumber = versionNumber;
 int expectedVersionNumber = 0;
@@ -1846,6 +1846,11 @@ void drawFrame( char inUpdate ) {
                 }
             else if( existingAccountPage->checkSignal( "tutorial2" ) ) {
                 livingLifePage->runTutorial(2);
+
+                startConnecting();
+                }
+            else if( existingAccountPage->checkSignal( "tutorial5" ) ) {
+                livingLifePage->runTutorial(5);
 
                 startConnecting();
                 }

@@ -65,8 +65,9 @@ class ExistingAccountPage : public GamePage, public ActionListener {
         TextButton mClearAccountButton;
         TextButton mCancelButton;
 
-        TextButton mTutorial2Button;
         TextButton mTutorial1Button;
+        TextButton mTutorial2Button;
+        TextButton mTutorial5Button;
 
         TextButton mSettingsButton;
         TextButton mReviewButton;
