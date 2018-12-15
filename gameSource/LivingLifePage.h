@@ -829,7 +829,9 @@ class LivingLifePage : public GamePage {
 
         void drawMapCell( int inMapI, 
                           int inScreenX, int inScreenY,
-                          char inHighlightOnly = false );
+                          char inHighlightOnly = false,
+                          // blocks frame update for cell and animation sounds
+                          char inNoTimeEffects = false );
         
         void checkForPointerHit( PointerHitRecord *inRecord,
                                  float inX, float inY );
@@ -867,17 +869,7 @@ class LivingLifePage : public GamePage {
         
 
         SimpleVector<GraveInfo> mGraveInfo;
-        
 
-        // allocated space that we can use when temporarily manipulating
-        // an object's skipDrawing array
-        int mSkipDrawingWorkingAreaSize;
-        char *mSkipDrawingWorkingArea;
-        
-        // can prepare one at a time
-        void prepareToSkipSprites( ObjectRecord *inObject, char inDrawBehind );
-        
-        void restoreSkipDrawing( ObjectRecord *inObject );
         
 
         // end the move of an extra moving object and stick it back

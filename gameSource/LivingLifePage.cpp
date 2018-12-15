@@ -1895,7 +1895,6 @@ LivingLifePage::LivingLifePage()
                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-,'?!/ " ),
           mDeathReason( NULL ),
           mShowHighlights( true ),
-          mSkipDrawingWorkingArea( NULL ),
           mUsingSteam( false ),
           mZKeyDown( false ) {
 
@@ -2470,10 +2469,6 @@ LivingLifePage::~LivingLifePage() {
         delete [] mGraveInfo.getElement(i)->relationName;
         }
     mGraveInfo.deleteAll();
-
-    if( mSkipDrawingWorkingArea != NULL ) {
-        delete [] mSkipDrawingWorkingArea;
-        }
     }
 
 
@@ -2859,7 +2854,8 @@ void LivingLifePage::handleAnimSound( int inObjectID, double inAge,
 
 void LivingLifePage::drawMapCell( int inMapI, 
                                   int inScreenX, int inScreenY,
-                                  char inHighlightOnly ) {
+                                  char inHighlightOnly,
+                                  char inNoTimeEffects ) {
             
     int oID = mMap[ inMapI ];
 
@@ -2871,7 +2867,7 @@ void LivingLifePage::drawMapCell( int inMapI,
         
         double oldFrameCount = mMapAnimationFrameCount[ inMapI ];
 
-        if( !mapPullMode ) {
+        if( !mapPullMode && !inHighlightOnly && !inNoTimeEffects ) {
             
             if( mMapCurAnimType[ inMapI ] == moving ) {
                 double animSpeed = 1.0;
@@ -3095,7 +3091,7 @@ void LivingLifePage::drawMapCell( int inMapI,
             }
         
 
-        if( !mapPullMode && !inHighlightOnly ) {
+        if( !mapPullMode && !inHighlightOnly && !inNoTimeEffects ) {
             handleAnimSound( oID, 0, mMapCurAnimType[ inMapI ], oldFrameCount, 
                              mMapAnimationFrameCount[ inMapI ],
                              pos.x / CELL_D,
@@ -3738,7 +3734,15 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
         
         double frozenRotHeldTimeVal = frameRateFactor * 
             inObj->heldFrozenRotFrameCount / 60.0;
+
         
+        char heldFlip = inObj->holdingFlip;
+
+        if( heldObject != NULL &&
+            heldObject->noFlip ) {
+            heldFlip = false;
+            }
+
 
         if( !alreadyDrawnPerson ) {
             doublePair personPos = pos;
@@ -3774,7 +3778,57 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
 
             if( ! inObj->tempAgeOverrideSet )
                 setAnimationEmotion( inObj->currentEmot );
+
             
+            if( heldObject->anySpritesBehindPlayer ) {
+                // draw part that is behind player
+                prepareToSkipSprites( heldObject, true );
+                
+                if( inObj->numContained == 0 ) {
+                    drawObjectAnim(
+                        inObj->holdingID, curHeldType, 
+                        heldTimeVal,
+                        heldAnimFade,
+                        fadeTargetHeldType,
+                        targetHeldTimeVal,
+                        frozenRotHeldTimeVal,
+                        &( inObj->heldFrozenRotFrameCountUsed ),
+                        endAnimType,
+                        endAnimType,
+                        heldObjectDrawPos,
+                        holdRot,
+                        false,
+                        heldFlip, -1, false, false, false,
+                        getEmptyClothingSet(), NULL,
+                        0, NULL, NULL );
+                    }
+                else {
+                    drawObjectAnim( 
+                        inObj->holdingID, curHeldType, 
+                        heldTimeVal,
+                        heldAnimFade,
+                        fadeTargetHeldType,
+                        targetHeldTimeVal,
+                        frozenRotHeldTimeVal,
+                        &( inObj->heldFrozenRotFrameCountUsed ),
+                        endAnimType,
+                        endAnimType,
+                        heldObjectDrawPos,
+                        holdRot,
+                        false,
+                        heldFlip,
+                        -1, false, false, false,
+                        getEmptyClothingSet(),
+                        NULL,
+                        inObj->numContained,
+                        inObj->containedIDs,
+                        inObj->subContainedIDs );
+                    }
+                
+                restoreSkipDrawing( heldObject );
+                }
+            
+
             // rideable object
             holdingPos =
                 drawObjectAnim( inObj->displayID, 2, curType, 
@@ -3813,14 +3867,6 @@ ObjectAnimPack LivingLifePage::drawLiveObject(
             
             heldTimeVal = frameRateFactor * 
                 inObj->lastHeldAnimationFrameCount / 60.0;
-            }
-        
-        char heldFlip = inObj->holdingFlip;
-        
-
-        if( heldObject != NULL &&
-            heldObject->noFlip ) {
-            heldFlip = false;
             }
         
                     
@@ -5222,7 +5268,10 @@ void LivingLifePage::draw( doublePair inViewCenter,
                     
                     // draw only behind layers now
                     prepareToSkipSprites( o, true );
-                    drawMapCell( mapI, screenX, screenY );
+                    drawMapCell( mapI, screenX, screenY, false, 
+                                 // no time effects, because we'll draw
+                                 // again later
+                                 true );
                     restoreSkipDrawing( o );
                     }
                 
@@ -5503,7 +5552,24 @@ void LivingLifePage::draw( doublePair inViewCenter,
                     if( ! o->heldPosOverride ) {
                         // not sliding into place
                         // draw it now
+                        
+                        char skippingSome = false;
+                        if( heldPack.inObjectID > 0 &&
+                            getObject( heldPack.inObjectID )->rideable &&
+                            getObject( heldPack.inObjectID )->
+                            anySpritesBehindPlayer ) {
+                            skippingSome = true;
+                            }
+                        if( skippingSome ) {
+                            prepareToSkipSprites( 
+                                getObject( heldPack.inObjectID ),
+                                false );
+                            }
                         drawObjectAnim( heldPack );
+                        if( skippingSome ) {
+                            restoreSkipDrawing( 
+                                getObject( heldPack.inObjectID ) );
+                            }
                         }
                     else {
                         heldToDrawOnTop.push_back( heldPack );
@@ -7746,47 +7812,6 @@ void dropPendingReceivedMessagesRegardingID( LiveObject *inPlayer,
             i--;
             }
         }
-    }
-
-
-
-
-void LivingLifePage::prepareToSkipSprites( ObjectRecord *inObject, 
-                                          char inDrawBehind ) {
-    if( mSkipDrawingWorkingArea != NULL ) {
-        if( mSkipDrawingWorkingAreaSize < inObject->numSprites ) {
-            delete [] mSkipDrawingWorkingArea;
-            mSkipDrawingWorkingArea = NULL;
-            
-            mSkipDrawingWorkingAreaSize = 0;
-            }
-        }
-    if( mSkipDrawingWorkingArea == NULL ) {
-        mSkipDrawingWorkingAreaSize = inObject->numSprites;
-        mSkipDrawingWorkingArea = new char[ mSkipDrawingWorkingAreaSize ];
-        }
-    
-    memcpy( mSkipDrawingWorkingArea, 
-            inObject->spriteSkipDrawing, inObject->numSprites );
-    
-    if( ! inDrawBehind ) {
-        for( int i=0; i< inObject->numSprites; i++ ) {
-            
-            if( inObject->spriteBehindPlayer[i] && ! inDrawBehind ) {
-                inObject->spriteSkipDrawing[i] = true;
-                }
-            else if( ! inObject->spriteBehindPlayer[i] && inDrawBehind ) {
-                inObject->spriteSkipDrawing[i] = true;
-                }
-            }
-        }
-    }
-
-    
-    
-void LivingLifePage::restoreSkipDrawing( ObjectRecord *inObject ) {
-    memcpy( inObject->spriteSkipDrawing, mSkipDrawingWorkingArea,
-            inObject->numSprites );
     }
 
 
