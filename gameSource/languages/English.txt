@@ -339,10 +339,13 @@ quit "QUIT"
 
 reborn "GET REBORN"
 
-tutorial "TUTORIAL"
-tutorial1 "HDC RTA"
+tutorial1 "HDC-RTA Hard"
 tutorial2 "TUTORIAL EX"
+tutorial3 "HDC-RTA Normal"
+tutorial4 "HDC-RTA Easy"
 tutorial5 "Burner Pump"
+tutorial6 "CRUDE CAR"
+tutorial7 "To The East"
 restartTutorial "RESTART TUTORIAL"
 
 menu "MENU"

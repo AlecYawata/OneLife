@@ -1839,21 +1839,9 @@ void drawFrame( char inUpdate ) {
                                 
                 currentGamePage->base_makeActive( true );
                 }
-            else if( existingAccountPage->checkSignal( "tutorial1" ) ) {
-                livingLifePage->runTutorial(1);
-
-                startConnecting();
-                }
-            else if( existingAccountPage->checkSignal( "tutorial2" ) ) {
-                livingLifePage->runTutorial(2);
-
-                startConnecting();
-                }
-            else if( existingAccountPage->checkSignal( "tutorial5" ) ) {
-                livingLifePage->runTutorial(5);
-
-                startConnecting();
-                }
+            else if( existingAccountPage->checkSignal( "tutorial" ) ) {
+                int tutorialNumber = SettingsManager::getIntSetting( "tutorialNumber", 1 );
+                livingLifePage->runTutorial(tutorialNumber);
             }
         else if( currentGamePage == getServerAddressPage ) {
             if( getServerAddressPage->isResponseReady() ) {

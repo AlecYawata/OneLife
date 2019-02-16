@@ -452,5 +452,22 @@ void setAnimationEmotion( Emotion *inEmotion );
 void setClothingHighlightFades( float *inFades );
 
 
+void *getSprite( int );
+char *getSpriteTag( int );
+char isSpriteBankLoaded();
+char markSpriteLive( int );
+void stepSpriteBank();
+void drawSprite( void*, doublePair, double, double, char );
+void setDrawColor( float inR, float inG, float inB, float inA );
+void setDrawFade( float );
+float getTotalGlobalFade();
+void toggleAdditiveTextureColoring( char inAdditive );
+void toggleAdditiveBlend( char );
+void drawSquare( doublePair, double );
+void startAddingToStencil( char, char, float );
+void startDrawingThroughStencil( char );
+void stopStencil();
+
+
 
 #endif
