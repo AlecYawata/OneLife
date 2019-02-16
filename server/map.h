@@ -8,6 +8,8 @@
 #include "../gameSource/GridPos.h"
 #include "../gameSource/transitionBank.h"
 
+#include "minorGems/game/doublePair.h"
+
 
 
 typedef struct ChangePosition {
@@ -35,7 +37,7 @@ typedef struct ChangePosition {
 char initMap();
 
 
-void freeMap();
+void freeMap( char inSkipCleanup = false );
 
 
 // can only be called before initMap or after freeMap
@@ -52,12 +54,15 @@ void resetEveRadius();
 
 
 // gets new Eve position on outskirts of civilization
-void getEvePosition( char *inEmail, int *outX, int *outY );
+// if inAllowRespawn, this player's last Eve old-age-death will be
+// considered.
+void getEvePosition( const char *inEmail, int *outX, int *outY, 
+                     char inAllowRespawn = true );
 
 
 // save recent placements on Eve's death so that this player can spawn
 // near them if they are ever Eve again
-void mapEveDeath( char *inEmail, double inAge );
+void mapEveDeath( const char *inEmail, double inAge, GridPos inDeathMapPos );
 
 
 
@@ -261,6 +266,29 @@ char getMetadata( int inMapID, unsigned char *inBuffer );
 // returns full map ID with embedded metadata ID for new metadata record
 int addMetadata( int inObjectID, unsigned char *inBuffer );
     
+
+
+// gets speech pipe indices for IN pipes at or adjacent to inX,inY
+// vector passed in through outIndicies will be filled with indices
+void getSpeechPipesIn( int inX, int inY, SimpleVector<int> *outIndicies );
+
+
+// returned vector NOT destroyed or modified by caller
+SimpleVector<GridPos> *getSpeechPipesOut( int inIndex );
+
+
+
+// for performance reasons, when the true decayed version of the object
+// doesn't matter, this skips some expensive steps
+int getMapObjectRaw( int inX, int inY );
+
+
+
+// next landing strip in line, in round-the-world circuit across all
+// landing positions
+GridPos getNextFlightLandingPos( int inCurrentX, int inCurrentY,
+                                 doublePair inDir );
+
 
 
 #endif

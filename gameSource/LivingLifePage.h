@@ -459,6 +459,7 @@ class LivingLifePage : public GamePage {
         
         char mStartedLoadingFirstObjectSet;
         char mDoneLoadingFirstObjectSet;
+        double mStartedLoadingFirstObjectSetStartTime;
 
         float mFirstObjectSetLoadingProgress;
         
@@ -811,11 +812,12 @@ class LivingLifePage : public GamePage {
 
         void clearLiveObjects();
         
+        // inSpeaker can be NULL
         void drawChalkBackgroundString( doublePair inPos, 
                                         const char *inString,
                                         double inFade,
                                         double inMaxWidth,
-                                        LiveObject *inSpeaker,
+                                        LiveObject *inSpeaker = NULL,
                                         int inForceMinChalkBlots = -1 );
         
 
@@ -881,7 +883,6 @@ class LivingLifePage : public GamePage {
         char mUsingSteam;
         char mZKeyDown;
 
-        
         // FOVMOD NOTE:  Change 1/1 - Take these changes during the merge process
         void changeHUDFOV(float newScale = 1.0f);
 
@@ -895,6 +896,8 @@ class LivingLifePage : public GamePage {
 
         // AGEMOD NOTE:  Change 1/1 - Take these changes during the merge process
         void agePanel( LiveObject* ourLiveObject, char displayPanel = true );
+
+        char mPlayerInFlight;
 
     };
 

@@ -2524,7 +2524,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
 
             // body emote above all body parts
             if( drawWithEmot != NULL &&
-                drawWithEmot->bodyEmot != 0 ) {
+                drawWithEmot->bodyEmot != 0 &&
+                obj->person ) {
             
                 char used;
                 drawObjectAnim( drawWithEmot->bodyEmot, 
@@ -2730,6 +2731,15 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             else if( workingSpriteFade[i] < 1 ) {
                 setDrawFade( workingSpriteFade[i] );
                 }
+
+            
+            char additive = false;
+            if( obj->spriteAdditiveBlend != NULL ) {
+                additive = obj->spriteAdditiveBlend[i];
+                }
+            if( additive ) {
+                toggleAdditiveBlend( true );
+                }
             
             int spriteID = obj->sprites[i];
             
@@ -2762,6 +2772,10 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             if( multiplicative ) {
                 toggleMultiplicativeBlend( false );
                 toggleAdditiveTextureColoring( false );
+                }
+            
+            if( additive ) {
+                toggleAdditiveBlend( false );
                 }
 
 
@@ -2849,7 +2863,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
               ||
               ( eyesIndex == -1 && i == headIndex ) )
             && drawWithEmot != NULL &&
-            drawWithEmot->faceEmot != 0 ) {
+            drawWithEmot->faceEmot != 0 &&
+            obj->person ) {
             
             char used;
             drawObjectAnim( drawWithEmot->faceEmot, 
@@ -2881,7 +2896,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
 
 
         // mouth on top of head
-        // but only if there's a moth to be replaced
+        // but only if there's a mouth to be replaced
         if( i == headIndex && drawWithEmot != NULL &&
             drawWithEmot->mouthEmot != 0 &&
             mouthIndex != -1 ) {
@@ -3028,6 +3043,39 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             }
         
         } 
+    
+
+    // head emot emot on top of everything
+    // if not
+    if( drawWithEmot != NULL &&
+        drawWithEmot->headEmot != 0 &&
+        obj->person ) {
+            
+        char used;
+        drawObjectAnim( drawWithEmot->headEmot, 
+                        clothingAnimType, 
+                        inFrameTime,
+                        inAnimFade, 
+                        clothingFadeTargetAnimType,
+                        inFadeTargetFrameTime,
+                        inFrozenRotFrameTime,
+                        &used,
+                        endAnimType,
+                        endAnimType,
+                        add( animHeadPos, inPos ),
+                        animHeadRotDelta,
+                        true,
+                        inFlipH,
+                        -1,
+                        0,
+                        false,
+                        false,
+                        emptyClothing,
+                        NULL,
+                        0, NULL,
+                        NULL );
+        }
+
 
 
     if( inClothing.hat != NULL ) {

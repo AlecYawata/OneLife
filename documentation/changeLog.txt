@@ -4,6 +4,237 @@ http://onehouronelife.com/updateLog.php
 
 
 
+Version 195     2019-January-31
+
+--Changed projection for drawn mouse pointer (to further fix behavior on
+  ultrawidescreen).
+
+--Tutorial draws attention to vertical doors, which are hard to see.  Tutorial
+  intro explains time commitment and gives death warning.  More explanation of
+  YUM and MEH.
+
+--Editor supports baking sprites that include color-adjusted sprite layers.
+
+--Support for long-distance flying.
+
+
+
+Server Fixes
+
+--Reflector changed so that server assignment is not sticky for a given email
+  address.  Each new life is a random re-roll among available servers.
+
+--Added birth location offsets to AM receiver message positions.
+
+--Reflector fixed so that offline servers aren't counted when summing current
+  active server totals.
+
+--Reflector now picks from weighted distribution of actually-alive set of
+  servers, if some of the servers in the active set are offline.  Last-ditch
+  effort code added to find SOME server for the player, if the weighted picking
+  fails for whatever reason.
+
+--Optimization: Don't need to do select at all on receive if timeout 0
+  (using MSG_DONTWAIT anyway).  select was found to be a hotspot with profiler.
+
+--Optimization: Profiler found 26% of non-idle time spent recomputing heat
+  maps.  We were taking another step through list of players each time new
+  messages arrived, meaning that we were looping through them faster and faster
+  during busy times (in one estimate, processing heat maps for 130 players
+  every second).  Now we process them at a fixed max rate, regardless of
+  incoming message rate, of 2 players every 0.1 seconds (20 players per second
+  during active times).
+
+--Optimization: Exposed getMapObjectRaw externally so recomputeHeatMap can use
+   it to avoid wasting cycles checking for decaying objects.
+
+--Optimization: We were checking what each player was crossing every server
+  step (and server steps happen faster and faster as the inbound message rate
+  increases).  Fixed to only check what a player is crossing every 0.25 seconds.
+
+--Removed a wayward continue.
+
+--Optimization:  Don't check curse settings every stepCurses call.
+
+--Optimization:  Only execute certain non-reactive parts of server step loop
+  once every 0.25 seconds at most, not every loop (loop can run very fast when
+  a lot of messages are coming in.
+
+--Check in server code and cron job for read-only file system.
+
+--Recomputing heat map for 20 players per second was a little slow.  With 200
+  players, that means each player only gets their heat map updated every 10
+  seconds.  Upped it to 80 players per second (each player gets updated every
+  2.5 seconds when there are 200 players).  Also shrunk dimensions of heat map
+  from 10x10 down to 8x8 (64% of original size, thus lowering computation load).
+
+--A bunch of places in code were calling computePartialMoveSpot without
+  checking whether player is moving first.  This allows a stale move path to
+  get queried when player no longer moving (example:  flight destination
+  reached).
+
+
+
+
+Version 193     2019-January-17
+
+--Code for transmission of speech through speech pipe objects.
+
+
+
+
+Version 190     2019-January-11
+
+--Fixed so that client sends correct number of tokens for LOGIN with blank
+  email.  Thanks Andrew K.
+
+--Added support for global triggers (for radio transmission).
+
+
+
+
+Server Fixes
+
+--Whoops... new reflector code was still using 50/50 coin flips for spreading
+  servers, causing some players to fall of the end of the list and find no
+  server to connect to.  Fixes #191
+
+
+
+Version 188     2019-January-4
+
+--Fixed swap of baskets with different numbers of items in a larger container.
+  Fixes #184
+
+--Fixed tutorial wording to avoid confusion about Eve.  Fixes #185
+
+--Min age for default actions (open door, rouse bear) now 3.  Fixes #186
+
+--On reconnect, don't clear home markers unless we see a new player ID.
+  Fixes #188
+
+--/DIE command no longer blocks crafting hints for DIE when older than 2.
+  Fixes #189
+
+--Tutorial button on main menu page (appears after you beat tutorial).
+  Fixes #190
+
+
+
+
+Version 187     2019-January-3
+
+--Snowball splat face emote fixed.  Forgot to commit the emotionObjects.ini
+  settings file.  Fixes #177
+
+--No more jaundice glitch on hat or apron.  Fixes #172
+
+
+
+
+Server Fixes
+
+--Improved reflector code to spread players evenly amoung active servers
+  (thanks CrazyEddie).  Fixes #171
+
+--Wounds, like animal bites, can now replace sickness (though effects of
+  sickness are not eliminated until wound is fully healed).  Fixes #162
+
+--Missing global variable in curse server.
+
+--Fixed so that forced-drop when moving (when attacked by animal) drops
+  relative to current position and not destination.  Fixes #165
+
+--Fixed so that locks/keys don't revert to ? state when they reside in a
+  container during server shutdown.  Fixes #180
+
+
+
+
+Version 185     2018-December-27
+
+--Survivable apocalypse (full map wipe while players are still alive) that
+  doesn't spread to other servers.
+
+--Eve old-age death-location respawn blocked if there are 4 or more fertile
+  females on server.  That is supposed to be a solo-play mechanic.
+
+--Whoa!  Huge bug in Eve death location for Eve respawn.  Was not actually
+  using her death location, but instead the weighted average of recent
+  placements on the map.  This would make her respawn in some other
+  more-developed village later, which is why there was so much player
+  confusion around this mechanic.
+
+--Again, whoa!  Huge bug in temperature-based weighting for mother fertility.
+  Was using abs instead of fabs in formula, resulting in all mothers having the
+  same weight, regardless of temperature.
+
+--Added yum-multiplier component to fertility weighting (having the highest yum
+  multiplier on the server is equivalent in weight to having a perfect-middle
+  temperature, and having both results in double weight---warm mothers who are
+  eating a variety of foods will be much more likely to have babies than cold
+  mono-diet mothers).
+
+--Fixed other places in code where abs was used instead of fabs.  These were
+  likely not causing bugs.
+
+--Fixed bug in server code where apocalypse setting blocked monument triggers.
+
+
+
+
+
+Version 183     2018-December-20
+
+--Whoops... various headless helper apps failed to compile.  Fixed.
+
+--Added /FPS command in client to toggle FPS display while living a life.
+
+--Added /PING command in client for measuring round-trip latency to server.
+
+--Support for additive blend on sprite layers (candle glow).
+
+--When searching for a matching body part, now search top-down instead of
+  bottom-up (one new character has two sets of eyes in old age, and we want to
+  find the top ones).
+
+--On inserting one object into another in editor, default to bottom layer of
+  inserted object as picked layer.
+
+--Support for head layer of emote (on top of everything, like a hat).
+
+--Copy Child Chain in animation editor now copies entire child tree.
+
+--Added version of child tree copy button that randomizes phases.
+
+--More improvements to crafting hint filters.  Don't show transition matches
+  that produce a precursor as an unlisted side-effect (for example, making a
+  shoe leaves a needle in your hand, but this is irrelevant if you're trying to
+  craft something that has a needle as a precursor).  Don't limit shown
+  transition based on depth of current object.  Instead, cut off precursor
+  chain search from filter target if chain passes through current object.
+  This allows us to see that we need to put two pieces of cut rabbit fur
+  together to make four in order to make bellows (even though four pieces is
+  shallower in the crafting tree than two pieces).
+
+
+
+
+
+Server Fixes
+
+--AllowedEmotRange server-side to block clients from manually requesting
+  jaundice emot.  Related to #170.
+
+--Fixed bug in computing decay time for wound.
+
+--Improved semantics of wound-and-weapon transitions in terms of how they
+  affect what's left in the hand of the perpetrator (wound transition can now
+  specify a held-weapon change if no other trans is present).
+
+
+
+
 Version 181     2018-December-13
 
 --noFlip object property now affects object drawing deeply, even when object is

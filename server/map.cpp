@@ -569,7 +569,8 @@ static void biomeDBPut( int inX, int inY, int inValue, int inSecondPlace,
 
 
 // returns -1 on failure, 1 on success
-static int eveDBGet( char *inEmail, int *outX, int *outY, int *outRadius ) {
+static int eveDBGet( const char *inEmail, int *outX, int *outY, 
+                     int *outRadius ) {
     unsigned char key[50];
     
     unsigned char value[12];
@@ -594,7 +595,7 @@ static int eveDBGet( char *inEmail, int *outX, int *outY, int *outRadius ) {
 
 
 
-static void eveDBPut( char *inEmail, int inX, int inY, int inRadius ) {
+static void eveDBPut( const char *inEmail, int inX, int inY, int inRadius ) {
     unsigned char key[50];
     unsigned char value[12];
     
@@ -1357,11 +1358,13 @@ void outputBiomeFractals() {
 
 
 
-int getMapObjectRaw( int inX, int inY );
 int *getContainedRaw( int inX, int inY, int *outNumContained, 
                       int inSubCont = 0 );
 
 void setMapObjectRaw( int inX, int inY, int inID );
+
+static void dbPut( int inX, int inY, int inSlot, int inValue, 
+                   int inSubCont = 0 );
 
 
 
@@ -2230,8 +2233,131 @@ static char loadIntoMapFromFile( FILE *inFile,
 
 
 
+static inline void changeContained( int inX, int inY, int inSlot, 
+                                    int inSubCont, int inID ) {
+    dbPut( inX, inY, FIRST_CONT_SLOT + inSlot, inID, inSubCont );    
+    }
+
+
+
+typedef struct GlobalTriggerState {
+        SimpleVector<GridPos> triggerOnLocations;
+        
+        // receivers for this trigger that are waiting to be turned on
+        SimpleVector<GridPos> receiverLocations;
+        
+        SimpleVector<GridPos> triggeredLocations;
+        SimpleVector<int> triggeredIDs;
+        // what we revert to when global trigger turns off (back to receiver)
+        SimpleVector<int> triggeredRevertIDs;
+    } GlobalTriggerState;
+        
+
+
+static SimpleVector<GlobalTriggerState> globalTriggerStates;
+
+
+static int numSpeechPipes = 0;
+
+static SimpleVector<GridPos> *speechPipesIn = NULL;
+
+static SimpleVector<GridPos> *speechPipesOut = NULL;
+
+
+
+static SimpleVector<GridPos> flightLandingPos;
+
+
+
+static char isAdjacent( GridPos inPos, int inX, int inY ) {
+    if( inX <= inPos.x + 1 &&
+        inX >= inPos.x - 1 &&
+        inY <= inPos.y + 1 &&
+        inY >= inPos.y - 1 ) {
+        return true;
+        }
+    return false;
+    }
+
+
+
+void getSpeechPipesIn( int inX, int inY, SimpleVector<int> *outIndicies ) {
+    for( int i=0; i<numSpeechPipes; i++ ) {
+        
+        for( int p=0; p<speechPipesIn[ i ].size(); p++ ) {
+            
+            GridPos inPos = speechPipesIn[i].getElementDirect( p );
+            if( isAdjacent( inPos, inX, inY ) ) {
+                 
+                // make sure pipe-in is still here
+                int id = getMapObjectRaw( inPos.x, inPos.y );
+                    
+                char stillHere = false;
+            
+                if( id > 0 ) {
+                    ObjectRecord *oIn = getObject( id );
+                
+                    if( oIn->speechPipeIn && 
+                        oIn->speechPipeIndex == i ) {
+                        stillHere = true;
+                        }
+                    }
+                if( ! stillHere ) {
+                    speechPipesIn[ i ].deleteElement( p );
+                    p--;
+                    }
+                else {
+                    outIndicies->push_back( i );
+                    break;
+                    }
+                }
+            }
+        }
+    }
+
+
+
+SimpleVector<GridPos> *getSpeechPipesOut( int inIndex ) {
+    // first, filter them to make sure they are all still here
+    for( int p=0; p<speechPipesOut[ inIndex ].size(); p++ ) {
+        
+        GridPos outPos = speechPipesOut[ inIndex ].getElementDirect( p );
+        // make sure pipe-out is still here
+        int id = getMapObjectRaw( outPos.x, outPos.y );
+        
+        char stillHere = false;
+        
+        if( id > 0 ) {
+            ObjectRecord *oOut = getObject( id );
+            
+            if( oOut->speechPipeOut && 
+                oOut->speechPipeIndex == inIndex ) {
+                stillHere = true;
+                }
+            }
+        if( ! stillHere ) {
+            speechPipesOut[ inIndex ].deleteElement( p );
+            p--;
+            }
+        }
+    
+    return &( speechPipesOut[ inIndex ] );
+    }
+
+
+
+
+
 
 char initMap() {
+    
+    numSpeechPipes = getMaxSpeechPipeIndex() + 1;
+    
+    speechPipesIn = new SimpleVector<GridPos>[ numSpeechPipes ];
+    speechPipesOut = new SimpleVector<GridPos>[ numSpeechPipes ];
+    
+
+
     initDBCaches();
     initBiomeCache();
 
@@ -2908,15 +3034,19 @@ char initMap() {
         
         int numSet = 0;
         
-        while( numRead == 5 ) {
+        while( numRead == 5 || numRead == 7 ) {
             
-            int x, y, parentID, dummyIndex;
+            int x, y, parentID, dummyIndex, slot, b;
             
             char marker;            
             
-            numRead = fscanf( dummyFile, "(%d,%d) %c %d %d\n", 
-                              &x, &y, &marker, &parentID, &dummyIndex );
-            if( numRead == 5 ) {
+            slot = -1;
+            b = 0;
+            
+            numRead = fscanf( dummyFile, "(%d,%d) %c %d %d [%d %d]\n", 
+                              &x, &y, &marker, &parentID, &dummyIndex,
+                              &slot, &b );
+            if( numRead == 5 || numRead == 7 ) {
                 
                 ObjectRecord *parent = getObject( parentID );
                 
@@ -2933,7 +3063,12 @@ char initMap() {
                         }
                     }
                 if( dummyID > 0 ) {
-                    setMapObjectRaw( x, y, dummyID );
+                    if( numRead == 5 ) {
+                        setMapObjectRaw( x, y, dummyID );
+                        }
+                    else {
+                        changeContained( x, y, slot, b, dummyID );
+                        }
                     numSet++;
                     }
                 }
@@ -2970,6 +3105,16 @@ char initMap() {
 
         // ignore old value for placements
         clearRecentPlacements();
+        }
+
+
+
+    globalTriggerStates.deleteAll();
+    
+    int numTriggers = getNumGlobalTriggers();
+    for( int i=0; i<numTriggers; i++ ) {
+        GlobalTriggerState s;
+        globalTriggerStates.push_back( s );
         }
 
 
@@ -3040,7 +3185,8 @@ void freeAndNullString( char **inStringPointer ) {
 
 
 static void rememberDummy( FILE *inFile, int inX, int inY, 
-                           ObjectRecord *inDummyO ) {
+                           ObjectRecord *inDummyO, 
+                           int inSlot = -1, int inB = 0 ) {
     
     if( inFile == NULL ) {
         return;
@@ -3083,15 +3229,22 @@ static void rememberDummy( FILE *inFile, int inX, int inY,
         }
     
     if( parent > 0 && dummyIndex >= 0 ) {
-        fprintf( inFile, "(%d,%d) %c %d %d\n", 
-                 inX, inY, 
-                 marker, parent, dummyIndex );
+        if( inSlot == -1 && inB == 0 ) {   
+            fprintf( inFile, "(%d,%d) %c %d %d\n", 
+                     inX, inY, 
+                     marker, parent, dummyIndex );
+            }
+        else {
+            fprintf( inFile, "(%d,%d) %c %d %d [%d %d]\n", 
+                     inX, inY, 
+                     marker, parent, dummyIndex, inSlot, inB );
+            }
         }
     }
 
 
 
-void freeMap() {
+void freeMap( char inSkipCleanup ) {
     printf( "%d calls to getBaseMap\n", getBaseMapCallCount );
 
     skipTrackingMapChanges = true;
@@ -3102,7 +3255,7 @@ void freeMap() {
         }
 
 
-    if( dbOpen ) {
+    if( dbOpen && ! inSkipCleanup ) {
         
         AppLog::infoF( "Cleaning up map database on server shutdown." );
         
@@ -3194,74 +3347,75 @@ void freeMap() {
                         }
                     }
                 }
+        
+
+            for( int i=0; i<xToPlace.size(); i++ ) {
+                int x = xToPlace.getElementDirect( i );
+                int y = yToPlace.getElementDirect( i );
             
+                setMapObjectRaw( x, y, idToPlace.getElementDirect( i ) );
+                }
+
+        
+            int numContChanged = 0;
+        
+            for( int i=0; i<xContToCheck.size(); i++ ) {
+                int x = xContToCheck.getElementDirect( i );
+                int y = yContToCheck.getElementDirect( i );
+                int b = bContToCheck.getElementDirect( i );
+        
+                if( getMapObjectRaw( x, y ) != 0 ) {
+
+                    int numCont;
+                    int *cont = getContainedRaw( x, y, &numCont, b );
+                
+                    char anyChanged = false;
+
+                    for( int c=0; c<numCont; c++ ) {
+
+                        char subCont = false;
+                    
+                        if( cont[c] < 0 ) {
+                            cont[c] *= -1;
+                            subCont = true;
+                            }
+                    
+                        ObjectRecord *contObj = getObject( cont[c] );
+                    
+                        if( contObj != NULL ) {
+                            if( contObj->isUseDummy ) {
+                                cont[c] = contObj->useDummyParent;
+                                rememberDummy( dummyFile, x, y, contObj, c, b );
+                            
+                                anyChanged = true;
+                                numContChanged ++;
+                                }
+                            else if( contObj->isVariableDummy ) {
+                                cont[c] = contObj->variableDummyParent;
+                                rememberDummy( dummyFile, x, y, contObj, c, b );
+                            
+                                anyChanged = true;
+                                numContChanged ++;
+                                }
+                            }
+                   
+                        if( subCont ) {
+                            cont[c] *= -1;
+                            }
+                        }
+                
+                    if( anyChanged ) {
+                        setContained( x, y, numCont, cont, b );
+                        }
+                
+                    delete [] cont;
+                    }
+                }
+                    
             if( dummyFile != NULL ) {
                 fclose( dummyFile );
                 }
-            }
-        
-
-        for( int i=0; i<xToPlace.size(); i++ ) {
-            int x = xToPlace.getElementDirect( i );
-            int y = yToPlace.getElementDirect( i );
             
-            setMapObjectRaw( x, y, idToPlace.getElementDirect( i ) );
-            }
-
-        
-        int numContChanged = 0;
-        
-        for( int i=0; i<xContToCheck.size(); i++ ) {
-            int x = xContToCheck.getElementDirect( i );
-            int y = yContToCheck.getElementDirect( i );
-            int b = bContToCheck.getElementDirect( i );
-        
-            if( getMapObjectRaw( x, y ) != 0 ) {
-
-                int numCont;
-                int *cont = getContainedRaw( x, y, &numCont, b );
-                
-                char anyChanged = false;
-
-                for( int c=0; c<numCont; c++ ) {
-
-                    char subCont = false;
-                    
-                    if( cont[c] < 0 ) {
-                        cont[c] *= -1;
-                        subCont = true;
-                        }
-                    
-                    ObjectRecord *contObj = getObject( cont[c] );
-                    
-                    if( contObj != NULL ) {
-                        if( contObj->isUseDummy ) {
-                            cont[c] = contObj->useDummyParent;
-                            anyChanged = true;
-                            numContChanged ++;
-                            }
-                        else if( contObj->isVariableDummy ) {
-                            cont[c] = contObj->variableDummyParent;
-                            anyChanged = true;
-                            numContChanged ++;
-                            }
-                        }
-                   
-                    if( subCont ) {
-                        cont[c] *= -1;
-                        }
-                    }
-                
-                if( anyChanged ) {
-                    setContained( x, y, numCont, cont, b );
-                    }
-                
-                delete [] cont;
-                }
-            }
-
-        
-        if( ! skipUseDummyCleanup ) {    
             AppLog::infoF(
                 "...%d useDummy/variable objects present that were changed "
                 "back into their unused parent.",
@@ -3287,32 +3441,44 @@ void freeMap() {
         
         
         DB_close( &db );
+        dbOpen = false;
         }
-
+    else if( dbOpen ) {
+        // just close with no cleanup
+        DB_close( &db );
+        dbOpen = false;
+        }
+    
     if( timeDBOpen ) {
         DB_close( &timeDB );
+        timeDBOpen = false;
         }
 
     if( biomeDBOpen ) {
         DB_close( &biomeDB );
+        biomeDBOpen = false;
         }
 
 
     if( floorDBOpen ) {
         DB_close( &floorDB );
+        floorDBOpen = false;
         }
 
     if( floorTimeDBOpen ) {
         DB_close( &floorTimeDB );
+        floorTimeDBOpen = false;
         }
 
 
     if( eveDBOpen ) {
         DB_close( &eveDB );
+        eveDBOpen = false;
         }
 
     if( metaDBOpen ) {
         DB_close( &metaDB );
+        metaDBOpen = false;
         }
     
 
@@ -3338,6 +3504,15 @@ void freeMap() {
     mapChangePosSinceLastStep.deleteAll();
     
     skipTrackingMapChanges = false;
+    
+    
+    delete [] speechPipesIn;
+    delete [] speechPipesOut;
+    
+    speechPipesIn = NULL;
+    speechPipesOut = NULL;
+
+    flightLandingPos.deleteAll();
     }
 
 
@@ -3362,6 +3537,7 @@ void wipeMapFiles() {
     deleteFileByName( "map.db" );
     deleteFileByName( "mapTime.db" );
     deleteFileByName( "playerStats.db" );
+    deleteFileByName( "meta.db" );
     }
 
 
@@ -3507,7 +3683,7 @@ timeSec_t dbLookTimeGet( int inX, int inY ) {
 
 
 static void dbPut( int inX, int inY, int inSlot, int inValue, 
-                   int inSubCont = 0 ) {
+                   int inSubCont ) {
     
     if( inSlot == 0 && inSubCont == 0 ) {
         // object has changed
@@ -3554,7 +3730,7 @@ static void dbPut( int inX, int inY, int inSlot, int inValue,
             apocalypseLocation.y = inY;
             }
         }
-    else if( inValue > 0 && inSlot == 0 && inSubCont == 0  ) {
+    if( inValue > 0 && inSlot == 0 && inSubCont == 0  ) {
         
         int status = getMonumentStatus( inValue );
         
@@ -5206,8 +5382,294 @@ char isMapSpotBlocking( int inX, int inY ) {
 
 
 
+
+static char equal( GridPos inA, GridPos inB ) {
+    if( inA.x == inB.x && inA.y == inB.y ) {
+        return true;
+        }
+    return false;
+    }
+
+
+
+static char tooClose( GridPos inA, GridPos inB, int inMinComponentDistance ) {
+    int xDist = inA.x - inB.x;
+    if( xDist < 0 ) {
+        xDist = -xDist;
+        }
+    int yDist = inA.y - inB.y;
+    if( yDist < 0 ) {
+        yDist = -yDist;
+        }
+    
+    if( xDist < inMinComponentDistance &&
+        yDist < inMinComponentDistance ) {
+        return true;
+        }
+    return false;
+    }
+    
+
+
+
+static int findGridPos( SimpleVector<GridPos> *inList, GridPos inP ) {
+    for( int i=0; i<inList->size(); i++ ) {
+        GridPos q = inList->getElementDirect( i );
+        if( equal( inP, q ) ) {
+            return i;
+            }
+        }
+    return -1;
+    }
+
+
+
 void setMapObjectRaw( int inX, int inY, int inID ) {
     dbPut( inX, inY, 0, inID );
+    
+
+    // global trigger and speech pipe stuff
+
+    if( inID <= 0 ) {
+        return;
+        }
+
+    ObjectRecord *o = getObject( inID );
+    
+    if( o == NULL ) {
+        return;
+        }
+
+
+
+    if( o->isFlightLanding ) {
+        GridPos p = { inX, inY };
+
+        char found = false;
+
+        for( int i=0; i<flightLandingPos.size(); i++ ) {
+            GridPos otherP = flightLandingPos.getElementDirect( i );
+            
+            // any new strip w/ 250,250 manhattan distance doesn't count
+            if( tooClose( otherP, p, 250 ) ) {
+                
+                // make sure this "too close" strip really still exists
+                int oID = getMapObject( otherP.x, otherP.y );
+            
+                if( oID <=0 ||
+                    ! getObject( oID )->isFlightLanding ) {
+                
+                    // not even a valid landing pos anymore
+                    flightLandingPos.deleteElement( i );
+                    i--;
+                    }
+                else {
+                    found = true;
+                    break;
+                    }
+                }
+            }
+        
+        if( !found ) {
+            flightLandingPos.push_back( p );
+            }
+        }
+    
+
+
+    if( o->speechPipeIn ) {
+        GridPos p = { inX, inY };
+        
+        int foundIndex = 
+            findGridPos( &( speechPipesIn[ o->speechPipeIndex ] ), p );
+        
+        if( foundIndex == -1 ) {
+            speechPipesIn[ o->speechPipeIndex ].push_back( p );
+            }        
+        }
+    else if( o->speechPipeOut ) {
+        GridPos p = { inX, inY };
+        
+        int foundIndex = 
+            findGridPos( &( speechPipesOut[ o->speechPipeIndex ] ), p );
+        
+        if( foundIndex == -1 ) {
+            speechPipesOut[ o->speechPipeIndex ].push_back( p );
+            }
+        }
+    else if( o->isGlobalTriggerOn ) {
+        GlobalTriggerState *s = globalTriggerStates.getElement(
+            o->globalTriggerIndex );
+        
+        GridPos p = { inX, inY };
+        
+        int foundIndex = findGridPos( &( s->triggerOnLocations ), p );
+        
+        if( foundIndex == -1 ) {
+            s->triggerOnLocations.push_back( p );
+            
+            if( s->triggerOnLocations.size() == 1 ) {
+                // just turned on globally
+
+                /// process all receivers
+                for( int i=0; i<s->receiverLocations.size(); i++ ) {
+                    GridPos q = s->receiverLocations.getElementDirect( i );
+
+                    int id = getMapObjectRaw( q.x, q.y );
+                    
+                    if( id <= 0 ) {
+                        // receiver no longer here
+                        s->receiverLocations.deleteElement( i );
+                        i--;
+                        continue;
+                        }
+
+                    ObjectRecord *oR = getObject( id );
+                    
+                    if( oR->isGlobalReceiver &&
+                        oR->globalTriggerIndex == o->globalTriggerIndex ) {
+                        // match
+                        
+                        int metaID = getMetaTriggerObject( 
+                            o->globalTriggerIndex );
+                        
+                        if( metaID > 0 ) {
+                            TransRecord *tR = getPTrans( metaID, id );
+                            
+                            if( tR != NULL ) {
+                                
+                                dbPut( q.x, q.y, 0, tR->newTarget );
+                            
+                                // save this to our "triggered" list
+                                int foundIndex = findGridPos(
+                                    &( s->triggeredLocations ), q );
+                                
+                                if( foundIndex != -1 ) {
+                                    // already exists
+                                    // replace
+                                    *( s->triggeredIDs.getElement( 
+                                           foundIndex ) ) =
+                                        tR->newTarget;
+                                    *( s->triggeredRevertIDs.getElement( 
+                                           foundIndex ) ) =
+                                        tR->target;
+                                    }
+                                else {
+                                    s->triggeredLocations.push_back( q );
+                                    s->triggeredIDs.push_back( tR->newTarget );
+                                    s->triggeredRevertIDs.push_back( 
+                                        tR->target );
+                                    }
+                                }
+                            }
+                        }
+                    // receiver no longer here
+                    // (either wasn't here anymore for other reasons,
+                    //  or we just changed it into its triggered state)
+                    // remove it
+                    s->receiverLocations.deleteElement( i );
+                    i--;
+                    }
+                }
+            }
+        }
+    else if( o->isGlobalTriggerOff ) {
+        GlobalTriggerState *s = globalTriggerStates.getElement(
+            o->globalTriggerIndex );
+        
+        GridPos p = { inX, inY };
+
+        int foundIndex = findGridPos( &( s->triggerOnLocations ), p );
+        
+        if( foundIndex != -1 ) {
+            s->triggerOnLocations.deleteElement( foundIndex );
+            
+            if( s->triggerOnLocations.size() == 0 ) {
+                // just turned off globally, no on triggers left on map
+
+                /// process all triggered elements back to off
+
+                for( int i=0; i<s->triggeredLocations.size(); i++ ) {
+                    GridPos q = s->triggeredLocations.getElementDirect( i );
+
+                    int curID = getMapObjectRaw( q.x, q.y );
+
+                    int triggeredID = s->triggeredIDs.getElementDirect( i );
+                    
+                    if( curID == triggeredID ) {
+                        // cell still in triggered state
+
+                        // revert it
+                        int revertID = 
+                            s->triggeredRevertIDs.getElementDirect( i );
+                        
+                        dbPut( q.x, q.y, 0, revertID );
+                        
+                        // no longer triggered, remove it
+                        s->triggeredLocations.deleteElement( i );
+                        s->triggeredIDs.deleteElement( i );
+                        s->triggeredRevertIDs.deleteElement( i );
+                        i--;
+                        
+                        // remember it as a reciever (it has gone back
+                        // to being a receiver again)
+                        s->receiverLocations.push_back( q );
+                        }
+                    }
+                }
+            }
+        }
+    else if( o->isGlobalReceiver ) {
+        GlobalTriggerState *s = globalTriggerStates.getElement(
+            o->globalTriggerIndex );
+        
+        GridPos p = { inX, inY };
+
+        int foundIndex = findGridPos( &( s->receiverLocations ), p );
+        
+        if( foundIndex == -1 ) {
+            s->receiverLocations.push_back( p );
+            }
+        
+        if( s->triggerOnLocations.size() > 0 ) {
+            // this receiver is currently triggered
+            
+            // trigger it now, right away, as soon as it is placed on map
+                                    
+            int metaID = getMetaTriggerObject( o->globalTriggerIndex );
+                        
+            if( metaID > 0 ) {
+                TransRecord *tR = getPTrans( metaID, inID );
+
+                if( tR != NULL ) {
+                    
+                    dbPut( inX, inY, 0, tR->newTarget );
+                        
+                    GridPos q = { inX, inY };
+                                  
+    
+                    // save this to our "triggered" list
+                    int foundIndex = findGridPos( 
+                        &( s->triggeredLocations ), q );
+                    
+                    if( foundIndex != -1 ) {
+                        // already exists
+                        // replace
+                        *( s->triggeredIDs.getElement( foundIndex ) ) =
+                            tR->newTarget;
+                        *( s->triggeredRevertIDs.getElement( 
+                               foundIndex ) ) =
+                            tR->target;
+                        }
+                    else {
+                        s->triggeredLocations.push_back( q );
+                        s->triggeredIDs.push_back( tR->newTarget );
+                        s->triggeredRevertIDs.push_back( tR->target );
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
@@ -5410,7 +5872,7 @@ void setContained( int inX, int inY, int inNumContained, int *inContained,
                    int inSubCont ) {
     dbPut( inX, inY, NUM_CONT_SLOT, inNumContained, inSubCont );
     for( int i=0; i<inNumContained; i++ ) {
-        dbPut( inX, inY, FIRST_CONT_SLOT + i, inContained[i], inSubCont );
+        changeContained( inX, inY, i, inSubCont, inContained[i] );
         }
     }
 
@@ -6201,7 +6663,8 @@ doublePair computeRecentCampAve( int *outNumPosFound ) {
 
 
 
-void getEvePosition( char *inEmail, int *outX, int *outY ) {
+void getEvePosition( const char *inEmail, int *outX, int *outY, 
+                     char inAllowRespawn ) {
 
     int currentEveRadius = eveRadius;
 
@@ -6216,7 +6679,7 @@ void getEvePosition( char *inEmail, int *outX, int *outY ) {
     
     int result = eveDBGet( inEmail, &pX, &pY, &pR );
     
-    if( result == 1 && pR > 0 ) {
+    if( inAllowRespawn && result == 1 && pR > 0 ) {
         printf( "Found camp center (%d,%d) r=%d in db for %s\n",
                 pX, pY, pR, inEmail );
         
@@ -6226,7 +6689,7 @@ void getEvePosition( char *inEmail, int *outX, int *outY ) {
         }
     else {
         // player has never been an Eve that survived to old age before
-        
+        // or such repawning forbidden by caller
 
         // New method:
         GridPos eveLocToUse = eveLocation;
@@ -6358,7 +6821,7 @@ void getEvePosition( char *inEmail, int *outX, int *outY ) {
 
 
 
-void mapEveDeath( char *inEmail, double inAge ) {
+void mapEveDeath( const char *inEmail, double inAge, GridPos inDeathMapPos ) {
     
     // record exists?
 
@@ -6381,9 +6844,6 @@ void mapEveDeath( char *inEmail, double inAge ) {
         }
     
 
-    int num = 0;
-    
-    doublePair ave = computeRecentCampAve( &num );
     
     int result = eveDBGet( inEmail, &pX, &pY, &pR );
     
@@ -6404,25 +6864,13 @@ void mapEveDeath( char *inEmail, double inAge ) {
         // not found in DB
         
         // must overwrite no matter what
-        pX = lrint( ave.x );
-        pY = lrint( ave.y );
-
         pR = eveRadiusStart;
         }
-    
-    
-    if( num > 0 ) {
-        // overwrite middle from last life with new middle of placements
-        // from this life
-        pX = lrint( ave.x );
-        pY = lrint( ave.y );
-        }
-    else {
-        // otherwise, leave last life's average alone
-        printf( "Logging Eve death:   "
-                "Keeping camp average (%d,%d) from last life\n",
-                pX, pY );
-        }
+
+
+    // their next camp will start where they last died
+    pX = inDeathMapPos.x;
+    pY = inDeathMapPos.y;
     
 
     printf( "Remembering Eve's camp in database (%d,%d) r=%d for %s\n",
@@ -6564,3 +7012,162 @@ int addMetadata( int inObjectID, unsigned char *inBuffer ) {
     
     return mapID;
     }
+
+
+
+
+static unsigned int distSquared( GridPos inA, GridPos inB ) {
+    int xDiff = inA.x - inB.x;
+    int yDiff = inA.y - inB.y;
+    
+    return xDiff * xDiff + yDiff * yDiff;
+    }
+
+
+
+
+void removeLandingPos( GridPos inPos ) {
+    for( int i=0; i<flightLandingPos.size(); i++ ) {
+        if( equal( inPos, flightLandingPos.getElementDirect( i ) ) ) {
+            flightLandingPos.deleteElement( i );
+            return;
+            }
+        }
+    }
+
+
+char isInDir( GridPos inPos, GridPos inOtherPos, doublePair inDir ) {
+    int dX = inOtherPos.x - inPos.x;
+    int dY = inOtherPos.y - inPos.y;
+    
+    if( inDir.x > 0 && dX > 0 ) {
+        return true;
+        }
+    if( inDir.x < 0 && dX < 0 ) {
+        return true;
+        }
+    if( inDir.y > 0 && dY > 0 ) {
+        return true;
+        }
+    if( inDir.y < 0 && dY < 0 ) {
+        return true;
+        }
+    return false;
+    }
+
+
+
+GridPos getNextCloseLandingPos( GridPos inPos, doublePair inDir, 
+                                char *outFound ) {
+    
+    int closestIndex = -1;
+    GridPos closestPos;
+    unsigned int closestDist = INT_MAX;
+    
+    for( int i=0; i<flightLandingPos.size(); i++ ) {
+        GridPos thisPos = flightLandingPos.getElementDirect( i );
+        
+        if( isInDir( inPos, thisPos, inDir ) ) {
+            unsigned int dist = distSquared( inPos, thisPos );
+            
+            if( dist < closestDist ) {
+                // check if this is still a valid landing pos
+                int oID = getMapObject( thisPos.x, thisPos.y );
+                
+                if( oID <=0 ||
+                    ! getObject( oID )->isFlightLanding ) {
+                    
+                    // not even a valid landing pos anymore
+                    flightLandingPos.deleteElement( i );
+                    i--;
+                    continue;
+                    }
+                closestDist = dist;
+                closestPos = thisPos;
+                closestIndex = i;
+                }
+            }
+        }
+    
+    if( closestIndex == -1 ) {
+        *outFound = false;
+        }
+    else {
+        *outFound = true;
+        }
+    
+    return closestPos;
+    }
+
+                
+
+
+
+GridPos getNextFlightLandingPos( int inCurrentX, int inCurrentY, 
+                                 doublePair inDir ) {
+    int closestIndex = -1;
+    GridPos closestPos;
+    unsigned int closestDist = INT_MAX;
+
+    GridPos curPos = { inCurrentX, inCurrentY };
+
+    for( int i=0; i<flightLandingPos.size(); i++ ) {
+        GridPos thisPos = flightLandingPos.getElementDirect( i );
+        
+        unsigned int dist = distSquared( curPos, thisPos );
+        
+        if( dist < closestDist ) {
+            
+            // check if this is still a valid landing pos
+            int oID = getMapObject( thisPos.x, thisPos.y );
+            
+            if( oID <=0 ||
+                ! getObject( oID )->isFlightLanding ) {
+                
+                // not even a valid landing pos anymore
+                flightLandingPos.deleteElement( i );
+                i--;
+                continue;
+                }
+            closestDist = dist;
+            closestPos = thisPos;
+            closestIndex = i;
+            }
+        }
+
+    
+    if( closestIndex != -1 && flightLandingPos.size() > 1 ) {
+        // found closest, and there's more than one
+        // look for next valid position in chosen direction
+
+        
+        char found = false;
+        
+        GridPos nextPos = getNextCloseLandingPos( closestPos, inDir, &found );
+        
+        if( found ) {
+            return nextPos;
+            }
+
+        // if we got here, we never found a nextPos that was valid
+        // closestPos is only option
+        return closestPos;
+        }
+    else if( closestIndex != -1 && flightLandingPos.size() == 1 ) {
+        // land at closest, only option
+        return closestPos;
+        }
+    
+    // got here, no place to land
+
+    // crash them at next Eve location
+    
+    int eveX, eveY;
+    
+    getEvePosition( "dummyPlaneCrashEmail@test.com", &eveX, &eveY, false );
+    
+    GridPos returnVal = { eveX, eveY };
+    
+    return returnVal;
+    }
+

@@ -6,12 +6,8 @@
 #include "minorGems/util/SimpleVector.h"
 
 
-typedef struct FloatRGB {
-        float r, g, b;
-    } FloatRGB;
+#include "FloatRGB.h"
 
-
-char equal( FloatRGB inA, FloatRGB inB );
 
 
 #include "SoundUsage.h"
@@ -87,6 +83,10 @@ typedef struct ObjectRecord {
         char anySpritesBehindPlayer;
         char *spriteBehindPlayer;
         
+        // toggle for additive blend mode (glow) for sprites
+        char *spriteAdditiveBlend;
+        
+
         // biome numbers where this object will naturally occur according
         // to mapChance below
         int numBiomes;
@@ -332,7 +332,20 @@ typedef struct ObjectRecord {
 
         char mayHaveMetadata;
         
+        
+        char isGlobalTriggerOn;
+        char isGlobalTriggerOff;
+        char isGlobalReceiver;
+        // index into globalTriggers vector
+        int globalTriggerIndex;
+        
 
+        char speechPipeIn;
+        char speechPipeOut;
+        int speechPipeIndex;
+
+        char isFlying;
+        char isFlightLanding;
 
     } ObjectRecord;
 
@@ -444,6 +457,7 @@ int addObject( const char *inDescription,
                int inLeftBlockingRadius, int inRightBlockingRadius,
                char inDrawBehindPlayer,
                char *inSpriteBehindPlayer,
+               char *inSpriteAdditiveBlend,
                char *inBiomes,
                float inMapChance,
                int inHeatValue,
@@ -773,6 +787,16 @@ void prepareToSkipSprites( ObjectRecord *inObject,
 // restores spriteSkipDrawing for object to what it was before
 // prepareToSkipSprites was called
 void restoreSkipDrawing( ObjectRecord *inObject );
+
+
+int getMaxSpeechPipeIndex();
+
+
+
+// gets number of global trigger indices
+int getNumGlobalTriggers();
+
+int getMetaTriggerObject( int inTriggerIndex );
 
 
 

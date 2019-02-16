@@ -123,6 +123,8 @@ PLAYER_OUT_OF_RANGE (PO)
 
 PLAYER_SAYS (PS)
 
+LOCATION_SAYS (LS)
+
 PLAYER_EMOT (PE)
 
 MAP_CHANGE (MX)
@@ -136,6 +138,8 @@ LINEAGE (LN)
 NAME (NM)
 
 APOCALYPSE (AP)
+
+APOCALYPSE_DONE (AD)
 
 DYING (DY)
 
@@ -152,6 +156,8 @@ CURSED (CU)
 CURSE_TOKEN_CHANGE (CX)
 
 CURSE_SCORE_CHANGE (CS)
+
+FLIGHT_DEST (FD)
 
 FORCED_SHUTDOWN (SD)
 
@@ -397,6 +403,30 @@ PS
 
 
 
+
+
+LS
+x y text
+x y text
+x y text
+...
+x y text
+#
+
+Text at each location says must not contain # or newline.
+
+Example:
+
+LS
+0 25 HELLO THERE
+14034 3424 CURSE JOHN SMITH
+-342 3847 HELP ME
+#
+
+
+
+
+
 PE
 p_id emot_index ttl_sec
 p_id emot_index
@@ -540,8 +570,16 @@ last_name may be ommitted.
 AP
 #
 
-Indicates that an apocalypse is pending (and death is coming).  Gives client
-time to show a visual effect before death-by-apocalypse happens.
+Indicates that an apocalypse is pending.  Gives client
+time to show a visual effect.
+
+
+
+AD
+#
+
+Indicates that an apocalypse is now over.  Client should go back to displaying
+world.
 
 
 
@@ -631,6 +669,15 @@ excess_curse_points#
 
 Tells player about their curse score, if it is above the threshold.
 
+
+
+FD
+p_id dest_x dest_y
+#
+
+Sent to all players to let them know about new flights.
+
+Flying player should wait for a MAP_CHUNK message around the destination.
 
 
 

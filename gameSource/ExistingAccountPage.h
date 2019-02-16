@@ -83,6 +83,8 @@ class ExistingAccountPage : public GamePage, public ActionListener {
 
         TextButton mViewAccountButton;
         
+        TextButton mTutorialButton;
+        
 
         double mPageActiveStartTime;
         int mFramesCounted;
