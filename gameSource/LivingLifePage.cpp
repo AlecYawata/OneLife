@@ -2309,7 +2309,12 @@ LivingLifePage::LivingLifePage()
 
 
 void LivingLifePage::runTutorial(int tutorialNum) {
-    mTutorialNumber = tutorialNum;
+    if (tutorialNum > 0) {
+        mTutorialNumber = tutorialNum;
+    }
+    if (mTutorialNumber == 0) {
+        mTutorialNumber = 1;
+    }
     mForceRunTutorial = true;
     }
 

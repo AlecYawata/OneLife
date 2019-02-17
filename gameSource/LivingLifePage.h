@@ -403,7 +403,7 @@ class LivingLifePage : public GamePage {
         void clearMap();
         
         // enabled tutorail next time a connection loads
-        void runTutorial(int tutorialNum = 1);
+        void runTutorial(int tutorialNum = 0);
         
 
         char isMapBeingPulled();
