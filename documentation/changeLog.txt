@@ -3,6 +3,214 @@ This file only list changes to game code.  Changes to content can be found here:
 http://onehouronelife.com/updateLog.php
 
 
+
+Version 211     2019-March-16
+
+--Fixed overlay negative scaling check in EditorImportPage.  Thanks Chard.
+  Fixes #243
+
+--scanf calls in soundBank and spriteBank were using .txt file extensions.
+
+--Added work-around for corrupted bin_cache files instead of crashing.
+
+--100 Hz added to possible frame rates.
+
+--Left or right click now works to remove specific item from permanent
+  container.  Fixes #257
+
+--Support for sounds in emot objects.
+
+
+
+
+Server Fixes:
+
+--Fixed crash when player clicks to remove default object from container.
+
+--No babies born to vog player.  Fixes #244
+
+--Fixed so that lastCheckedBiome is correct, in certain cases where we call
+  getBaseMap for neighboring cells too.  Thanks Chard.  Fixes #245.  Fixes #246
+
+--Fixed so that on-chunk vog players do not become visible when walking onto a
+   map chunk.
+
+--Min rebirth distance reduced from 2000 down to 200.  Eve spiral jump radius
+  is currently 250, so as the eve spiral passed near established towns, that
+  Eve would be blocked from giving birth to players who lived recently in the
+  nearby town.  2000 was too large.  200 is large enough to prevent you from
+  being in born in the same specific town over and over, even if there are
+  multiple family lines in that town.
+
+--Clothing thermal model reworked to make it more intuitive.  Before, because
+  clothing held in body heat, which was added each sim step, additional
+  clothing had a non-linear effect on your steady-state temperature.  Adding or
+  removing one shoe could dramatically change your temperature.  Now, no body
+  heat is added each sim step.  Instead, the R-value of your clothing outfit
+  closes the gap between your environment's temperature and your ideal
+  temperature, but only in cold environments.  A perfect set of clothing with
+  an R-value of 1.0 would bring a cold environment twice as close to perfect as
+  it would be without clothing.  In other words, clothing alone gets you 
+  half-way to perfect now in cold environments.  This effect is additve and
+  linear, so in a cold environment, each piece of clothing that you add makes
+  you a little bit warmer.  Also, the clothing R value still slows your
+  temperature change, but only if your environment is further from perfect than
+  your current temperature.  If you move into a more perfect environment (like 
+  standing by a fire), your clothing will not slow down your temperature change
+  to more perfect.  But when you move to a less perfect environment, it will
+  slow down your temperature change.
+
+--Prevented relative position leaking for far-away player in initial player
+  update message.  Also fixed for far-away grave messages.  Fixes #251
+
+--Support for forbidden emot indices right in middle of list instead of just at
+  end of list.
+
+
+
+
+Version 206    2019-March-1
+
+--Game client now prints version number on startup.
+
+--Client and editor no longer fight each other over bin_cache version numbers.
+
+--Fixed so client left/right mouse differentation for pick-up vs. modify (like
+  for stacks of bowls) only kicks in if the modify transition is a true
+  modification, leaving something on the ground, and not just a pick-up change.
+  This, in turn, fixes picking up piglets so that they go into their held
+  state.  Fixes #240
+
+--Made walking-on-road behavior consistent if blocking object intersects.  Now
+  you always stop, instead of routing around in a poorly defined way and
+  changing speed.  Fixes #242
+
+--VOG.
+
+
+
+
+Server Fixes:
+
+--Fixed server crash due to not checking player disconnected status in one spot
+  before sending a message to their socket.
+
+--Lineage limit now applies to birth location instead of family line, to deal
+  with multi-family towns (or twin-Eve founded towns).  After living a
+  substantial life, cannot be born within 2000 tiles of that birth location
+  until enough time has been spent living in other areas.  Fixes #222
+
+--Removed some redundant code triggered when a permanent held object is swapped
+  with something on the ground.  This code was causing an extra transition step
+  to happen, making a horse's lasso disappear, for example.  Fixes #233
+
+--Fixed incorrect variable declaration location in lineage server.
+
+--Compounded snowball splats are no longer deadly.  Fixes #235
+
+--Container removes and swaps now skips any item that player is not old enough
+  to hold (knife on top of backpack no longer blocks access to other items).
+  Fixes #238
+
+--Now you don't die until your food goes negative, making empty-hunger-bar
+  behavior consistent when you starve down to 0 or nurse down to 0.  When your
+  hunger bar shows 0, you still have one pip's worth of time before death.  You
+  only die when it is decremented FROM 0.  This also gives you a bit of extra
+  warning time, generally.  Fixes #241
+
+
+
+
+Version 204    2019-February-22
+
+--Oh jeez... gotta fopen files in binary mode on Windows.
+
+--Old bin_cache files need to be cleared after each update.  New implementation
+  that uses latest version number in file name.
+
+
+
+Version 202    2019-February-22
+
+--Client prints stat about fraction of total sprites loaded.
+
+--Dramatic speed up to client load time.  Pre-loading all sprites before LOGIN
+  screen shown from a single compressed cache file (used to load sprites from
+  separate files as-needed at map load time).  Now map loads almost instantly.
+
+--Same compressed cache file technique for sounds and reverbs before LOGIN.
+  Now the map loads instantly, since all assets are pre-loaded.
+
+--Hid LOADING MAP progress bar screen in client, since it's no longer needed.
+
+--Fix so that starting to cry again does not clear yellow color from yellow
+  fever on baby (emotes in general are fine when crying, becasue crying baby
+  doesn't have offical mouth or eyes that facial emots can hook onto, but
+  blushing can still work).  Fixes #231
+
+
+
+
+Server Fixes
+
+--Fixed crash caused by wayward deletion of new sequence number string in twin
+  code.
+
+--Fixed clothing biome boundary dancing exploit (crossing boundary between
+  hot/cold biome will never make you more comfortable (closer to target middle
+  temp) than you were before crossing).  Clothing still reduces thermal shock
+  from crossing biome boundaries, but only if you are already closer to target
+  temp than thermal shock on other side of temp meter.  So if you are close to
+  perfect, wearing clothing will help a lot when you cross a biome boundary
+  from cold to hot.  If you are currently freezing (and in clothes), the
+  clothing won't help much when you cross into a hot biome to reduce shock.
+
+--Body heat now only applies in cold environments, so it won't cause
+  overheating when wearing clothes in hot environments (clothes slow how fast
+  you heat up in the hot environment, but don't hurt you by making you even
+  hotter after you acclimate).
+
+--If client sends malformed message, we now disconnect them instead of killing
+  them.  Related to #194.
+
+--If client sends more than 200 character without sending a message terminator,
+  we treat this as a malformed message (to prevent a rogue client from filling
+  up the buffer on the server).
+
+--/DIE command now works even if you're not held, and clears mother's birth
+  cooldown if she ever picked up up at least once.  Fixes #194
+
+--/DIE command now works up to age 2, to compensate for slow map load times on
+  some machines.
+
+--Donkeytown threshold (which was fixed at a current curse score of 8 before)
+  now goes down as a player's total curse score rises.  Once they hit 25 total
+  points, it goes down to 7.  At 55, it goes down to 6.  At 65 down to 4.  And
+  75 down to 3.  Note that there are only 27 people in the game with a total
+  curse score of 55 or more.  A very tiny sliver of the total player
+  population.  So, we now wait for the worst players to anger fewer people
+  before sending them to Donkeytown.  Fixes #204
+
+--Age rate (secondsPerYear) is now an adjustable server setting.
+
+--Simplified thermal shock code in a way that reduces its impact.  Now when
+  crossing from a too-cool to a too-hot biome (or vice versa), you shock to the
+  mirror-image position on the temperature meter.  Clothing no longer affects
+  this.  After flip-flopping on the temperature meter, you then gradually go up
+  (or down) towards the biome's target temperature.  This gradual change is
+  slowed by clothing, as usual.  This means that crossing a biome boundary will
+  never cause a sudden increase in your hunger rate.
+
+--Lineage bans now affect all twins.  If one twin cannot be born in this line,
+  then none of them can.  Fixes #221
+
+--Snowballs in backpack no longer push body temp off the negative end of the
+  scale.  Clothing heat and held-item heat now handled in a more sensible way.
+  Fixes #226
+
+
+
+
 Version 199     2019-February-15
 
 --Scene editor allows copy/paste of area containing floor and people.

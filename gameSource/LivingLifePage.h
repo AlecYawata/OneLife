@@ -15,6 +15,8 @@
 
 #include "GamePage.h"
 
+#include "Picker.h"
+
 
 #include "pathFind.h"
 
@@ -393,7 +395,7 @@ typedef struct ExtraMapObject {
 
 
 
-class LivingLifePage : public GamePage {
+class LivingLifePage : public GamePage, public ActionListener {
         
     public:
 
@@ -445,6 +447,9 @@ class LivingLifePage : public GamePage {
             return mRequiredVersion;
             }
 
+
+        virtual void actionPerformed( GUIComponent *inTarget );
+        
 
     protected:
 
@@ -898,6 +903,8 @@ class LivingLifePage : public GamePage {
         void agePanel( LiveObject* ourLiveObject, char displayPanel = true );
 
         char mPlayerInFlight;
+
+        Picker mObjectPicker;
 
     };
 

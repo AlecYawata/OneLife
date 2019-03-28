@@ -9,12 +9,16 @@
 #include <stdint.h>
 
 
+static double minRebirthDistance = 200;
+
+
+
 extern double secondsPerYear;
 
 
 
 typedef struct LineageTime {
-        int lineageEveID;
+        GridPos birthPos;
         double lastBornTime;
         double totalLivedThisLine;
         double totalLivedOtherLines;
@@ -70,6 +74,10 @@ static double oneLineMaxYears = 0;
 
 
 void primeLineageTest( int inNumLivePlayers ) {
+    
+    minRebirthDistance = SettingsManager::getIntSetting( "minRebirthDistance",
+                                                         200 );
+    
 
     staleTime = Time::getCurrentTime() - staleTimeout;
 
@@ -141,7 +149,8 @@ static HashTableEntry *lookup( const char *inPlayerEmail ) {
 
 
 
-static void insert( const char *inPlayerEmail, int inLineageEveID,
+static void insert( const char *inPlayerEmail, 
+                    GridPos inBirthPos,
                     double inLivedYears, double inOtherLineRequiredYears ) {
     // new record saying player born in this line NOW
     
@@ -149,7 +158,7 @@ static void insert( const char *inPlayerEmail, int inLineageEveID,
     
     SimpleVector<LineageTime> *tList = new SimpleVector<LineageTime>();
     
-    LineageTime tNew = { inLineageEveID, curTime, inLivedYears, 0,
+    LineageTime tNew = { inBirthPos, curTime, inLivedYears, 0,
                          inOtherLineRequiredYears };
     
     tList->push_back( tNew );
@@ -165,7 +174,7 @@ static void insert( const char *inPlayerEmail, int inLineageEveID,
 
 
 
-char isLinePermitted( const char *inPlayerEmail, int inLineageEveID ) {
+char isLinePermitted( const char *inPlayerEmail, GridPos inBirthPos ) {
     if( testSkipped ) {
         return true;
         }
@@ -185,8 +194,8 @@ char isLinePermitted( const char *inPlayerEmail, int inLineageEveID ) {
             e->times->deleteElement( i );
             i--;
             }
-        else if( t->lineageEveID == inLineageEveID ) {
-            // born in this lineage before, and time not stale
+        else if( distance( t->birthPos, inBirthPos ) < minRebirthDistance ) {
+            // born in this lineage area, and time not stale
 
             if( t->totalLivedThisLine < oneLineMaxYears ) {
                 // we're allowed to live more in this line
@@ -215,7 +224,7 @@ char isLinePermitted( const char *inPlayerEmail, int inLineageEveID ) {
 
 
 
-void recordLineage( const char *inPlayerEmail, int inLineageEveID,
+void recordLineage( const char *inPlayerEmail, GridPos inBirthPos,
                     double inLivedYears, char inMurdered, 
                     char inCommittedMurderOrSID ) {
     double livedInThisLineYears = inLivedYears;
@@ -240,7 +249,7 @@ void recordLineage( const char *inPlayerEmail, int inLineageEveID,
     HashTableEntry *e = lookup( inPlayerEmail );
     
     if( e == NULL ) {
-        insert( inPlayerEmail, inLineageEveID, livedInThisLineYears,
+        insert( inPlayerEmail, inBirthPos, livedInThisLineYears,
                 otherLineRequiredYearsThis );
         return;
         }
@@ -253,8 +262,8 @@ void recordLineage( const char *inPlayerEmail, int inLineageEveID,
     for( int i=0; i<e->times->size(); i++ ) {
         LineageTime *t = e->times->getElement( i );
         
-        if( t->lineageEveID == inLineageEveID ) {
-            // previously born in this lineage, adjust with new birth time
+        if( distance( t->birthPos, inBirthPos ) < minRebirthDistance ) {
+            // previously born in this lineage loc, adjust with new birth time
             t->lastBornTime = curTime;
             t->totalLivedThisLine += livedInThisLineYears;
             
@@ -280,7 +289,7 @@ void recordLineage( const char *inPlayerEmail, int inLineageEveID,
 
     if( !found ) {
         // not found, add new one
-        LineageTime t = { inLineageEveID, curTime, livedInThisLineYears, 0,
+        LineageTime t = { inBirthPos, curTime, livedInThisLineYears, 0,
                           otherLineRequiredYearsThis };
         e->times->push_back( t );
         e->freshestTime = curTime;

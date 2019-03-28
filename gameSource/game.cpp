@@ -1,7 +1,10 @@
-int versionNumber = 199;
+int versionNumber = 211;
 int dataVersionNumber = 0;
 int clientVersionNumber = versionNumber;
 int expectedVersionNumber = 0;
+
+int binVersionNumber = versionNumber;
+
 
 // NOTE that OneLife doesn't use account hmacs
 
@@ -409,6 +412,8 @@ Font *handwritingFont;
 Font *pencilFont;
 Font *pencilErasedFont;
 
+Font *smallFont;
+
 
 char *shutdownMessage = NULL;
 
@@ -575,6 +580,12 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     updateDataVersionNumber();
     updateExpectedVersionNumber();
 
+
+    AppLog::printOutNextMessage();
+    AppLog::infoF( "OneLife client v%d (binV=%d, dataV=%d) starting up",
+                   versionNumber, binVersionNumber, dataVersionNumber );
+            
+
     toggleLinearMagFilter( true );
     toggleMipMapGeneration( true );
     toggleMipMapMinFilter( true );
@@ -625,16 +636,19 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     
     
     
-    mainFontReview = new Font( getFontTGAFileName(), 4, 8, false, 16 );
+    mainFontReview = new Font( getFontTGAFileName(), 4, 8, false, 16 * gui_fov_effective_scale  );
     mainFontReview->setMinimumPositionPrecision( 1 );
 
-    mainFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16 );
-    numbersFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16, 16 );
+    mainFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16 * gui_fov_effective_scale  );
+    numbersFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16, 16 * gui_fov_effective_scale  );
     
     mainFontFixed->setMinimumPositionPrecision( 1 );
     numbersFontFixed->setMinimumPositionPrecision( 1 );
     
     // FOVMOD NOTE:  Change 3/3 - Take these lines during the merge process	
+    smallFont = new Font( getFontTGAFileName(), 3, 8, false, 8 * gui_fov_effective_scale  );
+
+
     handwritingFont = 
         new Font( "font_handwriting_32_32.tga", 3, 6, false, 16 * gui_fov_effective_scale );
 
@@ -806,7 +820,9 @@ void freeFrameDrawer() {
     delete handwritingFont;
     delete pencilFont;
     delete pencilErasedFont;
-
+    
+    delete smallFont;
+    
     if( currentUserTypedMessage != NULL ) {
         delete [] currentUserTypedMessage;
         currentUserTypedMessage = NULL;
@@ -1460,52 +1476,30 @@ void drawFrame( char inUpdate ) {
                         initSpriteBankFinish();
                         
                         loadingPhaseStartTime = Time::getCurrentTime();
-                        
-                        int numReverbs = initSoundBankStart();
-                            
-                        if( numReverbs > 0 ) {
+      
+                        char rebuilding;
+
+                        int numSounds = initSoundBankStart( &rebuilding );
+
+                        if( rebuilding ) {
                             loadingPage->setCurrentPhase( 
-                                "SOUNDS##(GENERATING REVERBS)" );
-                            loadingPage->setCurrentProgress( 0 );
-                        
-                            
-                            loadingStepBatchSize = numReverbs / numLoadingSteps;
-                            
-                            if( loadingStepBatchSize < 1 ) {
-                                loadingStepBatchSize = 1;
-                                }
-                            
-                            loadingPhase ++;
+                                translate( "soundsRebuild" ) );
                             }
                         else {
-                            // skip progress for sounds
-                            initSoundBankFinish();
-                            
-                            char rebuilding;
-                        
-                            int numAnimations = 
-                                initAnimationBankStart( &rebuilding );
-                            
-                            if( rebuilding ) {
-                                loadingPage->setCurrentPhase( 
-                                    translate( "animationsRebuild" ) );
-                                }
-                            else {
-                                loadingPage->setCurrentPhase(
-                                    translate( "animations" ) );
-                                }
-                            loadingPage->setCurrentProgress( 0 );
-                            
-                            
-                            loadingStepBatchSize = 
-                                numAnimations / numLoadingSteps;
-                            
-                            if( loadingStepBatchSize < 1 ) {
-                                loadingStepBatchSize = 1;
-                                }
-                            
-                            loadingPhase += 2;
+                            loadingPage->setCurrentPhase(
+                                translate( "sounds" ) );
                             }
+
+                        loadingPage->setCurrentProgress( 0 );
+                        
+                            
+                        loadingStepBatchSize = numSounds / numLoadingSteps;
+                        
+                        if( loadingStepBatchSize < 1 ) {
+                            loadingStepBatchSize = 1;
+                            }
+                        
+                        loadingPhase ++;
                         }
                     break;
                     }
