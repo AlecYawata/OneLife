@@ -20058,8 +20058,8 @@ void LivingLifePage::lineageFertilityPanel( LiveObject* ourLiveObject, char disp
 void LivingLifePage::changeHUDFOV( float newScale ) {
 	if( newScale < 1 ) {
 		newScale = 1.0f;
-	} else if ( newScale > 6 ) {
-		newScale = 6.0f;
+	} else if ( newScale > 4 ) {
+		newScale = 4.0f;
 	}
     
     SettingsManager::setSetting( "fovScale", newScale );

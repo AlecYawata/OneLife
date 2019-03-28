@@ -45,13 +45,6 @@ ExistingAccountPage::ExistingAccountPage()
           mPasteButton( mainFont, 0, -80, translate( "paste" ), 'v', 'V' ),
           mDisableCustomServerButton( mainFont, 0, 220, 
                                       translate( "disableCustomServer" ) ),
-          mTutorial2Button( mainFont, 400, 240, translate( "tutorial2" ) ),
-          mTutorial1Button( mainFont, 400, 160, translate( "tutorial1" ) ),
-          mTutorial4Button( mainFont, 400, 0, translate( "tutorial4" ) ),
-          mTutorial5Button( mainFont, 400, -80, translate( "tutorial5" ) ),
-          mTutorial3Button( mainFont, 400, 80, translate( "tutorial3" ) ),
-          mTutorial6Button( mainFont, 400, -160, translate( "tutorial6" ) ),
-          mTutorial7Button( mainFont, 400, -240, translate( "tutorial7" ) ),
           mLoginButton( mainFont, 400, 0, translate( "loginButton" ) ),
           mFriendsButton( mainFont, 400, -80, translate( "friendsButton" ) ),
           mFamilyTreesButton( mainFont, 400, -160, translate( "familyTrees" ) ),
@@ -88,17 +81,6 @@ ExistingAccountPage::ExistingAccountPage()
         mKeyField.setText( accountKey );
         }
 
-    mTutorialButtons[0] = &mTutorial1Button;
-    mTutorialButtons[1] = &mTutorial2Button;
-    mTutorialButtons[2] = &mTutorial3Button;
-    mTutorialButtons[3] = &mTutorial4Button;
-    mTutorialButtons[4] = &mTutorial5Button;
-    mTutorialButtons[5] = &mTutorial6Button;
-    mTutorialButtons[6] = &mTutorial7Button;
-
-    for (int i=0; i<TUTORIAL_MAX; i++) {
-        setButtonStyle( mTutorialButtons[i] );
-        }
     setButtonStyle( &mLoginButton );
     setButtonStyle( &mFriendsButton );
     setButtonStyle( &mFamilyTreesButton );
@@ -117,10 +99,6 @@ ExistingAccountPage::ExistingAccountPage()
     mFields[0] = &mEmailField;
     mFields[1] = &mKeyField;
 
-    for (int i=0; i<TUTORIAL_MAX; i++) {
-        addComponent( mTutorialButtons[i] );
-        }
-
     addComponent( &mLoginButton );
     addComponent( &mFriendsButton );
     addComponent( &mFamilyTreesButton );
@@ -137,10 +115,6 @@ ExistingAccountPage::ExistingAccountPage()
 
     addComponent( &mViewAccountButton );
     addComponent( &mTutorialButton );
-    
-    for (int i=0; i<TUTORIAL_MAX; i++) {
-        (*mTutorialButtons[i]).addActionListener( this );
-        }
 
     mLoginButton.addActionListener( this );
     mFriendsButton.addActionListener( this );
@@ -210,23 +184,13 @@ void ExistingAccountPage::showDisableCustomServerButton( char inShow ) {
 
 void ExistingAccountPage::makeActive( char inFresh ) {
 
-    if( SettingsManager::getIntSetting( "tutorialDone", 0 ) ) {
-        mTutorialButton.setVisible( true );
-        }
-    else {
-        // tutorial forced anyway
-        mTutorialButton.setVisible( false );
-        }
-    
+    mTutorialButton.setVisible( true );
 
     mFramesCounted = 0;
     mPageActiveStartTime = game_getCurrentTime();    
     mFPSMeasureDone = false;
     
     mLoginButton.setVisible( false );
-    for (int i=0; i<TUTORIAL_MAX; i++) {
-        (*mTutorialButtons[i]).setVisible( false );
-        }
     mFamilyTreesButton.setVisible( false );
     mClearAccountButton.setVisible( false );
     mReviewButton.setVisible( false );
@@ -236,11 +200,8 @@ void ExistingAccountPage::makeActive( char inFresh ) {
     int skipFPSMeasure = SettingsManager::getIntSetting( "skipFPSMeasure", 0 );
     
     if( skipFPSMeasure ) {
-//        mLoginButton.setVisible( true );
-        for (int i=0; i<TUTORIAL_MAX; i++) {
-            (*mTutorialButtons[i]).setVisible( true );
-            }
-//        mFriendsButton.setVisible( true );
+        mLoginButton.setVisible( true );
+        mFriendsButton.setVisible( true );
         }
 
 
@@ -349,12 +310,6 @@ void ExistingAccountPage::step() {
 
 
 void ExistingAccountPage::actionPerformed( GUIComponent *inTarget ) {
-    for (int i=0; i<TUTORIAL_MAX; i++) {
-        if( inTarget == mTutorialButtons[i] ) {
-            SettingsManager::setSetting( "tutorialNumber", i+1 );
-            processLogin( true, "tutorial" );
-            }
-        }
     if( inTarget == &mLoginButton ) {
         processLogin( true, "done" );
         }
@@ -574,15 +529,11 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
                 }
 
             if( !fpsFailed ) {
-//                mLoginButton.setVisible( true );
-                for (int i=0; i<TUTORIAL_MAX; i++) {
-                    (*mTutorialButtons[i]).setVisible( true );
-                    }
-                
+                mLoginButton.setVisible( true );
                 int pastSuccess = 
                     SettingsManager::getIntSetting( "loginSuccess", 0 );
                 if( pastSuccess ) {
-//                    mFriendsButton.setVisible( true );
+                    mFriendsButton.setVisible( true );
                     }
                 }
             else {

@@ -58,6 +58,7 @@ SpriteToggleButton.cpp \
 categoryBank.cpp \
 liveAnimationTriggers.cpp \
 ReviewPage.cpp \
+TutorialPage.cpp \
 TextArea.cpp \
 RadioButtonSet.cpp \
 spellCheck.cpp \

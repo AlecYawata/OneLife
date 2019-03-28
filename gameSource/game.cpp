@@ -84,6 +84,7 @@ CustomRandomSource randSource( 34957197 );
 #include "RebirthChoicePage.h"
 #include "SettingsPage.h"
 #include "ReviewPage.h"
+#include "TutorialPage.h"
 #include "TwinPage.h"
 //#include "TestPage.h"
 
@@ -136,6 +137,8 @@ ExtendedMessagePage *extendedMessagePage;
 RebirthChoicePage *rebirthChoicePage;
 SettingsPage *settingsPage;
 ReviewPage *reviewPage;
+TutorialPage *tutorialPage;
+
 TwinPage *twinPage;
 //TestPage *testPage = NULL;
 
@@ -747,6 +750,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     twinPage = new TwinPage();
 
+    tutorialPage = new TutorialPage();
+
 
     // 0 music headroom needed, because we fade sounds before playing music
     setVolumeScaling( 10, 0 );
@@ -830,6 +835,7 @@ void freeFrameDrawer() {
     delete rebirthChoicePage;
     delete settingsPage;
     delete reviewPage;
+    delete tutorialPage;
     delete twinPage;
     
     //if( testPage != NULL ) {
@@ -1787,6 +1793,18 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             }
+        else if( currentGamePage == tutorialPage ) {
+            if( tutorialPage->checkSignal( "back" ) ) {
+                existingAccountPage->setStatus( NULL, false );
+                currentGamePage = existingAccountPage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( tutorialPage->checkSignal( "tutorial" ) ) {
+                int tutorialNumber = SettingsManager::getIntSetting( "tutorialNumber", 1 );
+                livingLifePage->runTutorial(tutorialNumber);
+                startConnecting();
+                }
+            }
         else if( currentGamePage == twinPage ) {
             if( twinPage->checkSignal( "cancel" ) ) {
                 existingAccountPage->setStatus( NULL, false );
@@ -1815,9 +1833,8 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             else if( existingAccountPage->checkSignal( "tutorial" ) ) {
-                int tutorialNumber = SettingsManager::getIntSetting( "tutorialNumber", 1 );
-                livingLifePage->runTutorial(tutorialNumber);
-                startConnecting();
+                currentGamePage = tutorialPage;
+                currentGamePage->base_makeActive( true );
                 }
             else if( existingAccountPage->checkSignal( "done" )
                      || 
@@ -2127,9 +2144,8 @@ void drawFrame( char inUpdate ) {
                 startConnecting();
                 }
             else if( rebirthChoicePage->checkSignal( "tutorial" ) ) {
-                livingLifePage->runTutorial();
-                // heck, allow twins in tutorial too, for now, it's funny
-                startConnecting();
+                currentGamePage = tutorialPage;
+                currentGamePage->base_makeActive( true );
                 }
             else if( rebirthChoicePage->checkSignal( "review" ) ) {
                 currentGamePage = reviewPage;

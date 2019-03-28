@@ -358,6 +358,7 @@ quit "QUIT"
 
 reborn "GET REBORN"
 
+tutorial "original RTA map"
 tutorial1 "HDC-RTA Hard"
 tutorial2 "TUTORIAL EX"
 tutorial3 "HDC-RTA Normal"
@@ -365,6 +366,9 @@ tutorial4 "HDC-RTA Easy"
 tutorial5 "Burner Pump"
 tutorial6 "CRUDE CAR"
 tutorial7 "To The East"
+tutorial8 "Airplane"
+tutorial9 "AM Radio Hard"
+tutorial10 "AM Radio Easy"
 restartTutorial "RESTART TUTORIAL"
 
 menu "MENU"

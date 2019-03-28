@@ -65,17 +65,6 @@ class ExistingAccountPage : public GamePage, public ActionListener {
         TextButton mClearAccountButton;
         TextButton mCancelButton;
 
-        TextButton mTutorial1Button;
-        TextButton mTutorial2Button;
-        TextButton mTutorial3Button;
-        TextButton mTutorial4Button;
-        TextButton mTutorial5Button;
-        TextButton mTutorial6Button;
-        TextButton mTutorial7Button;
-
-#define TUTORIAL_MAX 7
-        TextButton* mTutorialButtons[TUTORIAL_MAX];
-
         TextButton mSettingsButton;
         TextButton mReviewButton;
         
