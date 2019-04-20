@@ -2130,7 +2130,7 @@ LivingLifePage::LivingLifePage()
 	mNotePaperHideOffset.y = -420 - gui_fov_offset_y;
 
 
-    mHomeSlipHideOffset.x = 0;
+    mHomeSlipHideOffset.x = -50 * gui_fov_effective_scale;
 	mHomeSlipHideOffset.y = (-360 * gui_fov_effective_scale) + ((64 * gui_fov_effective_scale) - 64);
 	if( gui_fov_scale_hud > 0 ) {
 		mHomeSlipHideOffset.y = -360 - gui_fov_offset_y;
@@ -20396,8 +20396,10 @@ void LivingLifePage::agePanel( LiveObject* ourLiveObject, char displayPanel ) {
 
     char *ageString = autoSprintf( "AGE: %d", (int)computeCurrentAge( ourLiveObject ) );
 
-    double lifeTime = ourLiveObject->age / ourLiveObject->ageRate + game_getCurrentTime() - ourLiveObject->lastAgeSetTime - (ourLiveObject->lineage.size() > 0 ? 0 : 14 / ourLiveObject->ageRate);
-    ageString = autoSprintf( "AGE: %d(%d:%02d.%01d)", (int)computeCurrentAge( ourLiveObject ), (int)(lifeTime/60), ((int)lifeTime)%60, (int)(lifeTime*10) - ((int)lifeTime)*10 );
+    if (mTutorialNumber) {
+        double lifeTime = ourLiveObject->age / ourLiveObject->ageRate + game_getCurrentTime() - ourLiveObject->lastAgeSetTime - (ourLiveObject->lineage.size() > 0 ? 0 : 14 / ourLiveObject->ageRate);
+        ageString = autoSprintf( "AGE: %d(%d:%02d.%01d)", (int)computeCurrentAge( ourLiveObject ), (int)(lifeTime/60), ((int)lifeTime)%60, (int)(lifeTime*10) - ((int)lifeTime)*10 );
+        }
 
 	agePos.y += 40 * gui_fov_effective_scale;
 	handwritingFont->drawString( ageString, agePos, alignCenter);
@@ -20532,6 +20534,7 @@ void LivingLifePage::changeHUDFOV( float newScale ) {
 	mNotePaperPosTargetOffset = mNotePaperPosOffset;
 	mErasedNoteCharOffsets.deleteAll();
 	
+    mHomeSlipHideOffset.x = -50 * gui_fov_effective_scale;
 	mHomeSlipHideOffset.y = (-360 * gui_fov_effective_scale) + ((64 * gui_fov_effective_scale) - 64);
 	if( gui_fov_scale_hud > 0 ) {
 		mHomeSlipHideOffset.y = -360 - gui_fov_offset_y;
