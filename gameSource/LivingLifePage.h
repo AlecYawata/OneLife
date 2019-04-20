@@ -312,7 +312,11 @@ typedef struct GraveInfo {
     } GraveInfo;
         
 
-
+typedef struct OwnerInfo {
+    GridPos worldPos;
+    
+    SimpleVector<int> *ownerList;
+    } OwnerInfo;
 
 
 
@@ -877,7 +881,10 @@ class LivingLifePage : public GamePage, public ActionListener {
 
         SimpleVector<GraveInfo> mGraveInfo;
 
+        SimpleVector<OwnerInfo> mOwnerInfo;
         
+        void clearOwnerInfo();
+    
 
         // end the move of an extra moving object and stick it back
         // in the map at its destination.
