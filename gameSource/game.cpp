@@ -449,7 +449,7 @@ static int stepsBetweenDeleteRepeat;
 
 
 static void updateDataVersionNumber() {
-    File file( NULL, "dataVersionNumber_zh.txt" );
+    File file( NULL, "dataVersionNumber_ja.txt" );
     
     if( file.exists() ) {
         char *contents = file.readFileContents();
@@ -583,7 +583,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     postUpdate();
         
 
-    instructionsSprite = loadWhiteSprite( "instructions_zh.tga" );
+    instructionsSprite = loadWhiteSprite( "instructions_ja.tga" );
     
     
 
@@ -1210,7 +1210,7 @@ void deleteCharFromUserTypedMessage() {
 static void startConnecting() {
     userReconnect = false;
     
-    if( SettingsManager::getIntSetting( "useCustomServer_zh", 0 ) ) {
+    if( SettingsManager::getIntSetting( "useCustomServer_ja", 0 ) ) {
         usingCustomServer = true;
         
         if( serverIP != NULL ) {

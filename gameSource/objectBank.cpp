@@ -216,7 +216,7 @@ int initObjectBankStart( char *outRebuildingCache,
     currentFile = 0;
     
 
-    cache = initFolderCache( "objects_zh", outRebuildingCache );
+    cache = initFolderCache( "objects", outRebuildingCache );
 
     autoGenerateUsedObjects = inAutoGenerateUsedObjects;
     autoGenerateVariableObjects = inAutoGenerateVariableObjects;

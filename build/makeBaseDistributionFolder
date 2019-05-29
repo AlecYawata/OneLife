@@ -37,6 +37,7 @@ cp ../gameSource/otherSounds/*.aiff $baseFolder/otherSounds
 cp ../gameSource/settings/*.ini $baseFolder/settings
 cp ../gameSource/languages/*.txt $baseFolder/languages
 cp ../gameSource/language.txt $baseFolder
+cp ../gameSource/language_ja.txt $baseFolder
 cp ../gameSource/us_english_60.txt $baseFolder
 cp ../documentation/Readme.txt $baseFolder
 cp ../no_copyright.txt $baseFolder
@@ -58,6 +59,7 @@ cp ../../OneLifeData7/ground/* $baseFolder/ground
 
 
 cp ../../OneLifeData7/dataVersionNumber.txt $baseFolder/
+cp ../../OneLifeData7/dataVersionNumber.txt $baseFolder/dataVersionNumber_ja.txt
 
 
 rm -f $baseFolder/settings/email.ini
