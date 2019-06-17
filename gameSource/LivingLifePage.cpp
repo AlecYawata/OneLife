@@ -20441,12 +20441,6 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
 			calcOffsetHUD();
             }
             break;
-        case 127: { // DEL
-            if( isShiftKeyDown() ) {
-                sendToServerSocket( (char*)"DIE 0 0#" );
-                }
-            break;
-            }
         case 9: // tab
             if( mCurrentHintObjectID != 0 ) {
                 
