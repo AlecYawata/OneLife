@@ -163,8 +163,10 @@ static char *eveName = NULL;
 // maps extended ascii codes to true/false for characters allowed in SAY
 // messages
 static char allowedSayCharMap[256];
+static char allowedSayCharMapW[256][256];
 
-static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-,'?! ";
+static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?! ";
+static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん、。ー！？（）";
 
 
 static int killEmotionIndex = 2;
@@ -8210,10 +8212,15 @@ int main() {
     
 
     memset( allowedSayCharMap, false, 256 );
+    memset( allowedSayCharMapW, false, 256 * 256 );
     
     int numAllowed = strlen( allowedSayChars );
     for( int i=0; i<numAllowed; i++ ) {
         allowedSayCharMap[ (int)( allowedSayChars[i] ) ] = true;
+        }
+    numAllowed = strlen( allowedSayCharsW );
+    for( int i=0; i<numAllowed; i+=2 ) {
+        allowedSayCharMapW[ (unsigned char)( allowedSayCharsW[i] ) ] [ (unsigned char)(allowedSayCharsW[i+1]) ] = true;
         }
     
 
@@ -11005,19 +11012,49 @@ int main() {
 
                         unsigned int sayLimit = getSayLimit( nextPlayer );
                         
+                        /*
                         if( strlen( m.saidText ) > sayLimit ) {
                             // truncate
                             m.saidText[ sayLimit ] = '\0';
                             }
+                            */
 
                         int len = strlen( m.saidText );
                         
                         // replace not-allowed characters with spaces
-                        for( int c=0; c<len; c++ ) {
-                            if( ! allowedSayCharMap[ 
-                                    (int)( m.saidText[c] ) ] ) {
-                                
-                                m.saidText[c] = ' ';
+                        unsigned int numSay = 0;
+                        int cLen = 0;
+                        AppLog::infoF( "m.saidText : %s", m.saidText );
+
+                        for( int c=0; c<len; c+=cLen ) {
+                            cLen = mblen( m.saidText + c, MB_CUR_MAX );
+                            AppLog::infoF( "c : %d, cLen : %d", c, cLen );
+                            if(cLen == 0){
+                                m.saidText[c] = '\0';
+                                break;
+                                }
+                            else if(cLen == 1) {
+                                if( ! allowedSayCharMap[ 
+                                        (int)( m.saidText[c] ) ] ) {
+                                    
+                                    m.saidText[c] = 'r';
+                                    }
+                                }
+                            else {
+                                AppLog::infoF( "m.saidText[c, c+1] : %d, %d", (unsigned char)m.saidText[c], (unsigned char)m.saidText[c+1] );
+                                if( ! allowedSayCharMapW[ 
+                                        (unsigned char)(m.saidText[c]) ][ 
+                                        (unsigned char)(m.saidText[c+1]) ] ) {
+                                    
+                                    m.saidText[c] = 't';
+                                    m.saidText[c+1] = 'y';
+                                    }
+                                cLen = 2;
+                                }
+                            numSay ++;
+                            if( numSay >= sayLimit ) {
+                                m.saidText[c + cLen] = '\0';
+                                break;
                                 }
                             }
 

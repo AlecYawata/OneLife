@@ -2172,8 +2172,9 @@ LivingLifePage::LivingLifePage()
           mCurMouseOverID( 0 ),
           mChalkBlotSprite( loadWhiteSprite( "chalkBlot.tga" ) ),
           mPathMarkSprite( loadWhiteSprite( "pathMark.tga" ) ),
-          mSayField( handwritingFont, 0, 1000, 10, true, NULL,
-                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-,'?!/ 0123456789" ),
+          mSayField( mainFont, 0, 1000, 10, false, NULL
+//                     ,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!/ 0123456789" ),
+                     ),
           mDeathReason( NULL ),
           mShowHighlights( true ),
           mUsingSteam( false ),
@@ -2873,7 +2874,7 @@ SimpleVector<char*> *splitLines( const char *inString,
     
     // break into lines
     SimpleVector<char *> *tokens = 
-        tokenizeString( inString );
+        tokenizeStringW( inString );
     
     
     // collect all lines before drawing them
@@ -7583,7 +7584,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
     if( mSayField.isFocused() ) {
         char *partialSay = mSayField.getText();
 
-        char *strUpper = stringToUpperCase( partialSay );
+        char *strUpper = stringDuplicate( partialSay );
         
         delete [] partialSay;
 
@@ -20526,7 +20527,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                 // also eliminates all-space strings, which 
                 // end up in speech history, but are invisible
                 SimpleVector<char *> *tokens = 
-                    tokenizeString( typedText );
+                    tokenizeStringW( typedText );
                 
                 if( tokens->size() > 0 ) {
                     char *oldTypedText = typedText;

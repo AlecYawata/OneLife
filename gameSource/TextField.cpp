@@ -1,10 +1,12 @@
 #include "TextField.h"
 
 #include <string.h>
+#include <mbstring.h>
 
 #include "minorGems/game/game.h"
 #include "minorGems/game/gameGraphics.h"
 #include "minorGems/game/drawUtils.h"
+#include "minorGems/util/log/AppLog.h"
 #include "minorGems/util/stringUtils.h"
 #include "minorGems/util/SimpleVector.h"
 #include "minorGems/graphics/openGL/KeyboardHandlerGL.h"
@@ -81,7 +83,10 @@ TextField::TextField( Font *inDisplayFont,
     double width = 0;
 
     for( int c=32; c<256; c++ ) {
-        unsigned char pc = processCharacter( c );
+        unsigned char src[] = { (unsigned char)c, '\0', };
+        unsigned char* pPc = processCharacter( src );
+        unsigned char pc = pPc[0];
+        delete [] pPc;
 
         if( pc != 0 ) {
             char s[2];
@@ -166,11 +171,17 @@ void TextField::setText( const char *inText ) {
     
     int length = strlen( inText );
     for( int i=0; i<length; i++ ) {
-        unsigned char processedChar = processCharacter( inText[i] );
+        unsigned char *pProcessedChar = processCharacter( (unsigned char*)inText + i );
         
-        if( processedChar != 0 ) {
-            filteredText.push_back( processedChar );
+        size_t strLength = _mbclen( pProcessedChar );
+        if( strLength == 1) {
+            filteredText.push_back( pProcessedChar[0] );
             }
+        else if( strLength == 2) {
+            filteredText.push_back( pProcessedChar[0] );
+            filteredText.push_back( pProcessedChar[1] );
+            }
+            delete [] pProcessedChar;
         }
     
 
@@ -640,14 +651,363 @@ void TextField::pointerUp( float inX, float inY ) {
     }
 
 
+char furiganaSrc[][5] = {
+    { "ltsu", },
+    { "xtsu", },
+    { "kya", },
+    { "kyu", },
+    { "kyo", },
+    { "sya", },
+    { "syu", },
+    { "syo", },
+    { "sha", },
+    { "shi", },
+    { "shu", },
+    { "sho", },
+    { "tya", },
+    { "tyu", },
+    { "tyo", },
+    { "tsu", },
+    { "chi", },
+    { "nya", },
+    { "nyu", },
+    { "nyo", },
+    { "hya", },
+    { "hyu", },
+    { "hyo", },
+    { "mya", },
+    { "myu", },
+    { "myo", },
+    { "rya", },
+    { "ryu", },
+    { "ryo", },
+    { "lya", },
+    { "lyu", },
+    { "lyo", },
+    { "xya", },
+    { "xyu", },
+    { "xyo", },
+    { "gya", },
+    { "gyu", },
+    { "gyo", },
+    { "zya", },
+    { "zyu", },
+    { "zyo", },
+    { "jya", },
+    { "jyu", },
+    { "jyo", },
+    { "dya", },
+    { "dyu", },
+    { "dyo", },
+    { "bya", },
+    { "byu", },
+    { "byo", },
+    { "pya", },
+    { "pyu", },
+    { "pyo", },
+    { "ltu", },
+    { "xtu", },
+    { "ka", },
+    { "ki", },
+    { "ku", },
+    { "ke", },
+    { "ko", },
+    { "sa", },
+    { "si", },
+    { "su", },
+    { "se", },
+    { "so", },
+    { "ta", },
+    { "ti", },
+    { "tu", },
+    { "te", },
+    { "to", },
+    { "na", },
+    { "ni", },
+    { "nu", },
+    { "ne", },
+    { "no", },
+    { "ha", },
+    { "hi", },
+    { "hu", },
+    { "he", },
+    { "ho", },
+    { "ma", },
+    { "mi", },
+    { "mu", },
+    { "me", },
+    { "mo", },
+    { "ya", },
+    { "yu", },
+    { "yo", },
+    { "ra", },
+    { "ri", },
+    { "ru", },
+    { "re", },
+    { "ro", },
+    { "wa", },
+    { "wi", },
+    { "wu", },
+    { "we", },
+    { "wo", },
+    { "va", },
+    { "vi", },
+    { "vu", },
+    { "ve", },
+    { "vo", },
+    { "fa", },
+    { "fi", },
+    { "fu", },
+    { "fe", },
+    { "fo", },
+    { "ga", },
+    { "gi", },
+    { "gu", },
+    { "ge", },
+    { "go", },
+    { "za", },
+    { "zi", },
+    { "zu", },
+    { "ze", },
+    { "zo", },
+    { "ja", },
+    { "ji", },
+    { "ju", },
+    { "je", },
+    { "jo", },
+    { "da", },
+    { "di", },
+    { "du", },
+    { "de", },
+    { "do", },
+    { "ba", },
+    { "bi", },
+    { "bu", },
+    { "be", },
+    { "bo", },
+    { "pa", },
+    { "pi", },
+    { "pu", },
+    { "pe", },
+    { "po", },
+    { "la", },
+    { "li", },
+    { "lu", },
+    { "le", },
+    { "lo", },
+    { "xa", },
+    { "xi", },
+    { "xu", },
+    { "xe", },
+    { "xo", },
+    { "nn", },
+    { "kk", },
+    { "ss", },
+    { "tt", },
+    { "hh", },
+    { "mm", },
+    { "yy", },
+    { "rr", },
+    { "ww", },
+    { "a", },
+    { "i", },
+    { "u", },
+    { "e", },
+    { "o", },
+    { ".", },
+    { ",", },
+    { "!", },
+    { "?", },
+    { "-", },
+    { "(", },
+    { ")", },
+    { "\"", },
+    { "\'", },
+    { "/", },
+    { "^", },
+};
+char furiganaDist[][5] = {
+    { "っ", },
+    { "っ", },
+    { "きゃ", },
+    { "きゅ", },
+    { "きょ", },
+    { "しゃ", },
+    { "しゅ", },
+    { "しょ", },
+    { "しゃ", },
+    { "し", },
+    { "しゅ", },
+    { "しょ", },
+    { "ちゃ", },
+    { "ちゅ", },
+    { "ちょ", },
+    { "つ", },
+    { "ち", },
+    { "にゃ", },
+    { "にゅ", },
+    { "にょ", },
+    { "ひゃ", },
+    { "ひゅ", },
+    { "ひょ", },
+    { "みゃ", },
+    { "みゅ", },
+    { "みょ", },
+    { "りゃ", },
+    { "りゅ", },
+    { "りょ", },
+    { "ゃ", },
+    { "ゅ", },
+    { "ょ", },
+    { "ゃ", },
+    { "ゅ", },
+    { "ょ", },
+    { "ぎゃ", },
+    { "ぎゅ", },
+    { "ぎょ", },
+    { "じゃ", },
+    { "じゅ", },
+    { "じょ", },
+    { "じゃ", },
+    { "じゅ", },
+    { "じょ", },
+    { "ぢゃ", },
+    { "ぢゅ", },
+    { "ぢょ", },
+    { "びゃ", },
+    { "びゅ", },
+    { "びょ", },
+    { "ぴゃ", },
+    { "ぴゅ", },
+    { "ぴょ", },
+    { "っ", },
+    { "っ", },
+    { "か", },
+    { "き", },
+    { "く", },
+    { "け", },
+    { "こ", },
+    { "さ", },
+    { "し", },
+    { "す", },
+    { "せ", },
+    { "そ", },
+    { "た", },
+    { "ち", },
+    { "つ", },
+    { "て", },
+    { "と", },
+    { "な", },
+    { "に", },
+    { "ぬ", },
+    { "ね", },
+    { "の", },
+    { "は", },
+    { "ひ", },
+    { "ふ", },
+    { "へ", },
+    { "ほ", },
+    { "ま", },
+    { "み", },
+    { "む", },
+    { "め", },
+    { "も", },
+    { "や", },
+    { "ゆ", },
+    { "よ", },
+    { "ら", },
+    { "り", },
+    { "る", },
+    { "れ", },
+    { "ろ", },
+    { "わ", },
+    { "うぃ", },
+    { "う", },
+    { "うぇ", },
+    { "を", },
+    { "ば", },
+    { "び", },
+    { "ぶ", },
+    { "べ", },
+    { "ぼ", },
+    { "ふぁ", },
+    { "ふぃ", },
+    { "ふ", },
+    { "ふぇ", },
+    { "ふぉ", },
+    { "が", },
+    { "ぎ", },
+    { "ぐ", },
+    { "げ", },
+    { "ご", },
+    { "ざ", },
+    { "じ", },
+    { "ず", },
+    { "ぜ", },
+    { "ぞ", },
+    { "じゃ", },
+    { "じ", },
+    { "じゅ", },
+    { "じぇ", },
+    { "じょ", },
+    { "だ", },
+    { "ぢ", },
+    { "づ", },
+    { "で", },
+    { "ど", },
+    { "ば", },
+    { "び", },
+    { "ぶ", },
+    { "べ", },
+    { "ぼ", },
+    { "ぱ", },
+    { "ぴ", },
+    { "ぷ", },
+    { "ぺ", },
+    { "ぽ", },
+    { "ぁ", },
+    { "ぃ", },
+    { "ぅ", },
+    { "ぇ", },
+    { "ぉ", },
+    { "ぁ", },
+    { "ぃ", },
+    { "ぅ", },
+    { "ぇ", },
+    { "ぉ", },
+    { "ん", },
+    { "っk", },
+    { "っs", },
+    { "っt", },
+    { "っh", },
+    { "っm", },
+    { "っy", },
+    { "っr", },
+    { "っw", },
+    { "あ", },
+    { "い", },
+    { "う", },
+    { "え", },
+    { "お", },
+    { "。", },
+    { "、", },
+    { "！", },
+    { "？", },
+    { "ー", },
+    { "（", },
+    { "）", },
+    { "”", },
+    { "’", },
+    { "・", },
+    { "＾", },
+};
 
+unsigned char* TextField::processCharacter( unsigned char* pInASCII ) {
 
-unsigned char TextField::processCharacter( unsigned char inASCII ) {
-
-    unsigned char processedChar = inASCII;
+    unsigned char processedChar = pInASCII[0];
         
     if( mForceCaps ) {
-        processedChar = toupper( inASCII );
+        processedChar = toupper( processedChar );
         }
 
     if( mForbiddenChars != NULL ) {
@@ -655,7 +1015,7 @@ unsigned char TextField::processCharacter( unsigned char inASCII ) {
             
         for( int i=0; i<num; i++ ) {
             if( mForbiddenChars[i] == processedChar ) {
-                return 0;
+                return (unsigned char*)stringDuplicate( "" );
                 }
             }
         }
@@ -674,7 +1034,7 @@ unsigned char TextField::processCharacter( unsigned char inASCII ) {
             }
 
         if( !allowed ) {
-            return 0;
+            return (unsigned char*)stringDuplicate( "" );
             }
         }
     else {
@@ -682,12 +1042,13 @@ unsigned char TextField::processCharacter( unsigned char inASCII ) {
         
         if( processedChar == '\r' ) {
             // \r only permitted if it is listed explicitly
-            return 0;
+            return (unsigned char*)stringDuplicate( "" );
             }
         }
-        
 
-    return processedChar;
+    char returnStr[] = { (char)processedChar, '\0' };
+        
+    return (unsigned char*)stringDuplicate( returnStr );
     }
 
 
@@ -810,7 +1171,45 @@ void TextField::setFireOnLoseFocus( char inFireOnLeave ) {
     mFireOnLeave = inFireOnLeave;
     }
 
+int TextField::getPrevStringByteLen(int position) {
+    int i = 0;
+    int prevCharLen = 0;
+    while (i < position) {
+        prevCharLen = _mbclen((unsigned char*)mText + i);
+        i+= prevCharLen;
+        }
+        /*
+    int prevCharLen = 0;
+    if( position < 2) {
+        prevCharLen = 1;
+        }
+    else if( position == 2 ) {
+        if( _mbclen( (unsigned char*)mText + position - 1 ) != 1 ) {
+            prevCharLen = _mbclen( (unsigned char*)mText + position - 1 );
+            }
+        else{
+            prevCharLen = 1;
+            }
+        }
+    else if( _mbclen( (unsigned char*)mText + position - 1 ) != 1 ) {
+        if( _mbclen( (unsigned char*)mText + position - 2 ) != 1 ) {
+            prevCharLen = 1;
+            }
+        else{
+            prevCharLen = _mbclen( (unsigned char*)mText + position - 1 );
+            }
+        }
+    else {
+        prevCharLen = 1;
+        }
+        */
 
+    AppLog::getLog()->logPrintf(Log::INFO_LEVEL, "mText %s, mCursorPosition %d, prevStringByteLen %d", mText, mCursorPosition, prevCharLen );
+    for (int i=0; i<strlen(mText); i++) {
+        AppLog::getLog()->logPrintf(Log::INFO_LEVEL, "mText(%d) _mbclen = %d", i, _mbclen((unsigned char*)mText + i) );
+    }
+    return prevCharLen;
+    }
 
 
 void TextField::keyDown( unsigned char inASCII ) {
@@ -846,11 +1245,12 @@ void TextField::keyDown( unsigned char inASCII ) {
         }
     else if( inASCII == 13 ) {
         // enter hit in field
-        unsigned char processedChar = processCharacter( inASCII );    
+        unsigned char *pProcessedChar = processCharacter( &inASCII );    
 
-        if( processedChar != 0 ) {
+
+        if( pProcessedChar[0] != 0 ) {
             // newline is allowed
-            insertCharacter( processedChar );
+            insertString( (char*)pProcessedChar );
             
             mHoldDeleteSteps = -1;
             mFirstDeleteRepeatDone = false;
@@ -865,14 +1265,55 @@ void TextField::keyDown( unsigned char inASCII ) {
             // newline not allowed in this field
             fireActionPerformed( this );
             }
+        delete [] pProcessedChar;
         }
     else if( inASCII >= 32 ) {
 
-        unsigned char processedChar = processCharacter( inASCII );    
+        unsigned char *pProcessedChar = processCharacter( &inASCII );    
 
-        if( processedChar != 0 ) {
+        int pendingFuriganaLen = 0;
+        for( int i = 0; i <= mCursorPosition; i++ ) {
+            if( _mbclen( (unsigned char*)mText + i) == 2 ) {
+                i++;
+                pendingFuriganaLen = 0;
+                }
+            else {
+                pendingFuriganaLen++;
+                }
+            }
+
+        for( size_t i = 0; i < sizeof(furiganaSrc)/sizeof(furiganaSrc[0]); i++) {
+            int furiganaLen = strlen(furiganaSrc[i]);
+            if( pendingFuriganaLen + 1 < furiganaLen ) {
+                continue;
+                }
+            if (furiganaLen -1 <= mCursorPosition) {
+                for( int j = 0; j < furiganaLen; j++ ) {
+                    char furigana = furiganaSrc[i][j];
+                    if( j != furiganaLen - 1 ) {
+                        if (mText[mCursorPosition - furiganaLen + j + 1] != furigana) {
+                            break;
+                            }
+                        }
+                    else{
+                        if( furigana == pProcessedChar[0] ) {
+                            for( int k = 0; k < furiganaLen - 1; k++ ) {
+                                deleteHit();
+                                }
+                            insertString( furiganaDist[i] );
+                            pProcessedChar[0] = '\0';
+                            }
+                        }
+                    }
+                }
+            if( pProcessedChar[0] == 0 ) {
+                break;
+                }
+            }
+
+        if( pProcessedChar[0] != 0 ) {
             
-            insertCharacter( processedChar );
+            insertString( (char*)pProcessedChar );
             }
         
         mHoldDeleteSteps = -1;
@@ -883,6 +1324,8 @@ void TextField::keyDown( unsigned char inASCII ) {
         if( mFireOnAnyChange ) {
             fireActionPerformed( this );
             }
+
+        delete [] pProcessedChar;
         }    
     }
 
@@ -902,7 +1345,7 @@ void TextField::deleteHit() {
     if( mCursorPosition > 0 || isAnythingSelected() ) {
         mCursorFlashSteps = 0;
     
-        int newCursorPos = mCursorPosition - 1;
+        int newCursorPos = mCursorPosition - getPrevStringByteLen(mCursorPosition);
 
 
         if( isAnythingSelected() ) {
@@ -988,7 +1431,7 @@ void TextField::leftHit() {
 
     if( ! isShiftKeyDown() ) {
         if( isAnythingSelected() ) {
-            mCursorPosition = mSelectionStart + 1;
+            mCursorPosition = mSelectionStart + getPrevStringByteLen( mSelectionStart );
             }
 
         mSelectionStart = -1;
@@ -1014,7 +1457,7 @@ void TextField::leftHit() {
         
         }
     else {    
-        mCursorPosition --;
+        mCursorPosition -= getPrevStringByteLen(mCursorPosition);
         if( mCursorPosition < 0 ) {
             mCursorPosition = 0;
             }
@@ -1045,7 +1488,7 @@ void TextField::rightHit() {
     
     if( ! isShiftKeyDown() ) {
         if( isAnythingSelected() ) {
-            mCursorPosition = mSelectionEnd - 1;
+            mCursorPosition = mSelectionEnd - getPrevStringByteLen( mSelectionEnd );
             }
             
         mSelectionStart = -1;
@@ -1073,7 +1516,7 @@ void TextField::rightHit() {
         
         }
     else {
-        mCursorPosition ++;
+        mCursorPosition += getPrevStringByteLen( mCursorPosition );
         if( mCursorPosition > (int)strlen( mText ) ) {
             mCursorPosition = strlen( mText );
             }

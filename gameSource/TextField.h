@@ -241,8 +241,9 @@ class TextField : public PageComponent, public ActionListenerList {
         
         
         // returns 0 if character completely forbidden by field rules
-        unsigned char processCharacter( unsigned char inASCII );
-        
+        unsigned char *processCharacter( unsigned char *pInASCII );
+
+        int getPrevStringByteLen(int position);
         
 
         // clever (!) way of handling focus?
