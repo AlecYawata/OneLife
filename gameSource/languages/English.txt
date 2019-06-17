@@ -196,15 +196,18 @@ loadingMapFailedMessage "FAILED TO LOAD THE MAP."
 loadingMapFailedSubMessage "THE FOLLOWING FILE IS MISSING OR CORRUPTED:##%s####REINSTALLING THE GAME SHOULD FIX THIS PROBLEM."
 
 
-lastAte "ATE"
-lastAtePermanent "ATE FROM"
+lastAte "ATE "
+lastAteAfter ""
+lastAtePermanent "ATE FROM "
 
 breastMilk "DRANK BREAST MILK"
 
 you "YOU"
-eat "EAT"
+eat "EAT "
+eatAfter ""
 
-youWith "YOU WITH"
+youWith "YOU WITH "
+youWithAfter ""
 with "WITH"
 
 yum "YUM"
@@ -231,8 +234,8 @@ notRelevant "(%s NOT RELEVANT)"
 noMatch "(NO FILTER MATCH)"
 
 
-your "YOUR"
-of "OF"
+your "YOUR "
+of " OF "
 
 ownedBy "OWNED BY"
 
@@ -246,10 +249,15 @@ great "GREAT "
 brother "BROTHER"
 sister "SISTER"
 
+littleBrother "LITTLE BROTHER"
+bigBrother "BIG BROTHER"
+littleSister "LITTLE SISTER"
+bigSister "BIG SISTER"
+
 little "LITTLE"
 big "BIG"
-twin "TWIN"
-identical "IDENTICAL"
+twin "TWIN "
+identical "IDENTICAL "
 
 
 aunt "AUNT"
@@ -259,6 +267,12 @@ niece "NIECE"
 nephew "NEPHEW"
 
 cousin "COUSIN"
+cousinBigBrother "COUSIN"
+cousinBigSister "COUSIN"
+cousinLittleBrother "COUSIN"
+cousinLittleSister "COUSIN"
+
+family "FAMILY"
 
 1th "FIRST"
 2th "SECOND"
@@ -305,10 +319,10 @@ forgottenPerson "FORGOTTEN PERSON"
 
 unknownPerson "UNKNOWN PERSON"
 
-yearAgo "YEAR AGO"
-yearsAgo "YEARS AGO"
+yearAgo " YEAR AGO"
+yearsAgo " YEARS AGO"
 
-died "DIED"
+died " DIED"
 
 zero "ZERO"
 one "ONE"

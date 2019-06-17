@@ -509,20 +509,23 @@ char *getRelationName( SimpleVector<int> *ourLin,
         found = true;
 
         if( theirMatchIndex == 0 && ourMatchIndex == 0 ) {
-            if( theyMale ) {
-                main = translate( "brother" );
+            if( ourID < theirID ) {
+                if( theyMale ) {
+                    main = translate( "bigBrother" );
+                    }
+                else {
+                    main = translate( "bigSister" );
+                    }
                 }
             else {
-                main = translate( "sister" );
+                if( theyMale ) {
+                    main = translate( "littleBrother" );
+                    }
+                else {
+                    main = translate( "littleSister" );
+                    }
                 }
-            
-            if( ourAge < theirAge - 0.1 ) {
-                big = true;
-                }
-            else if( ourAge > theirAge + 0.1 ) {
-                little = true;
-                }
-            else {
+            if( ourAge > theirAge - 0.1 && ourAge < theirAge + 0.1 ) {
                 // close enough together in age
                 twin = true;
                 
@@ -551,8 +554,22 @@ char *getRelationName( SimpleVector<int> *ourLin,
             }
         else {
             // cousin of some kind
-            
-            main = translate( "cousin" );
+            if( ourAge < theirAge) {
+                if( theyMale ) {
+                    main = translate( "cousinBigBrother" );
+                    }
+                else {
+                    main = translate( "cousinBigSister" );
+                    }
+                }
+            else {
+                if( theyMale ) {
+                    main = translate( "cousinLittleBrother" );
+                    }
+                else {
+                    main = translate( "cousinLittleSister" );
+                    }
+                }
             
             // shallowest determines cousin number
             // diff determines removed number
@@ -571,7 +588,6 @@ char *getRelationName( SimpleVector<int> *ourLin,
     SimpleVector<char> buffer;
     
     buffer.appendElementString( translate( "your" ) );
-    buffer.appendElementString( " " );
 
 
     if( numGreats <= 4 ) {    
@@ -594,16 +610,11 @@ char *getRelationName( SimpleVector<int> *ourLin,
     if( cousinNum > 0 ) {
         int remainingCousinNum = cousinNum;
 
-        if( cousinNum >= 30 ) {
+        if( cousinNum >= 3 ) {
             buffer.appendElementString( translate( "distant" ) );
             remainingCousinNum = 0;
             }
         
-        if( cousinNum > 20 && cousinNum < 30 ) {
-            buffer.appendElementString( translate( "twenty" ) );
-            remainingCousinNum = cousinNum - 20;
-            }
-
         if( remainingCousinNum > 0  ) {
             char *numth = autoSprintf( "%dth", remainingCousinNum );
             buffer.appendElementString( translate( numth ) );
@@ -612,22 +623,12 @@ char *getRelationName( SimpleVector<int> *ourLin,
         buffer.appendElementString( " " );
         }
 
-    if( little ) {
-        buffer.appendElementString( translate( "little" ) );
-        buffer.appendElementString( " " );
-        }
-    else if( big ) {
-        buffer.appendElementString( translate( "big" ) );
-        buffer.appendElementString( " " );
-        }
-    else if( twin ) {
+    if( twin ) {
         if( identical ) {
             buffer.appendElementString( translate( "identical" ) );
-            buffer.appendElementString( " " );
             }
         
         buffer.appendElementString( translate( "twin" ) );
-        buffer.appendElementString( " " );
         }
     
     
@@ -8472,7 +8473,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             
                             char *yearsString;
                             
-                            if( years > 20 ) {
+                            if( years > 0 ) {
                                 if( years > 1000000 ) {
                                     int mil = years / 1000000;
                                     int remain = years % 1000000;
@@ -8529,14 +8530,14 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                 }
                             else {
                                 deathPhrase = 
-                                    autoSprintf( " - %s %s %s",
+                                    autoSprintf( " - %s%s%s",
                                                  translate( "died" ),
                                                  yearsString, yearWord );
                                 }
 
                             delete [] yearsString;
                             
-                            des = autoSprintf( "%s %s %s%s",
+                            des = autoSprintf( "%s%s%s%s",
                                                desNoComment, translate( "of" ),
                                                gI->relationName,
                                                deathPhrase );
@@ -8603,7 +8604,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                 int pID = gI->ownerList->getElementDirect( p );
                                 
                                 if( pID == ourID ) {
-                                    personName = translate( "YOU" );
+                                    personName = translate( "you" );
                                     break;
                                     }
                                 LiveObject *pO = getLiveObject( pID );
@@ -16427,15 +16428,18 @@ void LivingLifePage::step() {
                         stripDescriptionComment( strUpper );
 
                         const char *key = "lastAte";
+                        const char *keyAfter = "lastAteAfter";
                         
                         if( lastAteObj->permanent ) {
                             key = "lastAtePermanent";
+                            keyAfter = "lastAtePermanentAfter";
                             }
                         
                         mCurrentLastAteString = 
-                            autoSprintf( "%s %s",
+                            autoSprintf( "%s%s%s",
                                          translate( key ),
-                                         strUpper );
+                                         strUpper,
+                                         translate( keyAfter ) );
                         delete [] strUpper;
                     
                         mCurrentLastAteFillMax = lastAteFillMax;

@@ -1,17 +1,17 @@
-writeFailed "ERROR:  GAME FOLDER IS READ-ONLY"
+writeFailed "エラー:  ゲームが読み取り専用フォルダにあります"
 
 
-measuringFPS "MEASURING MAXIMUM FRAMERATE"
+measuringFPS "最大FPSを測定中"
 
-vsyncWarning "WARNING: VERTICAL SYNC DISABLED"
-vsyncWarning2 "(VISUAL TEARING LIKELY)"
+vsyncWarning "警告: VSYNCが無効になっています"
+vsyncWarning2 "(画面がカクつく可能性があります)"
 
-vsyncWarning3 "GRAPHICS CARD CONTROL PANEL CAN FIX THIS"
+vsyncWarning3 "グラフィックカードのコントロールパネルで変更することができます"
 
-vsyncContinueMessage "PRESS Y TO CONTINUE WITHOUT VSYNC OR ESC TO QUIT"
+vsyncContinueMessage "Yを押すとこのままゲームを起動します。ESCキーを押すとゲームを終了します。"
 
 
-fpsErrorLogin "ERROR:  FPS MISMATCH DETECTED.##VSYNC CHANGED?  MEASURED %0.1f FPS, EXPECTING %d FPS"
+fpsErrorLogin "エラー:  測定されたFPSが設定されているFPSと異なります。##VSYNCの設定を変更しましたか？  測定値 %0.1f FPS, 設定値 %d FPS"
 
 
 
@@ -27,18 +27,18 @@ categories "アイテムグループデータ"
 groundTextures "地面画像データ"
 
 
-spritesRebuild "SPRITES##(REBUILDING CACHE)"
-soundsRebuild "SOUNDS##(REBUILDING CACHE)"
-objectsRebuild "OBJECTS##(REBUILDING CACHE)"
-transitionsRebuild "TRANSITIONS##(REBUILDING CACHE)"
-animationsRebuild "ANIMATIONS##(REBUILDING CACHE)"
-categoriesRebuild "CATEGORIES##(REBUILDING CACHE)"
+spritesRebuild "画像データ##(キャッシュ作成中)"
+soundsRebuild "音声データ##(キャッシュ作成中)"
+objectsRebuild "アイテムデータ##(キャッシュ作成中)"
+transitionsRebuild "クラフトデータ##(キャッシュ作成中)"
+animationsRebuild "アニメーションデータ##(キャッシュ作成中)"
+categoriesRebuild "アイテムグループデータ##(キャッシュ作成中)"
 
 
 
 
 email "メールアドレス:"
-atSignTip "INSERT '@' SIGN (INTL KEYBOARDS)"
+atSignTip "'@'を入力する"
 
 
 loginButton "ログイン"
@@ -50,38 +50,38 @@ settingsButton "設定"
 postReviewButton "レビューする"
 updateReviewButton "UPDATE REVIEW"
 
-reviewText "REVIEW TEXT"
-reviewName "DISPLAY NAME"
+reviewText "レビュー本文"
+reviewName "表示名"
 
-recommend "RECOMMEND"
-recommendYes "YES"
-recommendNo "NO"
+recommend "おススメできますか"
+recommendYes "はい"
+recommendNo "いいえ"
 
-postButton "POST"
-postReviewTip "POST TO ONEHOURONELIFE.COM"
+postButton "送信"
+postReviewTip "ONEHOURONELIFE.COMに送信"
 
-updateButton "UPDATE"
-updateReviewTip "UPDATE ON ONEHOURONELIFE.COM"
+updateButton "更新"
+updateReviewTip "ONEHOURONELIFE.COMに更新"
 
-removeButton "REMOVE"
-removeReviewTip "REMOVE FROM ONEHOURONELIFE.COM"
-
-
-copyReviewTip "COPY REVIEW TEXT TO CLIPBOARD"
-copySelectionTip "COPY SELECTION TO CLIPBOARD"
-
-spellCheck "CHECK SPELLING"
-
-requestDenied "POST REQUEST DENIED"
-
-reviewPosted "REVIEW HAS BEEN POSTED"
-reviewUpdated "REVIEW HAS BEEN UPDATED"
-reviewRemoved "REVIEW HAS BEEN REMOVED"
+removeButton "削除"
+removeReviewTip "ONEHOURONELIFE.COMから削除"
 
 
+copyReviewTip "クリップボードからペースト"
+copySelectionTip "選択範囲をクリップボードにコピー"
 
-saveTip "LOGIN AND STORE DETAILS LOCALLY"
-clearAccountTip "DELETES ACCOUNT DETAILS FROM DISK"
+spellCheck "スペルチェック"
+
+requestDenied "送信失敗"
+
+reviewPosted "レビューが送信されました"
+reviewUpdated "レビューが更新されました"
+reviewRemoved "レビューが削除されました"
+
+
+
+saveTip "ログインしてアカウント情報を保存します"
+clearAccountTip "アカウント情報を消去します"
 
 
 accountKey "アカウントキー:"
@@ -89,136 +89,141 @@ paste "貼り付け"
 copy "コピー"
 clear "クリア"
 
-charLimit "5000 CHARACTER LIMIT REACHED"
+charLimit "最大5000文字です"
 
 
-twinCode "TWIN CODE:"
-generate "GENERATE"
+twinCode "フレンドコード:"
+generate "再生成"
 
-twinTip "GIVE FRIENDS THIS CODE AND GET BORN TOGETHER"
+twinTip "同じフレンドコードを入力すると一緒に生まれられます"
 
-twins "TWINS"
-triplets "TRIPLETS"
-quadruplets "QUADRUPLETS"
+twins "双子"
+triplets "三つ子"
+quadruplets "四つ子"
 
-cancel "CANCEL"
-
-
-backButton "BACK"
-restartButton "RESTART"
-fullscreen "FULLSCREEN:"
-borderless "BORDERLESS:"
-musicLoudness "MUSIC LOUDNESS:"
-soundLoudness "SOUND LOUDNESS:"
-
-currentFPS "CURRENT FRAME RATE:"
-targetFPS "TARGET FRAME RATE:"
-vsyncOn "USING VSYNC:"
-vsyncYes "YES"
-vsyncNo "NO"
-redetectButton "RE-DETECT"
+cancel "キャンセル"
 
 
-cursor "MOUSE POINTER:"
+backButton "戻る"
+restartButton "再起動"
+fullscreen "フルスクリーン:"
+borderless "最大化ウィンドウ:"
+musicLoudness "BGM音量:"
+soundLoudness "SE音量:"
 
-system "NATIVE"
-drawn "DRAWN"
-both "BOTH"
+currentFPS "現在のFPS:"
+targetFPS "設定FPS:"
+vsyncOn "VSYNCを使用:"
+vsyncYes "はい"
+vsyncNo "いいえ"
+redetectButton "FPS再検出"
+
+
+cursor "マウスポインター:"
+
+system "OSカーソル"
+drawn "ゲームカーソル"
+both "両方"
 
 scale "SCALE:"
 
 
-useCustomServer "USE CUSTOM SERVER:"
-address "ADDRESS:"
-port "PORT:"
+useCustomServer "カスタムサーバーを使用する:"
+address "ホスト:"
+port "ポート番号:"
 
 
 
-downloadingUpdate "DOWNLOADING UPDATE"
-applyingUpdate "APPLYING UPDATE"
+downloadingUpdate "更新をダウンロード中"
+applyingUpdate "更新中"
 
-serverShutdownMessage "THE SERVERS HAVE BEEN##SHUT DOWN FOR MAINTENANCE.##PLEASE TRY AGAIN LATER."
+serverShutdownMessage "サーバーはメンテナンスのために##シャットダウンしています。##しばらくしてから再度お試しください"
 
-upgradeMessage "PLEASE DOWNLOAD THE LATEST VERSION"
+upgradeMessage "ゲームの最新バージョンをダウンロードしてください"
 
-upgradeMessageSteam "PLEASE UPDATE THE GAME THROUGH STEAM"
+upgradeMessageSteam "Steamからゲームのアップデートを行ってください"
 
 steamID  "STEAM ID:"
 
-editAccount "EDIT ACCOUNT"
+editAccount "アカウントを変更"
 
-editAccountWarning "DON'T EDIT ACCOUNT UNLESS YOU KNOW WHAT YOU'RE DOING"
+editAccountWarning "本当に必要な時だけアカウントの変更を行ってください"
 
-view "VIEW"
-hide "HIDE"
-
-
-updateWritePermissionMessage "FAILED TO APPLY UPDATE:##MOVE GAME FOLDER SOMEWHERE##THAT IS NOT READ-ONLY."
-
-manualRestartMessage "RESTART GAME TO APPLY UPDATE"
+view "表示"
+hide "非表示"
 
 
-loginFailed "LOGIN FAILED"
+updateWritePermissionMessage "-アップデート失敗-##読み取り専用ではないフォルダに##ゲームを移動してください。"
 
-versionMismatch "VERSION MISMATCH:  CLIENT %d -- SERVER %d"
-disableCustomServer "DISABLE CUSTOM SERVER"
-
-
-serverShutdown "SERVER HAS BEEN SHUT DOWN"
-
-serverUpdate "SERVERS ARE IN THE PROCESS OF UPDATING"
+manualRestartMessage "ゲーム再起動でアップデートが完了します"
 
 
-serverFull "SERVER IS FULL"
+loginFailed "ログイン失敗"
 
-connectionFailed "CONNECTION FAILED"
-
-
-customServerMesssage "CUSTOM SERVER:  %s : %d"
-
-connecting "CONNECTING"
-
-waitingBirth "WAITING TO BE BORN"
-waitingBirthFriends "WAITING TO BE BORN AS %s"
-
-cancelWaitingFriends "PRESS [x] KEY TO CANCEL"
-
-waitingReconnect "TRYING TO RECONNECT"
-
-waitingArrival "CURRENTLY IN TRANSIT"
+versionMismatch "サーバーとクライアントのサーバーが一致しません:  クライアント %d -- サーバー %d"
+disableCustomServer "カスタムサーバーを使用しない"
 
 
-loadingMap "LOADING MAP"
+serverShutdown "サーバーがシャットダウン中"
+
+serverUpdate "サーバーがアップデート中"
 
 
-loadingMapFailedMessage "FAILED TO LOAD THE MAP."
+serverFull "サーバーが満員"
 
-loadingMapFailedSubMessage "THE FOLLOWING FILE IS MISSING OR CORRUPTED:##%s####REINSTALLING THE GAME SHOULD FIX THIS PROBLEM."
-
-
-lastAte "ATE"
-lastAtePermanent "ATE FROM"
-
-breastMilk "DRANK BREAST MILK"
-
-you "YOU"
-eat "EAT"
-
-youWith "YOU WITH"
-with "WITH"
-
-yum "YUM"
-meh "MEH"
+connectionFailed "接続失敗"
 
 
-eatHint "MOUTH"
-bareHandHint "BARE HAND"
-bareGroundHint "BARE GROUND"
-nothingHint "NOTHING"
-eventuallyHint "(EVENTUALLY)"
+customServerMesssage "カスタムサーバー:  %s : %d"
+
+connecting "接続中"
+
+waitingBirth "お母さんを探しています"
+waitingBirthFriends "%sのお母さんを探しています"
+
+cancelWaitingFriends "キャンセルする時は[x]キーを押してください"
+
+waitingReconnect "再接続試行中"
+
+waitingArrival "接続中"
 
 
-noHint "NO INFORMATION" 
+loadingMap "マップ読み込み中"
+
+
+loadingMapFailedMessage "マップ読み込み失敗"
+
+loadingMapFailedSubMessage "ファイルが壊れているか見つかりません:##%s####ゲームを再インストールしてください"
+
+
+lastAte ""
+lastAteAfter "を食べました"
+lastAtePermanent ""
+lastAtePermanentAfter "から食べました"
+
+breastMilk 母乳を飲みました"
+
+you "あなた"
+YOU "あなた"
+eat ""
+eatAfter "を食べる"
+
+youWith "あなたと"
+youWithAfter ""
+with "と"
+
+yum "美味しい"
+meh "飽きた"
+
+
+eatHint "自分をクリック"
+bareHandHint "素手で"
+bareGroundHint "何もない場所"
+nothingHint "なし"
+eventuallyHint "(ランダムで)"
+
+
+noHint "情報なし" 
 
 ofHint "OF"
 tabHint "[TAB]"
@@ -226,39 +231,49 @@ tabHint "[TAB]"
 enterHint "[ENTER]"
 
 
-making "MAKING:"
-notRelevant "(%s NOT RELEVANT)"
-noMatch "(NO FILTER MATCH)"
+making "作成法:"
+notRelevant "(%sには関連しません)"
+noMatch "(見つかりませんでした)"
 
 
-your "YOUR"
-of "OF"
+your "あなたの"
+of "の"
 
-ownedBy "OWNED BY"
+ownedBy "所有者："
 
 
-mother "MOTHER"
-son "SON"
-daughter "DAUGHTER"
-grand "GRAND"
-great "GREAT "
+mother "母"
+son "息子"
+daughter "娘"
+grand "祖"
+great "曾"
 
-brother "BROTHER"
-sister "SISTER"
+brother "兄弟"
+sister "姉妹"
+
+littleBrother "弟"
+bigBrother "兄"
+littleSister "妹"
+bigSister "姉"
 
 little "LITTLE"
 big "BIG"
-twin "TWIN"
-identical "IDENTICAL"
+twin "一緒に生まれた"
+identical "そっくりな"
 
 
-aunt "AUNT"
-uncle "UNCLE"
+aunt "叔母"
+uncle "叔父"
 
-niece "NIECE"
-nephew "NEPHEW"
+niece "姪"
+nephew "甥"
 
-cousin "COUSIN"
+cousinBigBrother "従兄"
+cousinBigSister "従姉"
+cousinLittleBrother "従弟"
+cousinLittleSister "従妹"
+
+family "親戚"
 
 1th "FIRST"
 2th "SECOND"
@@ -297,18 +312,18 @@ removed "REMOVED"
 manyTimes "MANY TIMES"
 
 
-unrelated "NO RELATION"
+unrelated "赤の他人"
 
-namelessPerson "NAMELESS PERSON"
+namelessPerson "名無し"
 
-forgottenPerson "FORGOTTEN PERSON"
+forgottenPerson "忘れ去られた人"
 
-unknownPerson "UNKNOWN PERSON"
+unknownPerson "不明"
 
-yearAgo "YEAR AGO"
-yearsAgo "YEARS AGO"
+yearAgo "年前に亡くなった"
+yearsAgo "年前に亡くなった"
 
-died "DIED"
+died ""
 
 zero "ZERO"
 one "ONE"
@@ -354,52 +369,54 @@ ping "PING"
 
 ms "MS"
 
-youDied "YOU DIED"
+youDied "あなたの人生は終わりました"
 
-deathAgeOne "AGE:  1 YEAR"
-deathAge "AGE:  %d YEARS"
+deathAgeOne "享年　1歳"
+deathAge "享年　%d歳"
 
-reasonDisconnected "CAUSE:  CONNECTION LOST"
+reasonDisconnected "死因:  接続切断"
 
-reasonHunger "CAUSE:  STARVATION"
+reasonHunger "死因:  餓死"
 
-reasonNursingHunger "CAUSE:  NURSING STARVATION"
+reasonNursingHunger "死因:  餓死"
 
-reasonKilled "CAUSE:  KILLED BY "
+reasonKilled "死因:  "
+reasonKilledAfter "に殺されました"
 
-reasonKilledUnknown "CAUSE:  KILLED BY UNKNOWN WEAPON"
-
-
-reasonSuccumbed "CAUSE:  SUCCUMBED TO "
-
-reasonSuccumbedUnknown "CAUSE:  SUCCUMBED TO UNKNOWN SICKNESS"
+reasonKilledUnknown "死因:  未知の武器で殺されました"
 
 
+reasonSuccumbed "死因:  "
+reasonSuccumbed "に罹りました"
 
-reasonOldAge "CAUSE:  OLD AGE"
-
-reasonSID "CAUSE:  SUDDEN INFANT DEATH"
-
-reasonUnknown "CAUSE:  UNKNOWN"
-
-reasonApocalypse "CAUSE:  THE APOCALYPSE"
+reasonSuccumbedUnknown "死因:  未知の病にかかりました"
 
 
-connectionLost "CONNECTION LOST"
 
-willTryReconnect "PRESS OK TO TRY RECONNECTING"
+reasonOldAge "死因:  老衰"
+
+reasonSID "死因:  乳幼児突然死症候群"
+
+reasonUnknown "死因:  不明"
+
+reasonApocalypse "世界は終焉を迎えました"
+
+
+connectionLost "接続切断"
+
+willTryReconnect "[OK]を押すと再接続を試みます"
 
 
 
 okay "OK"
-quit "QUIT"
+quit "終了"
 
-reborn "GET REBORN"
+reborn "生まれ直す"
 
-tutorial "TUTORIAL"
-restartTutorial "RESTART TUTORIAL"
+tutorial "チュートリアル"
+restartTutorial "チュートリアルをやり直す"
 
-menu "MENU"
+menu "トップに戻る"
 
 
 bugMessage1a "WILD BUG APPEARED!####AFTER THIS LIFE IS OVER,##PLEASE QUIT AND EMAIL LATEST RECORDED-GAME FILE TO:"
@@ -555,25 +572,25 @@ tutorial_99 "THIS IS THE END OF THE TUTORIAL.##AFTER YOU DIE HERE, YOU WILL BE B
 
 
 
-pauseMessage1 "REALLY QUIT?"
+pauseMessage1 "終了しますか"
 
-pauseMessage2 "PRESS [ENTER] TO RESUME"
+pauseMessage2 "[ENTER]キーを押すと取り消します"
 
 
-pauseMessage3 "PRESS [%] TO QUIT"
-pauseMessage3b "YOU CAN'T QUIT NOW"
+pauseMessage3 "[%]キーを押すとゲームを終了します"
+pauseMessage3b "今はゲームを終了できません"
 
 pauseMessage4 "-"
 
 
 
-quitMessage "[ESC] TO QUIT"
+quitMessage "[ESC]キーを押すとゲームを終了します"
 
 
 
-playbackTag           "PLAYBACK %:"
-playbackToggleMessage "(PRESS [%] TO HIDE)"
-playbackEndMessage    "(PRESS [ESC] TO END)"
+playbackTag           "リプレイ再生 %:"
+playbackToggleMessage "([%]キーを押すと非表示になります)"
+playbackEndMessage    "([ESC]キーを押すと終了します)"
 
 
 enterDemoCode  "Enter a demo code:"
