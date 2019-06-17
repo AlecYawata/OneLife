@@ -349,7 +349,7 @@ twenty "TWENTY"
 
 
 
-dieCommand "/DIE"
+dieCommand "/しぬ"
 
 fpsCommand "/FPS"
 
