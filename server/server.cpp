@@ -166,7 +166,7 @@ static char allowedSayCharMap[256];
 static char allowedSayCharMapW[256][256];
 
 static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?! ";
-static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉ、。ー！？（）";
+static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ、。ー！？（）";
 
 
 static int killEmotionIndex = 2;
