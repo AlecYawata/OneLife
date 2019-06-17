@@ -7,6 +7,7 @@
 #include "minorGems/util/stringUtils.h"
 
 #include "minorGems/util/random/JenkinsRandomSource.h"
+#include "minorGems/util/SettingsManager.h"
 
 #include "minorGems/io/file/File.h"
 
@@ -488,6 +489,9 @@ float initObjectBankStep() {
     
     int i = currentFile;
 
+    SimpleVector<char*> *itemNamesSetting = 
+        SettingsManager::getSettingW( "itemNames" );
+    
                 
     char *txtFileName = getFileName( cache, i );
             
@@ -522,7 +526,16 @@ float initObjectBankStep() {
                 next++;
                             
                 r->description = stringDuplicate( lines[next] );
-                         
+
+                r->localizedName = stringDuplicate( "" );                         
+                if (0 <= r->id && r->id < itemNamesSetting->size()) {
+                    delete [] r->localizedName;
+                    r->localizedName = stringDuplicate( itemNamesSetting->getElementDirect(r->id) );
+                    }
+                if (strlen(r->localizedName) == 0) {
+                    delete [] r->localizedName;
+                    r->localizedName = stringDuplicate( r->description );
+                    }
 
                 setupObjectWritingStatus( r );
                 
@@ -1227,6 +1240,8 @@ float initObjectBankStep() {
                 
     delete [] txtFileName;
 
+    itemNamesSetting->deallocateStringElements();
+    delete itemNamesSetting;
 
     currentFile ++;
     return (float)( currentFile ) / (float)( cache.numFiles );
@@ -1902,6 +1917,7 @@ static void freeObjectRecord( int inID ) {
             int race = idMap[inID]->race;
 
             delete [] idMap[inID]->description;
+            delete [] idMap[inID]->localizedName;
             
             delete [] idMap[inID]->biomes;
             
@@ -2081,6 +2097,7 @@ int reAddObject( ObjectRecord *inObject,
     char *biomeString = getBiomesString( inObject );
 
     int id = addObject( desc,
+                        inObject->localizedName,
                         inObject->containable,
                         inObject->containSize,
                         inObject->vertContainRotationOffset,
@@ -2356,6 +2373,7 @@ ObjectRecord **searchObjects( const char *inSearch,
 
 
 int addObject( const char *inDescription,
+               const char *inLocalizedName,
                char inContainable,
                float inContainSize,
                double inVertContainRotationOffset,
@@ -2782,6 +2800,7 @@ int addObject( const char *inDescription,
     
     r->id = newID;
     r->description = stringDuplicate( inDescription );
+    r->localizedName = stringDuplicate( inLocalizedName );
 
     r->containable = inContainable;
     r->containSize = inContainSize;

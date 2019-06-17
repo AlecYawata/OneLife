@@ -21,6 +21,7 @@ typedef struct ObjectRecord {
         int id;
         
         char *description;
+        char *localizedName;
 
         // can it go into a container
         char containable;
@@ -446,6 +447,7 @@ ObjectRecord **searchObjects( const char *inSearch,
 
 
 int addObject( const char *inDescription,
+               const char *inLocalizedName,
                char inContainable,
                float inContainSize,
                double inVertContainRotationOffset,

@@ -11,6 +11,7 @@
 
 #include "minorGems/util/stringUtils.h"
 #include "minorGems/util/SettingsManager.h"
+#include "minorGems/util/log/AppLog.h"
 
 #include "minorGems/crypto/hashes/sha1.h"
 

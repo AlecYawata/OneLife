@@ -930,7 +930,7 @@ static char *getDisplayObjectDescription( int inID ) {
     if( o == NULL ) {
         return NULL;
         }
-    char *upper = stringToUpperCase( o->description );
+    char *upper = stringDuplicate( o->localizedName );
     stripDescriptionComment( upper );
     return upper;
     }
@@ -6639,7 +6639,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                         if( mMap[ mapI ] > 0 ) {
                             ObjectRecord *o = getObject( mMap[mapI] );
                             
-                            baseDes = o->description;
+                            baseDes = o->localizedName;
                             
                             // don't number natural objects
                             // or objects that occur before the
@@ -8366,18 +8366,20 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 if( ourLiveObject->holdingID > 0 &&
                     getObject( ourLiveObject->holdingID )->foodValue > 0 ) {
                     
-                    des = autoSprintf( "%s %s",
+                    des = autoSprintf( "%s%s%s",
                                        translate( "eat" ),
                                        getObject( ourLiveObject->holdingID )->
-                                       description );
+                                       localizedName,
+                                       translate( "eatAfter" ) );
                     desToDelete = des;
                     }
                 else if( ourLiveObject->dying &&
                          ourLiveObject->holdingID > 0 ) {
-                    des = autoSprintf( "%s %s",
+                    des = autoSprintf( "%s%s",
                                        translate( "youWith" ),
                                        getObject( ourLiveObject->holdingID )->
-                                       description );
+                                       localizedName,
+                                       translate( "youWithAfter" ) );
                     desToDelete = des;
                     }
                 else {
@@ -8409,7 +8411,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                        des,
                                        translate( "with" ),
                                        getObject( otherObj->holdingID )->
-                                       description );
+                                       localizedName );
                     if( desToDelete != NULL ) {
                         delete [] desToDelete;
                         }
@@ -8420,7 +8422,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
             else {
                 ObjectRecord *o = getObject( idToDescribe );
                 
-                des = o->description;
+                des = o->localizedName;
 
                 if( strstr( des, "origGrave" ) != NULL ) {
                     char found = false;
@@ -9235,7 +9237,7 @@ int LivingLifePage::getNumHints( int inObjectID ) {
                 // don't count the object itself as a hit
                 continue;
                 }
-            char *des = stringToUpperCase( hits[i]->description );
+            char *des = stringToUpperCase( hits[i]->localizedName );
             
             stripDescriptionComment( des );
         
@@ -9632,7 +9634,7 @@ int LivingLifePage::getNumHints( int inObjectID ) {
         if( tr->actor > 0 && tr->actor != inObjectID ) {
             ObjectRecord *otherObj = getObject( tr->actor );
                 
-            char *trimmedDesc = stringDuplicate( otherObj->description );
+            char *trimmedDesc = stringDuplicate( otherObj->localizedName );
             stripDescriptionComment( trimmedDesc );
 
             for( int s=0; s<otherActorStrings.size(); s++ ) {
@@ -9657,7 +9659,7 @@ int LivingLifePage::getNumHints( int inObjectID ) {
         if( tr->target > 0 && tr->target != inObjectID ) {
             ObjectRecord *otherObj = getObject( tr->target );
                 
-            char *trimmedDesc = stringDuplicate( otherObj->description );
+            char *trimmedDesc = stringDuplicate( otherObj->localizedName );
             stripDescriptionComment( trimmedDesc );
 
             for( int s=0; s<otherTargetStrings.size(); s++ ) {
@@ -9725,7 +9727,7 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex ) {
         char *actorString;
         
         if( actor > 0 ) {
-            actorString = stringToUpperCase( getObject( actor )->description );
+            actorString = stringToUpperCase( getObject( actor )->localizedName );
             stripDescriptionComment( actorString );
             }
         else if( actor == 0 ) {
@@ -9743,7 +9745,7 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex ) {
         
         if( target > 0 ) {
             targetString = 
-                stringToUpperCase( getObject( target )->description );
+                stringToUpperCase( getObject( target )->localizedName );
             stripDescriptionComment( targetString );
             }
         else if( target == -1 && actor > 0 ) {
@@ -9789,7 +9791,7 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex ) {
         
         if( result > 0 ) {
             resultString = 
-                stringToUpperCase( getObject( result )->description );
+                stringToUpperCase( getObject( result )->localizedName );
             }
         else {
             resultString = stringDuplicate( translate( "nothingHint" ) );
@@ -14834,7 +14836,7 @@ void LivingLifePage::step() {
                             else {
 
                                 char *stringUpper = stringToUpperCase( 
-                                    weaponO->description );
+                                    weaponO->localizedName );
 
                                 stripDescriptionComment( stringUpper );
 
@@ -14867,7 +14869,7 @@ void LivingLifePage::step() {
                             else {
 
                                 char *stringUpper = stringToUpperCase( 
-                                    sicknessO->description );
+                                    sicknessO->localizedName );
 
                                 stripDescriptionComment( stringUpper );
 
@@ -16420,7 +16422,7 @@ void LivingLifePage::step() {
                         ObjectRecord *lastAteObj = getObject( lastAteID );
                         
                         char *strUpper = stringToUpperCase(
-                            lastAteObj->description );
+                            lastAteObj->localizedName );
 
                         stripDescriptionComment( strUpper );
 
