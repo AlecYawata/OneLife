@@ -166,7 +166,7 @@ static char allowedSayCharMap[256];
 static char allowedSayCharMapW[256][256];
 
 static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?! ";
-static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん、。ー！？（）";
+static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっ、。ー！？（）";
 
 
 static int killEmotionIndex = 2;
@@ -11037,7 +11037,7 @@ int main() {
                                 if( ! allowedSayCharMap[ 
                                         (int)( m.saidText[c] ) ] ) {
                                     
-                                    m.saidText[c] = 'r';
+                                    m.saidText[c] = ' ';
                                     }
                                 }
                             else {
@@ -11046,8 +11046,8 @@ int main() {
                                         (unsigned char)(m.saidText[c]) ][ 
                                         (unsigned char)(m.saidText[c+1]) ] ) {
                                     
-                                    m.saidText[c] = 't';
-                                    m.saidText[c+1] = 'y';
+                                    m.saidText[c] = ' ';
+                                    m.saidText[c+1] = ' ';
                                     }
                                 cLen = 2;
                                 }
