@@ -20255,17 +20255,6 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
             }
         return;
         }
-
-
-    if( isShiftKeyDown() && /*( isalpha( inASCII ) ||*/ inASCII == 32 ) /*)*/ {
-		if( ! mSayField.isFocused() ) {
-            mSayField.focus();
-        }
-		const char *namingPrefix = ( getOurLiveObject()->name != NULL ) ? "YOU ARE" : "I AM";
-		const char *randomName = ( getOurLiveObject()->name != NULL ) ? findRandomFirstName( reinterpret_cast<char*>( &inASCII ) ) : findRandomLastName( reinterpret_cast<char*>( &inASCII ) );
-		mSayField.setText( autoSprintf( "%s %s", namingPrefix, randomName ) );
-		return;
-	}
 	
 	if( isalpha( inASCII ) ) {
         if( ! mSayField.isFocused() ) {
