@@ -20255,13 +20255,6 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
             }
         return;
         }
-	
-	if( isalpha( inASCII ) ) {
-        if( ! mSayField.isFocused() ) {
-            mSayField.setText( reinterpret_cast<char*>( &inASCII ) );
-            mSayField.focus();
-        }
-    }
 
     if( inASCII == 63 ) { // Question Mark
         if( ! mSayField.isFocused() ) {
