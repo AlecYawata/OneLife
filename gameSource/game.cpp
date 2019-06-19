@@ -218,26 +218,26 @@ void setFOVScale() {
 
     gui_fov_target_scale_hud = SettingsManager::getFloatSetting( "fovScaleHUD", 1.0f );
 	if( gui_fov_target_scale_hud < 1.0f ) gui_fov_target_scale_hud = 1.0f;
-	else if( gui_fov_target_scale_hud > 6.0f ) gui_fov_target_scale_hud = 6.0f;
+	else if( gui_fov_target_scale_hud > 2.0f ) gui_fov_target_scale_hud = 2.0f;
 	SettingsManager::setSetting( "fovScaleHUD", gui_fov_target_scale_hud );
 	
     gui_fov_scale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
     if( gui_fov_scale < 1.0f ) gui_fov_scale = 1.0f;
-	else if ( gui_fov_scale > 6.0f ) gui_fov_scale = 6.0f;
+	else if ( gui_fov_scale > 2.0f ) gui_fov_scale = 2.0f;
 	SettingsManager::setSetting( "fovScale", gui_fov_scale );
 
     gui_fov_preferred_min_scale = SettingsManager::getFloatSetting( "fovPreferredMin", 1.5f );
     if( ! gui_fov_preferred_min_scale || gui_fov_preferred_min_scale < 1 )
 		gui_fov_preferred_min_scale = 1.f;
-    else if ( gui_fov_preferred_min_scale > 6 )
-		gui_fov_preferred_min_scale = 6.f;
+    else if ( gui_fov_preferred_min_scale > 2 )
+		gui_fov_preferred_min_scale = 2.f;
 	SettingsManager::setSetting( "fovPreferredMin", gui_fov_preferred_min_scale );
 
     gui_fov_preferred_max_scale = SettingsManager::getFloatSetting( "fovPreferredMax", 3.0f );
     if( ! gui_fov_preferred_max_scale || gui_fov_preferred_max_scale < 1 )
 		gui_fov_preferred_max_scale = 1.f;
-	else if ( gui_fov_preferred_max_scale > 6 )
-		gui_fov_preferred_max_scale = 6.f;
+	else if ( gui_fov_preferred_max_scale > 2 )
+		gui_fov_preferred_max_scale = 2.f;
 	SettingsManager::setSetting( "fovPreferredMax", gui_fov_preferred_max_scale );
 
 	gui_fov_scale_hud = gui_fov_scale / gui_fov_target_scale_hud;

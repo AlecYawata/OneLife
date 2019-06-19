@@ -18874,13 +18874,13 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
     int mouseButton = getLastMouseButton();
 	if( mouseButton == MouseButton::WHEELUP || mouseButton == MouseButton::WHEELDOWN ) {
 		float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
-		float newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentScale -= 0.5 : currentScale += 0.5;
+		float newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentScale /= 1.5 : currentScale *= 1.5;
 		if ( isShiftKeyDown() ) {
-			newScale = ( mouseButton == MouseButton::WHEELUP ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.5f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 3.0f );
+			newScale = ( mouseButton == MouseButton::WHEELUP ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
             }
         if ( isCommandKeyDown() ) {
             float currentHUDScale = SettingsManager::getFloatSetting( "fovScaleHUD", 1.0f );
-            newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentHUDScale -= 0.5 : currentHUDScale += 0.5;
+            newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentHUDScale /= 1.5 : currentHUDScale *= 1.5;
             changeHUDFOV( newScale );
         } else {
             changeFOV( newScale );
@@ -20764,13 +20764,13 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
 	if( inKeyCode == MG_KEY_LEFT || 
 		inKeyCode == MG_KEY_RIGHT ) {
 		float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
-		float newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentScale -= 0.5 : currentScale += 0.5;
+		float newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentScale /= 1.5 : currentScale *= 1.5;
         if ( isShiftKeyDown() ) {
-            newScale = ( inKeyCode == MG_KEY_LEFT ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.5f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 3.0f );
+            newScale = ( inKeyCode == MG_KEY_LEFT ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
             }
         if ( isCommandKeyDown() ) {
             float currentHUDScale = SettingsManager::getFloatSetting( "fovScaleHUD", 1.0f );
-            newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentHUDScale -= 0.5 : currentHUDScale += 0.5;
+            newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentHUDScale /= 1.5 : currentHUDScale *= 1.5;
             changeHUDFOV( newScale );
         } else {
 		    changeFOV( newScale );
@@ -21188,10 +21188,10 @@ void LivingLifePage::calcFontScale( float newScale, Font *font ) {
     }
 
 void LivingLifePage::changeFOV( float newScale, bool save ) {
-	if( newScale < 1.f )
-		newScale = 1.f;
-	else if( newScale > 6.f )
-		newScale = 6.f;
+	if( newScale < 0.667f )
+		newScale = 0.667f;
+	else if( newScale > 1.5f )
+		newScale = 1.5f;
     if( save ) {
     	SettingsManager::setSetting( "fovScale", newScale );
         }
@@ -21230,10 +21230,11 @@ void LivingLifePage::changeFOV( float newScale, bool save ) {
     }
 
 void LivingLifePage::changeHUDFOV( float newScale, bool save ) {
-	if( newScale < 1 ) {
-		newScale = 1.0f;
-	} else if ( newScale > 6 ) {
-		newScale = 6.0f;
+    return;
+	if( newScale < 0.667f ) {
+		newScale = 0.667f;
+	} else if ( newScale > 1.5 ) {
+		newScale = 1.5f;
 	}
 
 	gui_fov_target_scale_hud = newScale;
