@@ -8027,7 +8027,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
     // LINEAGEFERTILITYMOD NOTE:  Change 2/4 - Take these lines during the merge process
 	lineageFertilityPanel(ourLiveObject, showFertilityPanel);
 	// AGEMOD NOTE:  Change 2/3 - Take these lines during the merge process
-	agePanel(ourLiveObject, showAgePanel);
+//	agePanel(ourLiveObject, showAgePanel);
 
 
 
