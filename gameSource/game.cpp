@@ -542,7 +542,6 @@ char *getHashSalt() {
 void initDrawString( int inWidth, int inHeight ) {
 
     // FOVMOD NOTE:  Change 2/3 - Take these lines during the merge process
-    setFOVScale();
     // NAMEMOD NOTE:  Change 3/5 - Take these lines during the merge process
     initNames();
     toggleLinearMagFilter( true );

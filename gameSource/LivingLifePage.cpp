@@ -8981,8 +8981,10 @@ void LivingLifePage::handleOurDeath( char inDisconnect ) {
     
     delete [] ageString;
     delete [] partialReason;
-    
 
+    changeFOV( 1.0f, false );
+    changeHUDFOV( 1.0f, false );
+    
     setWaiting( false );
 
     if( inDisconnect ) {
@@ -17576,6 +17578,9 @@ void LivingLifePage::step() {
                 resumePlayingSoundSprites();
                 setMusicLoudness( musicLoudness );
 
+                changeFOV( SettingsManager::getFloatSetting( "fovScale", 1.0f ) , false );
+                changeHUDFOV( SettingsManager::getFloatSetting( "fovScaleHUD", 1.0f ) , false );
+
                 // center view on player's starting position
                 lastScreenViewCenter.x = CELL_D * ourLiveObject->xd;
                 lastScreenViewCenter.y = CELL_D * ourLiveObject->yd;
@@ -21182,12 +21187,14 @@ void LivingLifePage::calcFontScale( float newScale, Font *font ) {
 	font->setScaleFactor( scale );
     }
 
-void LivingLifePage::changeFOV( float newScale ) {
+void LivingLifePage::changeFOV( float newScale, bool save ) {
 	if( newScale < 1.f )
 		newScale = 1.f;
 	else if( newScale > 6.f )
 		newScale = 6.f;
-	SettingsManager::setSetting( "fovScale", newScale );
+    if( save ) {
+    	SettingsManager::setSetting( "fovScale", newScale );
+        }
 
 	LiveObject *ourLiveObject = getOurLiveObject();
 	if( ourLiveObject != NULL ) {
@@ -21222,7 +21229,7 @@ void LivingLifePage::changeFOV( float newScale ) {
 	setViewSize( 1280 * newScale );
     }
 
-void LivingLifePage::changeHUDFOV( float newScale ) {
+void LivingLifePage::changeHUDFOV( float newScale, bool save ) {
 	if( newScale < 1 ) {
 		newScale = 1.0f;
 	} else if ( newScale > 6 ) {
@@ -21230,7 +21237,9 @@ void LivingLifePage::changeHUDFOV( float newScale ) {
 	}
 
 	gui_fov_target_scale_hud = newScale;
-    SettingsManager::setSetting( "fovScaleHUD", gui_fov_target_scale_hud );
+    if( save ) {
+        SettingsManager::setSetting( "fovScaleHUD", gui_fov_target_scale_hud );
+        }
     gui_fov_scale_hud = gui_fov_scale / gui_fov_target_scale_hud;
 
 	calcOffsetHUD();
