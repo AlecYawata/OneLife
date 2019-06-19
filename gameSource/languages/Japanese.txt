@@ -201,7 +201,7 @@ lastAteAfter "を食べました"
 lastAtePermanent ""
 lastAtePermanentAfter "から食べました"
 
-breastMilk 母乳を飲みました"
+breastMilk "母乳を飲みました"
 
 you "あなた"
 YOU "あなた"
