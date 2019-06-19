@@ -660,17 +660,17 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     smallFont = new Font( getFontTGAFileName(), 3, 8, false, 8 * gui_fov_scale_hud );
 
     handwritingFont = 
-        new Font( "font_handwriting_32_32.tga", 3, 6, false, 16 * gui_fov_scale_hud );
+        new Font( "font_handwriting_32_32.tga", 3, 6, false, 18 * gui_fov_scale_hud );
 
     handwritingFont->setMinimumPositionPrecision( 1 );
 
     pencilFont = 
-        new Font( "font_pencil_32_32.tga", 3, 6, false, 16 * gui_fov_scale_hud );
+        new Font( "font_pencil_32_32.tga", 3, 6, false, 18 * gui_fov_scale_hud );
 
     pencilFont->setMinimumPositionPrecision( 1 );
 
     pencilErasedFont = 
-        new Font( "font_pencil_erased_32_32.tga", 3, 6, false, 16 * gui_fov_scale_hud );
+        new Font( "font_pencil_erased_32_32.tga", 3, 6, false, 18 * gui_fov_scale_hud );
 
     pencilErasedFont->setMinimumPositionPrecision( 1 );
 
