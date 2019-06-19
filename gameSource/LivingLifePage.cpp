@@ -219,6 +219,7 @@ static double culvertFractalScale = 20;
 static double culvertFractalRoughness = 0.62;
 static double culvertFractalAmp = 98;
 
+static double lastEmotUseTime = 0;
 
 typedef struct LocationSpeech {
         doublePair pos;
@@ -20702,64 +20703,63 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         return;
         }
 		
+    bool canUseEmot = (game_getCurrentTime() - lastEmotUseTime) > 2.0;
     // FOVMOD NOTE:  Change 27/27 - Take these lines during the merge process
-    if( inKeyCode == MG_KEY_F1) {
-        if( isShiftKeyDown() ) {
-            sendToServerSocket( (char*)"EMOT 0 0 14#" );
+    if( canUseEmot ) {
+        bool usedEmot = true;
+        if( inKeyCode == MG_KEY_F1) {
+            if( isShiftKeyDown() ) {
+                sendToServerSocket( (char*)"EMOT 0 0 14#" );
+                }
+            else {
+                sendToServerSocket( (char*)"EMOT 0 0 0#" );
+                }
+            }
+        else if( inKeyCode == MG_KEY_F2) {
+            if( isShiftKeyDown() ) {
+                sendToServerSocket( (char*)"EMOT 0 0 15#" );
+                }
+            else {
+                sendToServerSocket( (char*)"EMOT 0 0 1#" );
+                }
+            }
+        else if( inKeyCode == MG_KEY_F3) {
+            sendToServerSocket( (char*)"EMOT 0 0 2#" );
+            }
+        else if( inKeyCode == MG_KEY_F4) {
+            sendToServerSocket( (char*)"EMOT 0 0 3#" );
+            }
+        else if( inKeyCode == MG_KEY_F5) {
+            sendToServerSocket( (char*)"EMOT 0 0 4#" );
+            }
+        else if( inKeyCode == MG_KEY_F6) {
+            sendToServerSocket( (char*)"EMOT 0 0 5#" );
+            }
+        else if( inKeyCode == MG_KEY_F7) {
+            sendToServerSocket( (char*)"EMOT 0 0 6#" );
+            }
+        else if( inKeyCode == MG_KEY_F8) {
+            sendToServerSocket( (char*)"EMOT 0 0 9#" );
+            }
+        else if( inKeyCode == MG_KEY_F9) {
+            sendToServerSocket( (char*)"EMOT 0 0 10#" );
+            }
+        else if( inKeyCode == MG_KEY_F10) {
+            sendToServerSocket( (char*)"EMOT 0 0 11#" );
+            }
+        else if( inKeyCode == MG_KEY_F11) {
+            sendToServerSocket( (char*)"EMOT 0 0 12#" );
+            }
+        else if( inKeyCode == MG_KEY_F12) {
+            sendToServerSocket( (char*)"EMOT 0 0 13#" );
             }
         else {
-            sendToServerSocket( (char*)"EMOT 0 0 0#" );
+            usedEmot = false;
             }
-        return;
-        }
-    if( inKeyCode == MG_KEY_F2) {
-        if( isShiftKeyDown() ) {
-            sendToServerSocket( (char*)"EMOT 0 0 15#" );
+        if( usedEmot ) {
+            lastEmotUseTime = game_getCurrentTime();
+            return;
             }
-        else {
-            sendToServerSocket( (char*)"EMOT 0 0 1#" );
-            }
-        return;
-        }
-    if( inKeyCode == MG_KEY_F3) {
-        sendToServerSocket( (char*)"EMOT 0 0 2#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F4) {
-        sendToServerSocket( (char*)"EMOT 0 0 3#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F5) {
-        sendToServerSocket( (char*)"EMOT 0 0 4#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F6) {
-        sendToServerSocket( (char*)"EMOT 0 0 5#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F7) {
-        sendToServerSocket( (char*)"EMOT 0 0 6#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F8) {
-        sendToServerSocket( (char*)"EMOT 0 0 9#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F9) {
-        sendToServerSocket( (char*)"EMOT 0 0 10#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F10) {
-        sendToServerSocket( (char*)"EMOT 0 0 11#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F11) {
-        sendToServerSocket( (char*)"EMOT 0 0 12#" );
-        return;
-        }
-    if( inKeyCode == MG_KEY_F12) {
-        sendToServerSocket( (char*)"EMOT 0 0 13#" );
-        return;
         }
 	if( inKeyCode == MG_KEY_LEFT || 
 		inKeyCode == MG_KEY_RIGHT ) {
