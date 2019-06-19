@@ -656,6 +656,7 @@ void TextField::pointerUp( float inX, float inY ) {
 char furiganaSrc[][5] = {
     { "ltsu", },
     { "xtsu", },
+    { "lwa", },
     { "kya", },
     { "kyu", },
     { "kyo", },
@@ -831,6 +832,7 @@ char furiganaSrc[][5] = {
 char furiganaDist[][5] = {
     { "‚Á", },
     { "‚Á", },
+    { "‚ì", },
     { "‚«‚á", },
     { "‚«‚ã", },
     { "‚«‚å", },
