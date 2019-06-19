@@ -29,7 +29,8 @@ TextField::TextField( Font *inDisplayFont,
                       char inForceCaps,
                       const char *inLabelText,
                       const char *inAllowedChars,
-                      const char *inForbiddenChars )
+                      const char *inForbiddenChars,
+                      bool allowHiragana )
         : PageComponent( inX, inY ),
           mActive( true ), 
           mContentsHidden( false ),
@@ -55,6 +56,7 @@ TextField::TextField( Font *inDisplayFont,
           mSelectionStart( -1 ),
           mSelectionEnd( -1 ),
           mShiftPlusArrowsCanSelect( false ),
+          mAllowHiragana( allowHiragana ),
           mCursorFlashSteps( 0 ) {
     
     if( inLabelText != NULL ) {
@@ -1271,43 +1273,45 @@ void TextField::keyDown( unsigned char inASCII ) {
 
         unsigned char *pProcessedChar = processCharacter( &inASCII );    
 
-        int pendingFuriganaLen = 0;
-        for( int i = 0; i <= mCursorPosition; i++ ) {
-            if( _mbclen( (unsigned char*)mText + i) == 2 ) {
-                i++;
-                pendingFuriganaLen = 0;
+        if( mAllowHiragana ) {
+            int pendingFuriganaLen = 0;
+            for( int i = 0; i <= mCursorPosition; i++ ) {
+                if( _mbclen( (unsigned char*)mText + i) == 2 ) {
+                    i++;
+                    pendingFuriganaLen = 0;
+                    }
+                else {
+                    pendingFuriganaLen++;
+                    }
                 }
-            else {
-                pendingFuriganaLen++;
-                }
-            }
 
-        for( size_t i = 0; i < sizeof(furiganaSrc)/sizeof(furiganaSrc[0]); i++) {
-            int furiganaLen = strlen(furiganaSrc[i]);
-            if( pendingFuriganaLen + 1 < furiganaLen ) {
-                continue;
-                }
-            if (furiganaLen -1 <= mCursorPosition) {
-                for( int j = 0; j < furiganaLen; j++ ) {
-                    char furigana = furiganaSrc[i][j];
-                    if( j != furiganaLen - 1 ) {
-                        if (mText[mCursorPosition - furiganaLen + j + 1] != furigana) {
-                            break;
-                            }
-                        }
-                    else{
-                        if( furigana == pProcessedChar[0] ) {
-                            for( int k = 0; k < furiganaLen - 1; k++ ) {
-                                deleteHit();
+            for( size_t i = 0; i < sizeof(furiganaSrc)/sizeof(furiganaSrc[0]); i++) {
+                int furiganaLen = strlen(furiganaSrc[i]);
+                if( pendingFuriganaLen + 1 < furiganaLen ) {
+                    continue;
+                    }
+                if (furiganaLen -1 <= mCursorPosition) {
+                    for( int j = 0; j < furiganaLen; j++ ) {
+                        char furigana = furiganaSrc[i][j];
+                        if( j != furiganaLen - 1 ) {
+                            if (mText[mCursorPosition - furiganaLen + j + 1] != furigana) {
+                                break;
                                 }
-                            insertString( furiganaDist[i] );
-                            pProcessedChar[0] = '\0';
+                            }
+                        else{
+                            if( furigana == pProcessedChar[0] ) {
+                                for( int k = 0; k < furiganaLen - 1; k++ ) {
+                                    deleteHit();
+                                    }
+                                insertString( furiganaDist[i] );
+                                pProcessedChar[0] = '\0';
+                                }
                             }
                         }
                     }
-                }
-            if( pProcessedChar[0] == 0 ) {
-                break;
+                if( pProcessedChar[0] == 0 ) {
+                    break;
+                    }
                 }
             }
 

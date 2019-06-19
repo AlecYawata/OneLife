@@ -2172,9 +2172,8 @@ LivingLifePage::LivingLifePage()
           mCurMouseOverID( 0 ),
           mChalkBlotSprite( loadWhiteSprite( "chalkBlot.tga" ) ),
           mPathMarkSprite( loadWhiteSprite( "pathMark.tga" ) ),
-          mSayField( mainFont, 0, 1000, 10, false, NULL
+          mSayField( mainFont, 0, 1000, 10, false, NULL, NULL, NULL, true),
 //                     ,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!/ 0123456789" ),
-                     ),
           mDeathReason( NULL ),
           mShowHighlights( true ),
           mUsingSteam( false ),

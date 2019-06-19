@@ -26,7 +26,8 @@ class TextField : public PageComponent, public ActionListenerList {
                    char inForceCaps = false,
                    const char *inLabelText = NULL,
                    const char *inAllowedChars = NULL,
-                   const char *inForbiddenChars = NULL );
+                   const char *inForbiddenChars = NULL,
+                   bool allowHiragana = false );
 
         virtual ~TextField();
 
@@ -229,6 +230,7 @@ class TextField : public PageComponent, public ActionListenerList {
         
         int mCursorFlashSteps;
         
+        bool mAllowHiragana;
         
         void fixSelectionStartEnd();
 
