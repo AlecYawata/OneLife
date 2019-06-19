@@ -930,12 +930,12 @@ static void drawPauseScreen() {
 
     setDrawColor( 1, 1, 1, 0.5 * pauseScreenFade );
         
-    drawSquare( lastScreenViewCenter, 1.05 * ( viewHeight / 3 ) );
+    drawSquare( lastScreenViewCenter, 1.05 * ( viewHeight / 3 * 1.2 ) );
         
 
     setDrawColor( 0.2, 0.2, 0.2, 0.85 * pauseScreenFade  );
         
-    drawSquare( lastScreenViewCenter, viewHeight / 3 );
+    drawSquare( lastScreenViewCenter, viewHeight / 3 * 1.2 );
         
 
     setDrawColor( 1, 1, 1, pauseScreenFade );
