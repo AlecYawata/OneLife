@@ -8386,8 +8386,16 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 else {
                     des = (char*)translate( "you" );
                     if( ourLiveObject->name != NULL ) {
-                        des = autoSprintf( "%s - %s", des, 
-                                           ourLiveObject->name );
+                        des = autoSprintf( "%s - %s %d%s", des, 
+                                           ourLiveObject->name,
+                                           (int)computeCurrentAge( ourLiveObject ),
+                                           translate( "age" ) );
+                        desToDelete = des;
+                        }
+                    else {
+                        des = autoSprintf( "%s %d%s", des,
+                                           (int)computeCurrentAge( ourLiveObject ),
+                                           translate( "age" ) );
                         desToDelete = des;
                         }
                     }
