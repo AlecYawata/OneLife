@@ -17,7 +17,7 @@ extern char *userEmail;
 extern char *accountKey;
 
 
-static doublePair tutorialButtonPos = { 522, 300 };
+static doublePair tutorialButtonPos = { 500, 300 };
 
 
 
