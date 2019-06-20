@@ -65,7 +65,7 @@ ExistingAccountPage::ExistingAccountPage()
                          translate( "postReviewButton" ) ),
           mRedetectButton( mainFont, 0, 198, translate( "redetectButton" ) ),
           mViewAccountButton( mainFont, 0, 64, translate( "view" ) ),
-          mTutorialButton( mainFont, 522, 300, 
+          mTutorialButton( mainFont, 500, 300, 
                            translate( "tutorial" ) ),
           mPageActiveStartTime( 0 ),
           mFramesCounted( 0 ),

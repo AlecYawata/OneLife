@@ -44,7 +44,7 @@ SettingsPage::SettingsPage()
                                   translate( "port" ),
                                   "0123456789", NULL ),
           mCopyButton( mainFont, 381, -216, translate( "copy" ) ),
-          mPasteButton( mainFont, 518, -216, translate( "paste" ) ),
+          mPasteButton( mainFont, 530, -216, translate( "paste" ) ),
           mCursorScaleSlider( mainFont, 297, 155, 4, 200, 30,
                                        1.0, 10.0, 
                                        translate( "scale" ) ) {
