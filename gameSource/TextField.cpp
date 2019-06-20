@@ -383,7 +383,7 @@ void TextField::draw() {
         }
 
 
-    doublePair textPos = { - mWide/2 + mBorderWide, 0 };
+    doublePair textPos = { - mWide/2 + mBorderWide, 4 };
 
 
     char tooLongFront = false;
