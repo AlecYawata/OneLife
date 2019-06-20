@@ -7570,8 +7570,26 @@ void LivingLifePage::draw( doublePair inViewCenter,
         drawPos.x += 27 * gui_fov_scale_hud;
 
         setDrawColor( 0, 0, 0, 1 );
-        
-        handwritingFont->drawString( translate( "enterHint" ), 
+
+        const char* hint = translate( "enterHint" );
+
+        // if Eve and
+        if( mPendingFamilyName != NULL ) {
+            hint = translate ( "firstNameHint" );
+            }
+        else if( ourLiveObject->lineage.size() == 0 &&  ourLiveObject->name == NULL ) {
+            hint = translate ( "familyNameHint" );
+            }
+        else {
+            if( ourLiveObject->holdingID < 0 ) {
+                int heldBabyID = - ourLiveObject->holdingID;
+                LiveObject *heldBaby = getLiveObject( heldBabyID );
+                if( heldBaby->name == NULL ) {
+                    hint = translate ( "babyNameHint" );
+                    }
+                }
+            }
+        handwritingFont->drawString( hint, 
                                      drawPos,
                                      alignRight );
         }
@@ -15100,6 +15118,10 @@ void LivingLifePage::step() {
                     gameObjects.getElement( recentInsertedGameObjectIndex );
                 
                 ourID = ourObject->id;
+                if( mPendingFamilyName != NULL) {
+                    delete [] mPendingFamilyName;
+                    mPendingFamilyName = NULL;
+                }
 
                 if( ourID != lastPlayerID ) {
                     // different ID than last time, delete old home markers
@@ -20545,7 +20567,8 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                     mSayField.unfocus();
                     }
                 else {
-                    
+                    bool unfocus = true;
+
                     if( strlen( typedText ) > 0 &&
                          typedText[0] == '/' ) {
                     
@@ -20647,6 +20670,22 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                                 }
                             }
                         }
+                    else if( getOurLiveObject()->name == NULL ) {
+                        if( mPendingFamilyName != NULL ) {
+                            const char *sayCommand = "SAY";
+                            char *message = 
+                                autoSprintf( "%s 0 0 %s&%s#",
+                                             sayCommand, mPendingFamilyName, typedText );
+                            sendToServerSocket( message );
+                            delete [] message;
+                            delete [] mPendingFamilyName;
+                            mPendingFamilyName = NULL;
+                            }
+                        else {
+                            mPendingFamilyName = stringDuplicate( typedText );
+                            unfocus = false;
+                            }
+                        }
                     else {
                         // send text to server
 
@@ -20678,7 +20717,9 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                     mSentChatPhrases.push_back( stringDuplicate( typedText ) );
 
                     mSayField.setText( "" );
-                    mSayField.unfocus();
+                    if( unfocus ) {
+                        mSayField.unfocus();
+                        }
                     }
                 
                 delete [] typedText;

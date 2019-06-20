@@ -832,7 +832,7 @@ class LivingLifePage : public GamePage, public ActionListener {
         // forces next pointerDown call to avoid everything but ground clicks
         char mForceGroundClick;
         
-
+        char* mPendingFamilyName;
 
         LiveObject *getOurLiveObject();
         LiveObject *getLiveObject( int inID );

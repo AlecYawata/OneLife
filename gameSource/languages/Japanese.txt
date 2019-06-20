@@ -228,7 +228,10 @@ noHint "情報なし"
 ofHint "OF"
 tabHint "[TAB]"
 
-enterHint "[ENTER]"
+enterHint "[Enter]"
+familyNameHint "[苗字を入力]"
+firstNameHint "[名前を入力]"
+babyNameHint "[子供の名前を入力]"
 
 
 making "作成法:"

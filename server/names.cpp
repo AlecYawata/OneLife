@@ -306,11 +306,13 @@ const char *findCloseName( char *inString, char *inNameList, int inListLen ) {
 
 // results destroyed internally when freeNames called
 const char *findCloseFirstName( char *inString ) {
+    return inString;
     return findCloseName( inString, firstNames, firstNamesLen );
     }
 
 
 
 const char *findCloseLastName( char *inString ) {
+    return inString;
     return findCloseName( inString, lastNames, lastNamesLen );
     }

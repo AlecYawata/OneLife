@@ -165,7 +165,7 @@ static char *eveName = NULL;
 static char allowedSayCharMap[256];
 static char allowedSayCharMapW[256][256];
 
-static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?! ";
+static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& ";
 static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉゎがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ、。ー！？（）";
 
 
@@ -8096,51 +8096,7 @@ void nameBaby( LiveObject *inNamer, LiveObject *inBaby, char *inName,
     
     
     const char *lastName = "";
-    if( nextPlayer->name != NULL ) {
-        lastName = strstr( nextPlayer->name, 
-                           " " );
-                                        
-        if( lastName != NULL ) {
-            // skip space
-            lastName = &( lastName[1] );
-            }
-
-        if( lastName == NULL ) {
-            lastName = "";
-
-            if( nextPlayer->familyName != 
-                NULL ) {
-                lastName = 
-                    nextPlayer->familyName;
-                }    
-            }
-        else if( nextPlayer->nameHasSuffix ) {
-            // only keep last name
-            // if it contains another
-            // space (the suffix is after
-            // the last name).  Otherwise
-            // we are probably confused,
-            // and what we think
-            // is the last name IS the suffix.
-                                            
-            char *suffixPos =
-                strstr( (char*)lastName, " " );
-                                            
-            if( suffixPos == NULL ) {
-                // last name is suffix, actually
-                // don't pass suffix on to baby
-                lastName = "";
-                }
-            else {
-                // last name plus suffix
-                // okay to pass to baby
-                // because we strip off
-                // third part of name
-                // (suffix) below.
-                }
-            }
-        }
-    else if( nextPlayer->familyName != NULL ) {
+    if( nextPlayer->familyName != NULL ) {
         lastName = nextPlayer->familyName;
         }
     else if( babyO->familyName != NULL ) {
@@ -8152,10 +8108,16 @@ void nameBaby( LiveObject *inNamer, LiveObject *inBaby, char *inName,
     const char *close = 
         findCloseFirstName( name );
 
-    babyO->name = autoSprintf( "%s %s",
-                               close, 
-                               lastName );
+    char* babyName = autoSprintf( "%s %s",
+                               lastName, 
+                               close );
                                     
+    if( isNameDuplicateForCurses( babyName ) ) {
+        delete [] babyName;
+        return;
+        }
+    babyO->name = babyName;
+
     if( babyO->familyName == NULL &&
         nextPlayer->familyName != NULL ) {
         // mother didn't have a family 
@@ -11126,30 +11088,55 @@ int main() {
 
                         
                         if( nextPlayer->isEve && nextPlayer->name == NULL ) {
-                            char *name = isFamilyNamingSay( m.saidText );
-                            
-                            if( name != NULL && strcmp( name, "" ) != 0 ) {
-                                const char *close = findCloseLastName( name );
-                                nextPlayer->name = autoSprintf( "%s %s",
-                                                                eveName, 
-                                                                close );
-
-                                nextPlayer->familyName = 
-                                    stringDuplicate( close );
+                            int numParts;
+                            char **parts = split( m.saidText, "&", &numParts );
+                            if( numParts >= 2 ) {
+                                char* name = autoSprintf( "%s %s",
+                                                          parts[0],
+                                                          parts[1] );
+                                if( !isNameDuplicateForCurses( name ) ) {
+                                    nextPlayer->familyName = stringDuplicate( parts[0] );
+                                    nextPlayer->name = name;
+                                    logName( nextPlayer->id,
+                                             nextPlayer->email,
+                                             nextPlayer->name,
+                                             nextPlayer->lineageEveID );
+                                    playerIndicesToSendNamesAbout.push_back( i );
+                                    delete [] m.saidText;
+                                    m.saidText = autoSprintf( "わたしは%sです", name );
+                                    }
+                                else {
+                                    delete [] name;
+                                    delete [] m.saidText;
+                                    m.saidText = stringDuplicate( "*命名に使用した名前はすでに使われています" );
+                                    }
+                                }
+                            else {
+                                char *name = isFamilyNamingSay( m.saidText );
                                 
-                                nextPlayer->name = getUniqueCursableName( 
-                                    nextPlayer->name, 
-                                    &( nextPlayer->nameHasSuffix ) );
+                                if( name != NULL && strcmp( name, "" ) != 0 ) {
+                                    const char *close = findCloseLastName( name );
+                                    nextPlayer->name = autoSprintf( "%s %s",
+                                                                    eveName, 
+                                                                    close );
 
-                                logName( nextPlayer->id,
-                                         nextPlayer->email,
-                                         nextPlayer->name,
-                                         nextPlayer->lineageEveID );
-                                playerIndicesToSendNamesAbout.push_back( i );
+                                    nextPlayer->familyName = 
+                                        stringDuplicate( close );
+                                    
+                                    nextPlayer->name = getUniqueCursableName( 
+                                        nextPlayer->name, 
+                                        &( nextPlayer->nameHasSuffix ) );
+
+                                    logName( nextPlayer->id,
+                                             nextPlayer->email,
+                                             nextPlayer->name,
+                                             nextPlayer->lineageEveID );
+                                    playerIndicesToSendNamesAbout.push_back( i );
+                                    }
                                 }
                             }
 
-                        if( nextPlayer->holdingID < 0 ) {
+                        else if( nextPlayer->holdingID < 0 ) {
 
                             // we're holding a baby
                             // (no longer matters if it's our own baby)
@@ -11160,10 +11147,21 @@ int main() {
                             
                             if( babyO != NULL && babyO->name == NULL ) {
                                 char *name = isBabyNamingSay( m.saidText );
+                                if( name == NULL ) {
+                                    name = m.saidText;
+                                    }
 
                                 if( name != NULL && strcmp( name, "" ) != 0 ) {
                                     nameBaby( nextPlayer, babyO, name,
                                               &playerIndicesToSendNamesAbout );
+                                    if( babyO->name != NULL ) {
+                                        delete [] m.saidText;
+                                        m.saidText = autoSprintf( "あなたは%sです", babyO->name );
+                                        }
+                                    else {
+                                        delete [] m.saidText;
+                                        m.saidText = stringDuplicate( "*命名に使用した名前はすでに使われています" );
+                                        }
                                     }
                                 }
                             }
