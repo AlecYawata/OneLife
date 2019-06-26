@@ -166,7 +166,7 @@ static char allowedSayCharMap[256];
 static char allowedSayCharMapW[256][256];
 
 static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& ";
-static const char *allowedSayCharsW = "‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»‚½‚¿‚Â‚Ä‚Æ‚È‚É‚Ê‚Ë‚Ì‚Í‚Ğ‚Ó‚Ö‚Ù‚Ü‚İ‚Ş‚ß‚à‚â‚ä‚æ‚ç‚è‚é‚ê‚ë‚í‚ğ‚ñ‚á‚ã‚å‚Á‚Ÿ‚¡‚£‚¥‚§‚ì‚ª‚¬‚®‚°‚²‚´‚¶‚¸‚º‚¼‚¾‚À‚Ã‚Å‚Ç‚Î‚Ñ‚Ô‚×‚Ú‚Ï‚Ò‚Õ‚Ø‚ÛAB[IHij";
+static const char *allowedSayCharsW = "ã‚ã„ã†ãˆãŠã‹ããã‘ã“ã•ã—ã™ã›ããŸã¡ã¤ã¦ã¨ãªã«ã¬ã­ã®ã¯ã²ãµã¸ã»ã¾ã¿ã‚€ã‚ã‚‚ã‚„ã‚†ã‚ˆã‚‰ã‚Šã‚‹ã‚Œã‚ã‚ã‚’ã‚“ã‚ƒã‚…ã‚‡ã£ããƒã…ã‡ã‰ã‚ãŒããã’ã”ã–ã˜ãšãœãã ã¢ã¥ã§ã©ã°ã³ã¶ã¹ã¼ã±ã´ã·ãºã½ã€ã€‚ãƒ¼ï¼ï¼Ÿï¼ˆï¼‰";
 
 
 static int killEmotionIndex = 2;
@@ -11121,12 +11121,12 @@ int main() {
                                              nextPlayer->lineageEveID );
                                     playerIndicesToSendNamesAbout.push_back( i );
                                     delete [] m.saidText;
-                                    m.saidText = autoSprintf( "‚í‚½‚µ‚Í%s‚Å‚·", name );
+                                    m.saidText = autoSprintf( "ã‚ãŸã—ã¯%sã§ã™", name );
                                     }
                                 else {
                                     delete [] name;
                                     delete [] m.saidText;
-                                    m.saidText = stringDuplicate( "*–½–¼‚Ég—p‚µ‚½–¼‘O‚Í‚·‚Å‚Ég‚í‚ê‚Ä‚¢‚Ü‚·" );
+                                    m.saidText = stringDuplicate( "*å‘½åã«ä½¿ç”¨ã—ãŸåå‰ã¯ã™ã§ã«ä½¿ã‚ã‚Œã¦ã„ã¾ã™" );
                                     }
                                 }
                             else {
@@ -11174,11 +11174,11 @@ int main() {
                                               &playerIndicesToSendNamesAbout );
                                     if( babyO->name != NULL ) {
                                         delete [] m.saidText;
-                                        m.saidText = autoSprintf( "‚ ‚È‚½‚Í%s‚Å‚·", babyO->name );
+                                        m.saidText = autoSprintf( "ã‚ãªãŸã¯%sã§ã™", babyO->name );
                                         }
                                     else {
                                         delete [] m.saidText;
-                                        m.saidText = stringDuplicate( "*–½–¼‚Ég—p‚µ‚½–¼‘O‚Í‚·‚Å‚Ég‚í‚ê‚Ä‚¢‚Ü‚·" );
+                                        m.saidText = stringDuplicate( "*å‘½åã«ä½¿ç”¨ã—ãŸåå‰ã¯ã™ã§ã«ä½¿ã‚ã‚Œã¦ã„ã¾ã™" );
                                         }
                                     }
                                 }

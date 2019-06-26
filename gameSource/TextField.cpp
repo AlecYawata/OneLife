@@ -175,7 +175,7 @@ void TextField::setText( const char *inText ) {
     for( int i=0; i<length; i++ ) {
         unsigned char *pProcessedChar = processCharacter( (unsigned char*)inText + i );
         
-        size_t strLength = _mbclen( pProcessedChar );
+        size_t strLength = mbclen( (char*)pProcessedChar );
         if( strLength == 1) {
             filteredText.push_back( pProcessedChar[0] );
             }
@@ -183,7 +183,12 @@ void TextField::setText( const char *inText ) {
             filteredText.push_back( pProcessedChar[0] );
             filteredText.push_back( pProcessedChar[1] );
             }
-            delete [] pProcessedChar;
+        else if( strLength == 3) {
+            filteredText.push_back( pProcessedChar[0] );
+            filteredText.push_back( pProcessedChar[1] );
+            filteredText.push_back( pProcessedChar[2] );
+            }
+        delete [] pProcessedChar;
         }
     
 
@@ -624,7 +629,7 @@ void TextField::pointerUp( float inX, float inY ) {
             
             // find gap between drawn letters that is closest to clicked x
             
-            for( int i=0; i<=drawnTextLength; i++ ) {
+            for( int i=0; i<=drawnTextLength; i+=mbclen(mDrawnText+i) ) {
                 
                 char *textCopy = stringDuplicate( mDrawnText );
                 
@@ -642,6 +647,9 @@ void TextField::pointerUp( float inX, float inY ) {
                 if( thisDistance < bestDistance ) {
                     bestCursorDrawPosition = i;
                     bestDistance = thisDistance;
+                    }
+                if (mbclen(mDrawnText+i) == 0) {
+                    break;
                     }
                 }
             
@@ -829,181 +837,181 @@ char furiganaSrc[][5] = {
     { "/", },
     { "^", },
 };
-char furiganaDist[][5] = {
-    { "‚Á", },
-    { "‚Á", },
-    { "‚ì", },
-    { "‚«‚á", },
-    { "‚«‚ã", },
-    { "‚«‚å", },
-    { "‚µ‚á", },
-    { "‚µ‚ã", },
-    { "‚µ‚å", },
-    { "‚µ‚á", },
-    { "‚µ", },
-    { "‚µ‚ã", },
-    { "‚µ‚å", },
-    { "‚¿‚á", },
-    { "‚¿‚ã", },
-    { "‚¿‚å", },
-    { "‚Â", },
-    { "‚¿", },
-    { "‚É‚á", },
-    { "‚É‚ã", },
-    { "‚É‚å", },
-    { "‚Ð‚á", },
-    { "‚Ð‚ã", },
-    { "‚Ð‚å", },
-    { "‚Ý‚á", },
-    { "‚Ý‚ã", },
-    { "‚Ý‚å", },
-    { "‚è‚á", },
-    { "‚è‚ã", },
-    { "‚è‚å", },
-    { "‚á", },
-    { "‚ã", },
-    { "‚å", },
-    { "‚á", },
-    { "‚ã", },
-    { "‚å", },
-    { "‚¬‚á", },
-    { "‚¬‚ã", },
-    { "‚¬‚å", },
-    { "‚¶‚á", },
-    { "‚¶‚ã", },
-    { "‚¶‚å", },
-    { "‚¶‚á", },
-    { "‚¶‚ã", },
-    { "‚¶‚å", },
-    { "‚À‚á", },
-    { "‚À‚ã", },
-    { "‚À‚å", },
-    { "‚Ñ‚á", },
-    { "‚Ñ‚ã", },
-    { "‚Ñ‚å", },
-    { "‚Ò‚á", },
-    { "‚Ò‚ã", },
-    { "‚Ò‚å", },
-    { "‚Á", },
-    { "‚Á", },
-    { "‚©", },
-    { "‚«", },
-    { "‚­", },
-    { "‚¯", },
-    { "‚±", },
-    { "‚³", },
-    { "‚µ", },
-    { "‚·", },
-    { "‚¹", },
-    { "‚»", },
-    { "‚½", },
-    { "‚¿", },
-    { "‚Â", },
-    { "‚Ä", },
-    { "‚Æ", },
-    { "‚È", },
-    { "‚É", },
-    { "‚Ê", },
-    { "‚Ë", },
-    { "‚Ì", },
-    { "‚Í", },
-    { "‚Ð", },
-    { "‚Ó", },
-    { "‚Ö", },
-    { "‚Ù", },
-    { "‚Ü", },
-    { "‚Ý", },
-    { "‚Þ", },
-    { "‚ß", },
-    { "‚à", },
-    { "‚â", },
-    { "‚ä", },
-    { "‚æ", },
-    { "‚ç", },
-    { "‚è", },
-    { "‚é", },
-    { "‚ê", },
-    { "‚ë", },
-    { "‚í", },
-    { "‚¤‚¡", },
-    { "‚¤", },
-    { "‚¤‚¥", },
-    { "‚ð", },
-    { "‚Î", },
-    { "‚Ñ", },
-    { "‚Ô", },
-    { "‚×", },
-    { "‚Ú", },
-    { "‚Ó‚Ÿ", },
-    { "‚Ó‚¡", },
-    { "‚Ó", },
-    { "‚Ó‚¥", },
-    { "‚Ó‚§", },
-    { "‚ª", },
-    { "‚¬", },
-    { "‚®", },
-    { "‚°", },
-    { "‚²", },
-    { "‚´", },
-    { "‚¶", },
-    { "‚¸", },
-    { "‚º", },
-    { "‚¼", },
-    { "‚¶‚á", },
-    { "‚¶", },
-    { "‚¶‚ã", },
-    { "‚¶‚¥", },
-    { "‚¶‚å", },
-    { "‚¾", },
-    { "‚À", },
-    { "‚Ã", },
-    { "‚Å", },
-    { "‚Ç", },
-    { "‚Î", },
-    { "‚Ñ", },
-    { "‚Ô", },
-    { "‚×", },
-    { "‚Ú", },
-    { "‚Ï", },
-    { "‚Ò", },
-    { "‚Õ", },
-    { "‚Ø", },
-    { "‚Û", },
-    { "‚Ÿ", },
-    { "‚¡", },
-    { "‚£", },
-    { "‚¥", },
-    { "‚§", },
-    { "‚Ÿ", },
-    { "‚¡", },
-    { "‚£", },
-    { "‚¥", },
-    { "‚§", },
-    { "‚ñ", },
-    { "‚Ák", },
-    { "‚Ás", },
-    { "‚Át", },
-    { "‚Áh", },
-    { "‚Ám", },
-    { "‚Áy", },
-    { "‚Ár", },
-    { "‚Áw", },
-    { "‚ ", },
-    { "‚¢", },
-    { "‚¤", },
-    { "‚¦", },
-    { "‚¨", },
-    { "B", },
-    { "A", },
-    { "I", },
-    { "H", },
-    { "[", },
-    { "i", },
-    { "j", },
-    { "h", },
-    { "f", },
-    { "E", },
-    { "O", },
+char furiganaDist[][7] = {
+    { "ã£", },
+    { "ã£", },
+    { "ã‚Ž", },
+    { "ãã‚ƒ", },
+    { "ãã‚…", },
+    { "ãã‚‡", },
+    { "ã—ã‚ƒ", },
+    { "ã—ã‚…", },
+    { "ã—ã‚‡", },
+    { "ã—ã‚ƒ", },
+    { "ã—", },
+    { "ã—ã‚…", },
+    { "ã—ã‚‡", },
+    { "ã¡ã‚ƒ", },
+    { "ã¡ã‚…", },
+    { "ã¡ã‚‡", },
+    { "ã¤", },
+    { "ã¡", },
+    { "ã«ã‚ƒ", },
+    { "ã«ã‚…", },
+    { "ã«ã‚‡", },
+    { "ã²ã‚ƒ", },
+    { "ã²ã‚…", },
+    { "ã²ã‚‡", },
+    { "ã¿ã‚ƒ", },
+    { "ã¿ã‚…", },
+    { "ã¿ã‚‡", },
+    { "ã‚Šã‚ƒ", },
+    { "ã‚Šã‚…", },
+    { "ã‚Šã‚‡", },
+    { "ã‚ƒ", },
+    { "ã‚…", },
+    { "ã‚‡", },
+    { "ã‚ƒ", },
+    { "ã‚…", },
+    { "ã‚‡", },
+    { "ãŽã‚ƒ", },
+    { "ãŽã‚…", },
+    { "ãŽã‚‡", },
+    { "ã˜ã‚ƒ", },
+    { "ã˜ã‚…", },
+    { "ã˜ã‚‡", },
+    { "ã˜ã‚ƒ", },
+    { "ã˜ã‚…", },
+    { "ã˜ã‚‡", },
+    { "ã¢ã‚ƒ", },
+    { "ã¢ã‚…", },
+    { "ã¢ã‚‡", },
+    { "ã³ã‚ƒ", },
+    { "ã³ã‚…", },
+    { "ã³ã‚‡", },
+    { "ã´ã‚ƒ", },
+    { "ã´ã‚…", },
+    { "ã´ã‚‡", },
+    { "ã£", },
+    { "ã£", },
+    { "ã‹", },
+    { "ã", },
+    { "ã", },
+    { "ã‘", },
+    { "ã“", },
+    { "ã•", },
+    { "ã—", },
+    { "ã™", },
+    { "ã›", },
+    { "ã", },
+    { "ãŸ", },
+    { "ã¡", },
+    { "ã¤", },
+    { "ã¦", },
+    { "ã¨", },
+    { "ãª", },
+    { "ã«", },
+    { "ã¬", },
+    { "ã­", },
+    { "ã®", },
+    { "ã¯", },
+    { "ã²", },
+    { "ãµ", },
+    { "ã¸", },
+    { "ã»", },
+    { "ã¾", },
+    { "ã¿", },
+    { "ã‚€", },
+    { "ã‚", },
+    { "ã‚‚", },
+    { "ã‚„", },
+    { "ã‚†", },
+    { "ã‚ˆ", },
+    { "ã‚‰", },
+    { "ã‚Š", },
+    { "ã‚‹", },
+    { "ã‚Œ", },
+    { "ã‚", },
+    { "ã‚", },
+    { "ã†ãƒ", },
+    { "ã†", },
+    { "ã†ã‡", },
+    { "ã‚’", },
+    { "ã°", },
+    { "ã³", },
+    { "ã¶", },
+    { "ã¹", },
+    { "ã¼", },
+    { "ãµã", },
+    { "ãµãƒ", },
+    { "ãµ", },
+    { "ãµã‡", },
+    { "ãµã‰", },
+    { "ãŒ", },
+    { "ãŽ", },
+    { "ã", },
+    { "ã’", },
+    { "ã”", },
+    { "ã–", },
+    { "ã˜", },
+    { "ãš", },
+    { "ãœ", },
+    { "ãž", },
+    { "ã˜ã‚ƒ", },
+    { "ã˜", },
+    { "ã˜ã‚…", },
+    { "ã˜ã‡", },
+    { "ã˜ã‚‡", },
+    { "ã ", },
+    { "ã¢", },
+    { "ã¥", },
+    { "ã§", },
+    { "ã©", },
+    { "ã°", },
+    { "ã³", },
+    { "ã¶", },
+    { "ã¹", },
+    { "ã¼", },
+    { "ã±", },
+    { "ã´", },
+    { "ã·", },
+    { "ãº", },
+    { "ã½", },
+    { "ã", },
+    { "ãƒ", },
+    { "ã…", },
+    { "ã‡", },
+    { "ã‰", },
+    { "ã", },
+    { "ãƒ", },
+    { "ã…", },
+    { "ã‡", },
+    { "ã‰", },
+    { "ã‚“", },
+    { "ã£k", },
+    { "ã£s", },
+    { "ã£t", },
+    { "ã£h", },
+    { "ã£m", },
+    { "ã£y", },
+    { "ã£r", },
+    { "ã£w", },
+    { "ã‚", },
+    { "ã„", },
+    { "ã†", },
+    { "ãˆ", },
+    { "ãŠ", },
+    { "ã€‚", },
+    { "ã€", },
+    { "ï¼", },
+    { "ï¼Ÿ", },
+    { "ãƒ¼", },
+    { "ï¼ˆ", },
+    { "ï¼‰", },
+    { "â€", },
+    { "â€™", },
+    { "ãƒ»", },
+    { "ï¼¾", },
 };
 
 unsigned char* TextField::processCharacter( unsigned char* pInASCII ) {
@@ -1179,7 +1187,7 @@ int TextField::getPrevStringByteLen(int position) {
     int i = 0;
     int prevCharLen = 0;
     while (i < position) {
-        prevCharLen = _mbclen((unsigned char*)mText + i);
+        prevCharLen = mbclen( mText + i );
         i+= prevCharLen;
         }
         /*
@@ -1188,19 +1196,19 @@ int TextField::getPrevStringByteLen(int position) {
         prevCharLen = 1;
         }
     else if( position == 2 ) {
-        if( _mbclen( (unsigned char*)mText + position - 1 ) != 1 ) {
-            prevCharLen = _mbclen( (unsigned char*)mText + position - 1 );
+        if( mbclen( (unsigned char*)mText + position - 1 ) != 1 ) {
+            prevCharLen = mbclen( (unsigned char*)mText + position - 1 );
             }
         else{
             prevCharLen = 1;
             }
         }
-    else if( _mbclen( (unsigned char*)mText + position - 1 ) != 1 ) {
-        if( _mbclen( (unsigned char*)mText + position - 2 ) != 1 ) {
+    else if( mbclen( (unsigned char*)mText + position - 1 ) != 1 ) {
+        if( mbclen( (unsigned char*)mText + position - 2 ) != 1 ) {
             prevCharLen = 1;
             }
         else{
-            prevCharLen = _mbclen( (unsigned char*)mText + position - 1 );
+            prevCharLen = mbclen( (unsigned char*)mText + position - 1 );
             }
         }
     else {
@@ -1210,7 +1218,7 @@ int TextField::getPrevStringByteLen(int position) {
 
     AppLog::getLog()->logPrintf(Log::INFO_LEVEL, "mText %s, mCursorPosition %d, prevStringByteLen %d", mText, mCursorPosition, prevCharLen );
     for (int i=0; i<strlen(mText); i++) {
-        AppLog::getLog()->logPrintf(Log::INFO_LEVEL, "mText(%d) _mbclen = %d", i, _mbclen((unsigned char*)mText + i) );
+        AppLog::getLog()->logPrintf(Log::INFO_LEVEL, "mText(%d) mblen = %d", i, mblen(( char*)mText + i, MB_CUR_MAX) );
     }
     return prevCharLen;
     }
@@ -1278,8 +1286,9 @@ void TextField::keyDown( unsigned char inASCII ) {
         if( mAllowHiragana ) {
             int pendingFuriganaLen = 0;
             for( int i = 0; i <= mCursorPosition; i++ ) {
-                if( _mbclen( (unsigned char*)mText + i) == 2 ) {
-                    i++;
+                unsigned int cLen = mbclen( mText + i );
+                if( cLen >= 2 ) {
+                    i += cLen - 1;
                     pendingFuriganaLen = 0;
                     }
                 else {
@@ -1522,7 +1531,7 @@ void TextField::rightHit() {
         
         }
     else {
-        mCursorPosition += getPrevStringByteLen( mCursorPosition );
+        mCursorPosition += mbclen(mText + mCursorPosition);
         if( mCursorPosition > (int)strlen( mText ) ) {
             mCursorPosition = strlen( mText );
             }
