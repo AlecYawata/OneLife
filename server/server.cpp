@@ -8992,6 +8992,24 @@ int main() {
                         nextConnection->errorCauseString =
                             "Client key check failed";
                         }
+                    else if( strstr( webResult, "WPERROR" ) != NULL ) {
+                        AppLog::info( "Purchase system got error." );
+                        nextConnection->error = true;
+                        nextConnection->errorCauseString =
+                            "Purchase system got error";
+                        }
+                    else if( strstr( webResult, "NOUSER" ) != NULL ) {
+                        AppLog::info( "No user." );
+                        nextConnection->error = true;
+                        nextConnection->errorCauseString =
+                            "No user";
+                        }
+                    else if( strstr( webResult, "NOTPURCHASED" ) != NULL ) {
+                        AppLog::info( "User didn't purchase." );
+                        nextConnection->error = true;
+                        nextConnection->errorCauseString =
+                            "User didn't purchase";
+                        }
                     else if( strstr( webResult, "VALID" ) != NULL ) {
                         // correct!
 
