@@ -275,6 +275,9 @@ static doublePair recalcOffset( doublePair ofs, bool force = false ) {
     return ofs;
     }
 
+int lastCursorLiveObjectID = 0;
+char* lastCursorGraveName = NULL;
+
 
 // most recent home at end
 
@@ -2762,6 +2765,7 @@ LivingLifePage::~LivingLifePage() {
 
     for( int i=0; i<mGraveInfo.size(); i++ ) {
         delete [] mGraveInfo.getElement(i)->relationName;
+        delete [] mGraveInfo.getElement(i)->name;
         }
     mGraveInfo.deleteAll();
 
@@ -8421,6 +8425,12 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 }
             else if( idToDescribe < 0 ) {
                 LiveObject *otherObj = getLiveObject( -idToDescribe );
+
+                lastCursorLiveObjectID = -idToDescribe;
+                if( lastCursorGraveName != NULL) {
+                    delete [] lastCursorGraveName;
+                    lastCursorGraveName = NULL;
+                    }
                 
                 if( otherObj != NULL ) {
                     des = otherObj->relationName;
@@ -8452,7 +8462,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 
                 des = o->localizedName;
 
-                if( strstr( des, "origGrave" ) != NULL ) {
+                if( strstr( o->description, "origGrave" ) != NULL ) {
                     char found = false;
                     
                     for( int g=0; g<mGraveInfo.size(); g++ ) {
@@ -8557,7 +8567,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                 }
                             else {
                                 deathPhrase = 
-                                    autoSprintf( " - %s%s%s",
+                                    autoSprintf( "%s%s%s ",
                                                  translate( "died" ),
                                                  yearsString, yearWord );
                                 }
@@ -8565,13 +8575,26 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             delete [] yearsString;
                             
                             des = autoSprintf( "%s%s%s%s",
-                                               desNoComment, translate( "of" ),
+                                               deathPhrase,
                                                gI->relationName,
-                                               deathPhrase );
+                                               translate( "of" ),
+                                               desNoComment
+                                                );
                             delete [] desNoComment;
                             delete [] deathPhrase;
                             
                             desToDelete = des;
+
+                            lastCursorLiveObjectID = 0;
+                            if( lastCursorGraveName != NULL) {
+                                delete [] lastCursorGraveName;
+                                lastCursorGraveName = NULL;
+                                }
+
+                            if( gI->name != NULL ) {
+                                lastCursorGraveName = stringDuplicate( gI->name );
+                                }
+
                             found = true;
                             break;
                             }    
@@ -11378,6 +11401,13 @@ void LivingLifePage::step() {
                     g.creationTimeUnknown = false;
                     g.lastMouseOverYears = -1;
                     g.lastMouseOverTime = g.creationTime;
+
+                    if( gravePerson->name != NULL ) {
+                        g.name = stringDuplicate( gravePerson->name );
+                        }
+                    else {
+                        g.name = stringDuplicate( "名無し" );
+                        }
                     
                     char *des = gravePerson->relationName;
                     char *desToDelete = NULL;
@@ -11541,6 +11571,7 @@ void LivingLifePage::step() {
                             // call them forgotten instead
                             des = (char*)translate( "forgottenPerson" );
                             }
+                        g.name = NULL;
                         }
                     }
                 if( strcmp( nameBuffer, "" ) != 0 &&
@@ -11548,6 +11579,8 @@ void LivingLifePage::step() {
                     des = autoSprintf( "%s - %s",
                                        nameBuffer, des );
                     desToDelete = des;
+
+                    g.name = stringDuplicate( nameBuffer );
                     }
 
                 g.relationName = stringDuplicate( des );
@@ -17958,6 +17991,7 @@ void LivingLifePage::makeActive( char inFresh ) {
 
     for( int i=0; i<mGraveInfo.size(); i++ ) {
         delete [] mGraveInfo.getElement(i)->relationName;
+        delete [] mGraveInfo.getElement(i)->name;
         }
     mGraveInfo.deleteAll();
 
@@ -20744,6 +20778,7 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         return;
         }
 		
+    /*
     bool canUseEmot = (game_getCurrentTime() - lastEmotUseTime) > 2.0;
     // FOVMOD NOTE:  Change 27/27 - Take these lines during the merge process
     if( canUseEmot ) {
@@ -20802,6 +20837,46 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
             return;
             }
         }
+    */
+    if( inKeyCode == MG_KEY_F1 ) {
+        if( !mSayField.isFocused() ) {
+            mSayField.focus();
+            }
+
+        char* curseName = "";
+        if( lastCursorLiveObjectID > 0 ) {
+            LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
+            if( lastCursorLiveObject && lastCursorLiveObject->name != NULL ) {
+                curseName = lastCursorLiveObject->name;
+                }
+            }
+        if( lastCursorGraveName != NULL ) {
+            curseName = lastCursorGraveName;
+            }
+        mSayField.focus();
+        char* newText = autoSprintf( "%sをのろう", curseName );
+        mSayField.setText(newText);
+        delete [] newText;
+        }
+
+    if( inKeyCode == MG_KEY_F2 ) {
+        if( !mSayField.isFocused() ) {
+            mSayField.focus();
+            }
+
+        char* targetName = "";
+        if( lastCursorLiveObjectID > 0 ) {
+            LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
+            if( lastCursorLiveObject && lastCursorLiveObject->name != NULL ) {
+                targetName = lastCursorLiveObject->name;
+                }
+            }
+        mSayField.focus();
+        char* newText = autoSprintf( "%sはこれをつかっていいよ", targetName );
+        mSayField.setText(newText);
+        delete [] newText;
+        }
+
 	if( inKeyCode == MG_KEY_LEFT || 
 		inKeyCode == MG_KEY_RIGHT ) {
 		float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );

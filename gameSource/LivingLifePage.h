@@ -326,6 +326,8 @@ typedef struct GraveInfo {
         // used to detect when we've moused away, even if not mousing
         // over another grave
         double lastMouseOverTime;
+
+        char* name;
     } GraveInfo;
         
 
