@@ -5,6 +5,7 @@
 #include <math.h>
 #include <assert.h>
 #include <float.h>
+#include <wchar.h>
 
 
 #include "minorGems/util/stringUtils.h"
@@ -163,10 +164,9 @@ static char *eveName = NULL;
 // maps extended ascii codes to true/false for characters allowed in SAY
 // messages
 static char allowedSayCharMap[256];
-static char allowedSayCharMapW[256][256];
 
 static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& ";
-static const char *allowedSayCharsW = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉゎがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ、。ー！？（）";
+static const wchar_t *allowedSayCharsW = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉゎがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ、。ー！？（）";
 
 
 static int killEmotionIndex = 2;
@@ -8179,17 +8179,12 @@ int main() {
     
 
     memset( allowedSayCharMap, false, 256 );
-    memset( allowedSayCharMapW, false, 256 * 256 );
-    
+
     int numAllowed = strlen( allowedSayChars );
     for( int i=0; i<numAllowed; i++ ) {
         allowedSayCharMap[ (int)( allowedSayChars[i] ) ] = true;
         }
-    numAllowed = strlen( allowedSayCharsW );
-    for( int i=0; i<numAllowed; i+=2 ) {
-        allowedSayCharMapW[ (unsigned char)( allowedSayCharsW[i] ) ] [ (unsigned char)(allowedSayCharsW[i+1]) ] = true;
-        }
-    
+
 
     nextID = 
         SettingsManager::getIntSetting( "nextPlayerID", 2 );
@@ -11012,29 +11007,29 @@ int main() {
                         AppLog::infoF( "m.saidText : %s", m.saidText );
 
                         for( int c=0; c<len; c+=cLen ) {
-                            cLen = mblen( m.saidText + c, MB_CUR_MAX );
+                            cLen = mbclen( m.saidText + c );
                             AppLog::infoF( "c : %d, cLen : %d", c, cLen );
                             if(cLen == 0){
                                 m.saidText[c] = '\0';
                                 break;
                                 }
-                            else if(cLen == 1) {
-                                if( ! allowedSayCharMap[ 
-                                        (int)( m.saidText[c] ) ] ) {
-                                    
-                                    m.saidText[c] = ' ';
-                                    }
-                                }
                             else {
-                                AppLog::infoF( "m.saidText[c, c+1] : %d, %d", (unsigned char)m.saidText[c], (unsigned char)m.saidText[c+1] );
-                                if( ! allowedSayCharMapW[ 
-                                        (unsigned char)(m.saidText[c]) ][ 
-                                        (unsigned char)(m.saidText[c+1]) ] ) {
-                                    
-                                    m.saidText[c] = ' ';
-                                    m.saidText[c+1] = ' ';
+                                char* charStr = stringDuplicate( m.saidText + c );
+                                charStr[cLen] = '\0';
+                                wchar_t wcharStr[16];
+                                mbstowcs(wcharStr, charStr, 15);
+                                bool allow = false;
+                                for (int iAllow=0; iAllow<wcslen(allowedSayCharsW); iAllow++) {
+                                    if (allowedSayCharsW[iAllow] == wcharStr[0]) {
+                                        allow = true;
+                                        break;
+                                        }
                                     }
-                                cLen = 2;
+                                if( !allow ) {
+                                    for (int iC=0; iC<cLen; iC++) {
+                                        m.saidText[c + iC] = ' ';
+                                        }
+                                    }
                                 }
                             numSay ++;
                             if( numSay >= sayLimit ) {
