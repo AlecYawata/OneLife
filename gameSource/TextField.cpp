@@ -189,6 +189,9 @@ void TextField::setText( const char *inText ) {
             filteredText.push_back( pProcessedChar[2] );
             }
         delete [] pProcessedChar;
+        if( strLength > 0 ) {
+            i += strLength - 1;
+            }
         }
     
 
@@ -1058,7 +1061,11 @@ unsigned char* TextField::processCharacter( unsigned char* pInASCII ) {
             }
         }
 
-    char returnStr[] = { (char)processedChar, '\0' };
+    char returnStr[5] = { '\0', '\0', '\0', '\0', '\0', };
+    int cLen = mbclen( (char*)pInASCII );
+    for( int i=0; i<cLen; i++ ) {
+        returnStr[i] = pInASCII[i];
+        }
         
     return (unsigned char*)stringDuplicate( returnStr );
     }
