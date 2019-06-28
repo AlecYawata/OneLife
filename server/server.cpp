@@ -6951,7 +6951,12 @@ char *isReverseNamingSay( char *inSaidString,
 
             // back one, to exclude space from name
             if( hitLoc != saidDupe ) {
-                hitLoc[-1] = '\0';
+                if( hitLoc[-1] == ' ' ) {
+                    hitLoc[-1] = '\0';
+                    }
+                else {
+                    hitLoc[0] = '\0';
+                    }
                 return saidDupe;
                 }
             else {
@@ -6974,7 +6979,7 @@ char *isFamilyNamingSay( char *inSaidString ) {
     }
 
 char *isCurseNamingSay( char *inSaidString ) {
-    return isNamingSay( inSaidString, &cursingPhrases );
+    return isReverseNamingSay( inSaidString, &cursingPhrases );
     }
 
 char *isNamedGivingSay( char *inSaidString ) {
