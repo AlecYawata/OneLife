@@ -16166,6 +16166,9 @@ void LivingLifePage::step() {
                         }
                     }
                 }
+            if( ourObject->lineage.size() == 0 ) {
+                mSayField.focus();
+                }
             }
         else if( type == CURSED ) {
             int numLines;
@@ -20801,7 +20804,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                                 }
                             }
                         }
-                    else if( getOurLiveObject()->name == NULL ) {
+                    else if( getOurLiveObject()->name == NULL && getOurLiveObject()->lineage.size() == 0 ) {
                         if( mPendingFamilyName != NULL ) {
                             const char *sayCommand = "SAY";
                             char *message = 
