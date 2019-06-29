@@ -20939,10 +20939,17 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         }
     */
     if( inKeyCode == MG_KEY_F1 ) {
-        if( !mSayField.isFocused() ) {
-            mSayField.focus();
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            return;
             }
-
+        if( ourLiveObject->holdingID < 0 ) {
+            int heldBabyID = - ourLiveObject->holdingID;
+            LiveObject *heldBaby = getLiveObject( heldBabyID );
+            if( heldBaby->name == NULL ) {
+                return;
+                }
+            }
         char* curseName = "";
         if( lastCursorLiveObjectID > 0 ) {
             LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
@@ -20953,6 +20960,9 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         if( lastCursorGraveName != NULL ) {
             curseName = lastCursorGraveName;
             }
+        if( strcmp( curseName, "" ) == 0 ) {
+            return;
+            }
         mSayField.focus();
         char* newText = autoSprintf( "%sをのろう", curseName );
         mSayField.setText(newText);
@@ -20960,10 +20970,17 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         }
 
     if( inKeyCode == MG_KEY_F2 ) {
-        if( !mSayField.isFocused() ) {
-            mSayField.focus();
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            return;
             }
-
+        if( ourLiveObject->holdingID < 0 ) {
+            int heldBabyID = - ourLiveObject->holdingID;
+            LiveObject *heldBaby = getLiveObject( heldBabyID );
+            if( heldBaby->name == NULL ) {
+                return;
+                }
+            }
         char* targetName = "";
         if( lastCursorLiveObjectID > 0 ) {
             LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
@@ -20971,8 +20988,11 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
                 targetName = lastCursorLiveObject->name;
                 }
             }
+        if( strcmp( targetName, "" ) == 0 ) {
+            return;
+            }
         mSayField.focus();
-        char* newText = autoSprintf( "%sはこれをつかっていいよ", targetName );
+        char* newText = autoSprintf( "%sのものよ", targetName );
         mSayField.setText(newText);
         delete [] newText;
         }
