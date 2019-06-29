@@ -8408,12 +8408,38 @@ void LivingLifePage::draw( doublePair inViewCenter,
                     }
                 else {
                     des = (char*)translate( "you" );
-                    if( ourLiveObject->name != NULL ) {
-                        des = autoSprintf( "%s - %s %d%s", des, 
-                                           ourLiveObject->name,
+
+                    if( ourLiveObject->holdingID > 0 &&
+                        getObject( ourLiveObject->holdingID )->localizedName != NULL ) {
+                        des = autoSprintf( "%s を持った %s %d%s", 
+                                           getObject( ourLiveObject->holdingID )->localizedName, des,
                                            (int)computeCurrentAge( ourLiveObject ),
                                            translate( "age" ) );
                         desToDelete = des;
+                        }
+                    else if( ourLiveObject->holdingID < 0 ) {
+                        LiveObject* babyObject = getLiveObject( -ourLiveObject->holdingID );
+                        if( babyObject->name != NULL ) {
+                            des = autoSprintf( "%sの%s %d%s - %s %d%s", 
+                                               babyObject->relationName != NULL ? babyObject->relationName : (char*)translate( "unrelated" ),
+                                               babyObject->name,
+                                               (int)computeCurrentAge( babyObject ),
+                                               translate( "age" ),
+                                               des,
+                                               (int)computeCurrentAge( ourLiveObject ),
+                                               translate( "age" ) );
+                            desToDelete = des;
+                            }
+                        else {
+                            des = autoSprintf( "%s %d%s - %s %d%s", 
+                                               babyObject->relationName != NULL ? babyObject->relationName : (char*)translate( "unrelated" ),
+                                               (int)computeCurrentAge( babyObject ),
+                                               translate( "age" ),
+                                               des,
+                                               (int)computeCurrentAge( ourLiveObject ),
+                                               translate( "age" ) );
+                            desToDelete = des;
+                            }
                         }
                     else {
                         des = autoSprintf( "%s %d%s", des,
@@ -8439,8 +8465,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
                     des = (char*)translate( "unrelated" );
                     }
                 if( otherObj != NULL && otherObj->name != NULL ) {
-                    des = autoSprintf( "%s - %s",
-                                       otherObj->name, des );
+                    des = autoSprintf( "%sの%s",
+                                       des, otherObj->name );
                     desToDelete = des;
                     }
                 if( otherObj != NULL && 
@@ -8455,6 +8481,79 @@ void LivingLifePage::draw( doublePair inViewCenter,
                         }
                     
                     desToDelete = des;
+                    }
+                des = autoSprintf( "%s %d%s", des,
+                                   (int)computeCurrentAge( otherObj ),
+                                   translate( "age" ) );
+                if( desToDelete != NULL ) {
+                    delete [] desToDelete;
+                    }
+                desToDelete = des;
+
+                if( otherObj->holdingID < 0 ) {
+                    LiveObject* otherHoldingLiveObject = getLiveObject( -otherObj->holdingID );
+                    if( otherHoldingLiveObject != NULL ) {
+                        if( otherHoldingLiveObject->id == ourLiveObject->id ) {
+                            if( ourLiveObject->name != NULL ) {
+                                des = autoSprintf( "あなた - %s %d%s を抱えた %s",
+                                                   otherHoldingLiveObject->name,
+                                                   (int)computeCurrentAge( otherObj ),
+                                                   translate( "age" ),
+                                                   des );
+                                if( desToDelete != NULL ) {
+                                    delete [] desToDelete;
+                                    }
+                                desToDelete = des;
+                                }
+                            else {
+                                des = autoSprintf( "あなた %d%s を抱えた %s",
+                                                   (int)computeCurrentAge( otherObj ),
+                                                   translate( "age" ),
+                                                   des );
+                                if( desToDelete != NULL ) {
+                                    delete [] desToDelete;
+                                    }
+                                desToDelete = des;
+                                }
+                            }
+                        else if( otherHoldingLiveObject->name != NULL ) {
+                            des = autoSprintf( "%sの%s %d%s を抱えた %s",
+                                               otherHoldingLiveObject->relationName != NULL ? otherHoldingLiveObject->relationName : (char*)translate( "unrelated" ),
+                                               otherHoldingLiveObject->name,
+                                               (int)computeCurrentAge( otherObj ),
+                                               translate( "age" ),
+                                               des );
+                            if( desToDelete != NULL ) {
+                                delete [] desToDelete;
+                                }
+                            desToDelete = des;
+                            }
+                        else {
+                            des = autoSprintf( "%s %d%s を抱えた %s",
+                                               otherHoldingLiveObject->relationName != NULL ? otherHoldingLiveObject->relationName : (char*)translate( "unrelated" ),
+                                               (int)computeCurrentAge( otherObj ),
+                                               translate( "age" ),
+                                               des );
+                            if( desToDelete != NULL ) {
+                                delete [] desToDelete;
+                                }
+                            desToDelete = des;
+                            }
+                        }
+                    }
+                else if( otherObj->holdingID > 0 ) {
+                    ObjectRecord* otherHoldingObject = getObject( otherObj->holdingID );
+                    if( otherHoldingObject != NULL && otherHoldingObject->localizedName != NULL ) {
+                        des = autoSprintf( "%s %d%s を持った %s", 
+                                           otherHoldingObject->localizedName,
+                                           (int)computeCurrentAge( otherObj ),
+                                           translate( "age" ),
+                                           des);
+                        if( desToDelete != NULL ) {
+                            delete [] desToDelete;
+                            }
+                        desToDelete = des;
+                        }
                     }
                 }
             else {
@@ -8585,13 +8684,11 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             
                             desToDelete = des;
 
-                            lastCursorLiveObjectID = 0;
-                            if( lastCursorGraveName != NULL) {
-                                delete [] lastCursorGraveName;
-                                lastCursorGraveName = NULL;
-                                }
-
                             if( gI->name != NULL ) {
+                                lastCursorLiveObjectID = 0;
+                                if( lastCursorGraveName != NULL) {
+                                    delete [] lastCursorGraveName;
+                                    }
                                 lastCursorGraveName = stringDuplicate( gI->name );
                                 }
 
@@ -16069,6 +16166,9 @@ void LivingLifePage::step() {
                         }
                     }
                 }
+            if( ourObject->lineage.size() == 0 ) {
+                mSayField.focus();
+                }
             }
         else if( type == CURSED ) {
             int numLines;
@@ -17557,8 +17657,8 @@ void LivingLifePage::step() {
         //  animation will play long enough without waiting ahead of time)
         // AND server agrees with our position
         if( ! ourLiveObject->inMotion && 
-            currentTime - ourLiveObject->pendingActionAnimationStartTime > 
-            0.166 - ourLiveObject->lastResponseTimeDelta &&
+            //currentTime - ourLiveObject->pendingActionAnimationStartTime > 
+            //0.166 - ourLiveObject->lastResponseTimeDelta &&
             ourLiveObject->xd == ourLiveObject->xServer &&
             ourLiveObject->yd == ourLiveObject->yServer ) {
             
@@ -18219,6 +18319,14 @@ void LivingLifePage::checkForPointerHit( PointerHitRecord *inRecord,
         
         
         // check this cell first
+
+        // force close by shift key
+        if( isShiftKeyDown() ) {
+            p->hitOurPlacement = true;
+            p->closestCellX = clickDestX;
+            p->closestCellY = clickDestY;
+            p->hitAnObject = true;
+            }
 
         // all short objects are mouse-through-able
         
@@ -20704,7 +20812,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                                 }
                             }
                         }
-                    else if( getOurLiveObject()->name == NULL ) {
+                    else if( getOurLiveObject()->name == NULL && getOurLiveObject()->lineage.size() == 0 ) {
                         if( mPendingFamilyName != NULL ) {
                             const char *sayCommand = "SAY";
                             char *message = 
@@ -20839,10 +20947,17 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         }
     */
     if( inKeyCode == MG_KEY_F1 ) {
-        if( !mSayField.isFocused() ) {
-            mSayField.focus();
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            return;
             }
-
+        if( ourLiveObject->holdingID < 0 ) {
+            int heldBabyID = - ourLiveObject->holdingID;
+            LiveObject *heldBaby = getLiveObject( heldBabyID );
+            if( heldBaby->name == NULL ) {
+                return;
+                }
+            }
         char* curseName = "";
         if( lastCursorLiveObjectID > 0 ) {
             LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
@@ -20853,6 +20968,9 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         if( lastCursorGraveName != NULL ) {
             curseName = lastCursorGraveName;
             }
+        if( strcmp( curseName, "" ) == 0 ) {
+            return;
+            }
         mSayField.focus();
         char* newText = autoSprintf( "%sをのろう", curseName );
         mSayField.setText(newText);
@@ -20860,10 +20978,17 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         }
 
     if( inKeyCode == MG_KEY_F2 ) {
-        if( !mSayField.isFocused() ) {
-            mSayField.focus();
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            return;
             }
-
+        if( ourLiveObject->holdingID < 0 ) {
+            int heldBabyID = - ourLiveObject->holdingID;
+            LiveObject *heldBaby = getLiveObject( heldBabyID );
+            if( heldBaby->name == NULL ) {
+                return;
+                }
+            }
         char* targetName = "";
         if( lastCursorLiveObjectID > 0 ) {
             LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
@@ -20871,8 +20996,11 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
                 targetName = lastCursorLiveObject->name;
                 }
             }
+        if( strcmp( targetName, "" ) == 0 ) {
+            return;
+            }
         mSayField.focus();
-        char* newText = autoSprintf( "%sはこれをつかっていいよ", targetName );
+        char* newText = autoSprintf( "%sのものよ", targetName );
         mSayField.setText(newText);
         delete [] newText;
         }

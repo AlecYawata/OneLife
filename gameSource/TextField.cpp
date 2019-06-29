@@ -196,7 +196,7 @@ void TextField::setText( const char *inText ) {
     
 
     mText = filteredText.getElementString();
-    mTextLen = strlen( mText );
+    mTextLen = mbslen( mText );
     
     mCursorPosition = strlen( mText );
 
@@ -1083,7 +1083,7 @@ void TextField::insertCharacter( unsigned char inASCII ) {
     char *oldText = mText;
     
     if( mMaxLength != -1 &&
-        strlen( oldText ) >= (unsigned int) mMaxLength ) {
+        mbslen( oldText ) >= (unsigned int) mMaxLength ) {
         // max length hit, don't add it
         return;
         }
@@ -1095,7 +1095,7 @@ void TextField::insertCharacter( unsigned char inASCII ) {
     
     mText = autoSprintf( "%s%c%s", 
                          preCursor, inASCII, postCursor );
-    mTextLen = strlen( mText );
+    mTextLen = mbslen( mText );
 
     delete [] preCursor;
     
@@ -1123,19 +1123,7 @@ void TextField::insertString( char *inString ) {
     mText = autoSprintf( "%s%s%s", 
                          preCursor, inString, postCursor );
     
-    mTextLen = strlen( mText );
-
-    if( mMaxLength != -1 &&
-        mTextLen > mMaxLength ) {
-        // truncate
-        mText[ mMaxLength ] = '\0';
-        
-        char *longString = mText;
-        mText = stringDuplicate( mText );
-        delete [] longString;
-        
-        mTextLen = strlen( mText );
-        }
+    mTextLen = mbslen( mText );
     
 
     delete [] preCursor;
@@ -1144,9 +1132,6 @@ void TextField::insertString( char *inString ) {
     
     mCursorPosition += strlen( inString );
 
-    if( mCursorPosition > mTextLen ) {
-        mCursorPosition = mTextLen;
-        }
     }
 
 
@@ -1325,6 +1310,11 @@ void TextField::keyDown( unsigned char inASCII ) {
                                     }
                                 insertString( furiganaDist[i] );
                                 pProcessedChar[0] = '\0';
+                                if( mMaxLength > 0 ) {
+                                    while( mbslen( mText ) > mMaxLength ) {
+                                        deleteHit();
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1338,6 +1328,11 @@ void TextField::keyDown( unsigned char inASCII ) {
         if( pProcessedChar[0] != 0 ) {
             
             insertString( (char*)pProcessedChar );
+            if( mMaxLength > 0 ) {
+                while( mbslen( mText ) > mMaxLength ) {
+                    deleteHit();
+                    }
+                }
             }
         
         mHoldDeleteSteps = -1;
@@ -1414,7 +1409,7 @@ void TextField::deleteHit() {
         char *postCursor = &( mText[ mCursorPosition ] );
 
         mText = autoSprintf( "%s%s", preCursor, postCursor );
-        mTextLen = strlen( mText );
+        mTextLen = mbslen( mText );
         
         delete [] preCursor;
 
