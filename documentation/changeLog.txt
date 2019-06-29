@@ -3,6 +3,296 @@ This file only list changes to game code.  Changes to content can be found here:
 http://onehouronelife.com/updateLog.php
 
 
+
+Version 245    2019-June-28
+
+--Support for new genetic fitness score across lives, ranking, leaderboard, 
+  and genetic history display inside client.
+
+
+
+
+Server Fixes
+
+--Whoops... totally forgot to update killEmotionIndex.ini server setting.
+  Murder Mouth should work now.
+
+
+
+
+
+Version 243    2019-June-21
+
+--Better randomization (less repetative) of multi-sound sets by shuffling
+  sounds, playing them in that order, and then reshuffling (instead of picking
+  a different random sound each time, which can lead to lots of repeats).
+
+--Support in editor for pasting a single sound onto the end of a sound set
+  without replacing it.
+
+--Client can now play animation sounds from a character's emote.
+
+--8/12 display for lives remaining (suggested by Dodge).
+
+--Finally fixed lurking wrong-grave-info bug (triggered when you swap a bone
+  basket with something that's on the ground where an old grave has already
+  decayed away).  Fixes #338
+
+
+
+
+Server Fixes
+
+--Fixed issues with other forced-emots (like snowball splats) interruping the
+  KILL-state angry face.  Now the angry face comes back when the snowball splat
+  melts.
+
+--Admin funciton for restoring all tokens back to starting level (useful before
+  servers restart).
+
+
+
+
+Version 242    2019-June-19
+
+--Client support for in-game poll feature.
+
+
+
+
+Server Fixes
+
+--Fixed a crash when a baby tries to take a sword out of a backpack they are
+  wearing.
+
+
+
+
+Version 240    2019-June-14
+
+--Fixed so that lives-left text never overlaps with re-detect or custom-server-
+  disable buttons on login page.  Fixed so that re-dectect button doesn't
+  linger after visiting settings page triggers a re-measure of FPS.
+
+--There are now both Retry and Re-detect buttons when FPS mismatch occurs,
+  allowing you to re-measure right then and there without restarting the game.
+  We don't keep re-measuring every time we return to this screen, speeding up
+  player login.  We wait to fetch life token data from the server until after
+  the first FPS measurement is over, to avoid networking hiccups messing up the
+  measurment.  Fixes #330
+
+--Fixed memory leak.  Fixes #322
+
+--Fixed so that if you click on an object that is surrounded NSEW but still
+  accessible, you walk there, to that object's spot, and interact with it,
+  instead of just walking there.  Fixes #318
+
+--Protocol now includes lineageEveID with lineage and grave messages so that
+  client can show DISTANT RELATIVE for relatives and graves that are further
+  away than the 20 generation cuttoff.  Fixes #317
+
+--Fixed memory leak in killMessage.  Fixes #311
+
+--New /DISCONNECT command in client for testing.
+
+--Added support for sprites that disappear when an object is contained.
+  Fixes #282
+
+
+
+Server Fixes
+
+--Fixed so that empty tiles that used to contain a natural object are restored
+  when map is culled back to natural state.  Thanks Alec.  Fixes #332
+
+--Reduced map database pollution with unecessary 0-values (before, we would 
+  clear a tile's contained items, setting its num-contained to 0 in the db,
+  every time an item was picked up from that tile, even if the item that was
+  picked up contained nothing---now, we check that there are contained items
+  there to clear before clearing them and inserting a 0 for num contained in
+  the database).  This cuts the number of database entries in half in many
+  situations (thus reducing the disk size of the database dramatically).
+ 
+--If you disconnect and reconnect when you have 0 lives left, you are no longer
+  blocked from logging in to resume your last life.
+
+--Fixed bug where you could enter the kill-intent state against family members
+  when holding the sword, and if you ever got close enough, the server would
+  generate an endless flood of update messages for the failed kill action,
+  overload network connections, and leading to disconnects.  Now you can't even
+  enter the kill-intent state if the weapon you are holding is not applicable
+  to your target.  Thanks Laccy.  Fixes #320
+
+--Can no longer trigger a transition for warn clothing that takes it to an
+  unwearable state (for example, hitting crown with hammer to turn it back into
+  an ingot while you're still wearing it).  Fixes #310
+
+--No more tutorial players in name logs.  Fixes  #333
+
+--Fixed typo in square root of two in server code.  Fixes #325
+
+--Fixed disappearing springs caused by map cache not being aware of grid
+  placement status.  Fixes #319
+
+--Trees and other permanent objects regrowing destroy sections of underlying
+  roads in natural reclamation.  However, surface non-permanent natural objects
+  (stones, iron, etc.) will re-occur on top of the road.  Fixes #334
+
+--No language barriers on low-pop servers.  Fixes #314
+
+--Making sure REMV action is grid adjacent.  Fixes #312 
+
+--Monument stats include year now.  Fixes #307
+
+--Fixed calculation of distance for fleeing/chasing animal movement.  Fixes #306
+
+--If you quit the client to disconnect and then reconnect as a twin, it will
+  now kill your old self to make room for your twin (it used to confusingly
+  reconnect you to your old life, and let your partner through as a lone twin).
+  Fixes #305
+
+--Fixed cause of ghost players who just stand there but aren't really there.
+  Fixes #299
+
+--Smarter code when swapping shoes.  Swaps held shoe with non-matching shoe
+  first, and if both shoes are non-matching, pays attention to which shoe you
+  clicked on.  Fixes #297
+
+--If name of Eve or baby not unique within past two hours on server, closest
+  unique name chosen instead.  No more roman numeral suffixes.  Fixes #283
+
+
+
+Version 238    2019-June-8
+
+--Support for limited number of life tokens per player, with more tokens
+  earned every hour that passes.
+
+
+
+
+Server Fixes
+
+--We now add a new Eve whenever existing families have more than 15 players
+  each on average.
+
+--Lineage server trims newlines from death cause description.
+
+--People without last names can be cursed.  Fixes #302
+
+--Fixed a memory leak in murderPerpEmail.
+
+--Support for 'kill' result emots that are non-lethal and don't make you drop
+  what you are holding through new no_replace tag.  Snowball splats now work
+  this way.
+
+--Stone road not culled (allong with stone walls) during map reclamation by
+  nature.
+
+--Rolled back change 7292535f9fca5333bff52f3ba9038b530ea77273, so max birth
+  cooldown is 5 minutes again.
+
+--Rolled back changes 10e9b49dca89cd9e50895a883a0e98c9ab9e0f89 and
+  b33eae6c249103b32b4c0163bb5fe1e57c1d3a35, so mother's birth cooldown only
+  resets if she picked up a SIDS baby, and doesn't reset if most recent baby
+  died due to neglect.
+
+--Partially rolled back change 2419cdf75a3d64d2c637851434763c84efdd7649 so that
+  suicide triggers area ban like it did before, but family skip list is still
+  functioning too.  Thus, suicide has a compound effect of making you skip the
+  family until you run out of families AND ban yourself from that area.
+  Figured leaving skip list code in place for now is fine, instead of tearing
+  it out completely.
+
+--Disabled latest Eve spring grid placement close to civ, and re-enabled old
+  Eve spiral.
+
+--New Eve spiral behavior:  If center of spiral hasn't been seen in a long
+  enough time that it has likely been culled, we restart the spiral again from
+  the center.  This prevents the spiral from getting endlessly bigger, and
+  brings Eves closer together again periodically, as the center of the map gets
+  culled.
+
+
+
+
+
+Version 235    2019-May-29
+
+--Fixed one cause of rubber-banding player movement in client.  No need to
+  navigate all the way back to start of a new path sent by server if we're
+  closer to a spot in the middle of the path.
+
+--Fixed so that other players never slow down in their movement to match
+  server timing, but still speed up if necessary.  (It's always okay for
+  another player to arrive at their destination early, client-side.)
+
+
+
+Server Fixes
+
+--Changes to function of /DIE.  Can no longer use it to cycle through all
+  families and force yourself to be an unecessary Eve.  Eve only spawns if
+  there are really no available motehrs for an incoming baby.  /DIE adds this
+  family to your family skip list.  If you eventually cycle through all
+  families, so that you've skipped them all, and none are left, your skip list
+  is cleared.
+
+--When the server has 15 or more simultaneous players, 200 map database entries
+  are examined every periodic server step (4x per second), and any entries in
+  regions that have not been seen by players in 8 hours are set back to their
+  natural state.  Depending on the size of the database, walking through all
+  entries can take quite a while (the current bigserver2 database has 25
+  million entries, so that would take 8 hours at the current rate).  Thus, the
+  actual decay-back-to-nature time will be at least 8 hours, due to the time it
+  takes to walk through all database entries.  Also, a group of tiles will
+  potentially clear in an uneven sequence, based on their order in the
+  database.  Thus, partial ruins are possible.
+
+--Don't spawn non-cursed Eve near donkey town.
+
+--Always reset mother's birth cool down if baby does /DIE, whether ever held
+  or not.
+
+--Mother's birth cool-down instantly resets when her most-recent baby dies of
+  any cause.
+
+--Max birth cool-down for mother is 3 minutes instead of 5 (mean 1.2 minutes
+  instead of 2 minutes).
+
+--Ancient stone walls are left standing during 8-hour-no-look map culling.
+
+
+
+
+Version 234    2019-May-25
+
+--Fixed long-standing bug when something decays in the hand of a moving player,
+  causing a bad player update message to get sent, making their position revert
+  on other clients.
+
+--On SHIFT-click to kill, allow missing by up to four tiles (finding closest
+  person and calling them the target) to avoid the annoying "drop your weapon
+  by accident" game when you're trying to click on a moving target.
+
+--Fixed long-standing bug that would defer mid-move player change until after
+  their move completed.
+
+
+
+Server Fixes:
+
+--Query times listed on front page of family tree server.
+
+--Reduced server step time to 1/10 sec max if there are active kill requests
+  pending, so that even on servers with very few players, kills happen
+  instantly when players cross paths.
+
+--Added a work-around for a bug in move path validation that was causing valid
+  moves to get rejected by server.  Fixed check for diagonal adjacent.
+
+
+
 Version 231    2019-May-23
 
 --Tiles that are drawn as non-flipped remember their non-flipped status, even

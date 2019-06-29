@@ -1544,12 +1544,15 @@ function ls_frontPage() {
             $string_to_hash =
                 ls_requestFilter( "string_to_hash", "/[A-Z0-9]+/i", "0" );
 
+
+            $encodedEmail = urlencode( $emailFilter );
+            
             $correct = false;
             
             global $ticketServerURL;
             $url = "$ticketServerURL".
                 "?action=check_ticket_hash".
-                "&email=$emailFilter".
+                "&email=$encodedEmail".
                 "&hash_value=$ticket_hash".
                 "&string_to_hash=$string_to_hash";
             
@@ -1729,9 +1732,20 @@ function ls_frontPage() {
     
     echo "<tr><td colspan=6><font size=5>Today's Long Lines:".
         "</font></td></tr>\n";
+
+    $specialForceIndexClause = $forceIndexClause;
+
+    if( $specialForceIndexClause == "" ) {
+        // we need to speed this query up by forcing an index on death_time
+        // otherwise, mysql orders them by generation number first, and
+        // then walks through to find $numPerList with matching death times
+        // there are way too many long lines beyond what we will have
+        // today, so this is a lot to walk through
+        $specialForceIndexClause = " FORCE INDEX( death_time ) ";
+        }
     
     ls_printFrontPageRows(
-        $forceIndexClause,
+        $specialForceIndexClause,
         "$filterClause AND death_time >= DATE_SUB( NOW(), INTERVAL 1 DAY )",
         "generation DESC, death_time DESC",
         $numPerList );
@@ -1785,7 +1799,8 @@ function ls_printFrontPageRows( $inForceIndexClause,
                                 $inFilterClause, $inOrderBy, $inNumRows ) {
     global $tableNamePrefix;
     global $photoServerURL, $usePhotoServer;
-    
+
+    $startTime = microtime( true );
 
     $query = "SELECT lives.id, display_id, player_id, name, ".
         "age, generation, death_time, deepest_descendant_generation, ".
@@ -1799,7 +1814,6 @@ function ls_printFrontPageRows( $inForceIndexClause,
         "$inFilterClause ".
         "ORDER BY $inOrderBy ".
         "LIMIT $inNumRows;";
-    ls_log( $query );
     
     
     $result = ls_queryDatabase( $query );
@@ -1911,6 +1925,21 @@ function ls_printFrontPageRows( $inForceIndexClause,
         echo "</tr>";
         }
 
+    $runTime = microtime( true ) - $startTime;
+
+    $runTimeMS = number_format( $runTime * 1000, 0 );
+    
+    $plural = "";
+    if( $runTimeMS != 1 ) {
+        $plural = "s";
+        }
+    
+    echo "<tr><td colspan=6 align=right>".
+        "(query took $runTimeMS milisecond$plural)</td></tr>";
+
+    if( $runTime > 0.5 ) {
+        ls_log( "This query took $runTimeMS miliseconds:  $query" );
+        }
     }
 
 
@@ -2548,7 +2577,7 @@ function ls_getDeathHTML( $inID, $inRelID ) {
                         if( $commentPos != FALSE ) {
                             $line = substr( $line, 0, $commentPos );
                             }
-
+                        $line = trim( $line );
                         $deathString = "Killed by $line";
                         }
                     }

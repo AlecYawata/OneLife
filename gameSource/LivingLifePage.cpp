@@ -424,7 +424,8 @@ char *getRelationName( SimpleVector<int> *ourLin,
                        SimpleVector<int> *theirLin, 
                        int ourID, int theirID,
                        int ourDisplayID, int theirDisplayID,
-                       double ourAge, double theirAge ) {
+                       double ourAge, double theirAge,
+                       int ourEveID, int theirEveID ) {
     
 
     ObjectRecord *theirDisplayO = getObject( theirDisplayID );
@@ -507,6 +508,13 @@ char *getRelationName( SimpleVector<int> *ourLin,
             }
         
         if( ourMatchIndex == -1 ) {
+            
+            if( ourEveID != -1 && theirEveID != -1 &&
+                ourEveID == theirEveID ) {
+                // no shared lineage, but same eve beyond lineage cuttoff
+                return stringDuplicate( translate( "distantRelative" ) );
+                }
+
             return NULL;
             }
         
@@ -659,17 +667,19 @@ char *getRelationName( SimpleVector<int> *ourLin,
 
 
 char *getRelationName( LiveObject *inOurObject, LiveObject *inTheirObject ) {
-    SimpleVector<int> ourLin = inOurObject->lineage;
-    SimpleVector<int> theirLin = inTheirObject->lineage;
+    SimpleVector<int> *ourLin = &( inOurObject->lineage );
+    SimpleVector<int> *theirLin = &( inTheirObject->lineage );
     
     int ourID = inOurObject->id;
     int theirID = inTheirObject->id;
 
     
-    return getRelationName( &ourLin, &theirLin, ourID, theirID,
+    return getRelationName( ourLin, theirLin, ourID, theirID,
                             inOurObject->displayID, inTheirObject->displayID,
                             inOurObject->age,
-                            inTheirObject->age );
+                            inTheirObject->age,
+                            inOurObject->lineageEveID,
+                            inTheirObject->lineageEveID );
     }
 
 
@@ -716,10 +726,18 @@ static char serverSocketConnected = false;
 static float connectionMessageFade = 1.0f;
 static double connectedTime = 0;
 
+static char forceDisconnect = false;
+
 
 // reads all waiting data from socket and stores it in buffer
 // returns false on socket error
 static char readServerSocketFull( int inServerSocket ) {
+
+    if( forceDisconnect ) {
+        forceDisconnect = false;
+        return false;
+        }
+    
 
     unsigned char buffer[512];
     
@@ -947,6 +965,7 @@ typedef enum messageType {
     SERVER_FULL,
 	SEQUENCE_NUMBER,
     ACCEPTED,
+    NO_LIFE_TOKENS,
     REJECTED,
     MAP_CHUNK,
     MAP_CHANGE,
@@ -998,22 +1017,7 @@ messageType getMessageType( char *inMessage ) {
     
     messageType returnValue = UNKNOWN;
 
-    if( strcmp( copy, "SHUTDOWN" ) == 0 ) {
-        returnValue = SHUTDOWN;
-        }
-    else if( strcmp( copy, "SERVER_FULL" ) == 0 ) {
-        returnValue = SERVER_FULL;
-        }
-    else if( strcmp( copy, "SN" ) == 0 ) {
-        returnValue = SEQUENCE_NUMBER;
-        }
-    else if( strcmp( copy, "ACCEPTED" ) == 0 ) {
-        returnValue = ACCEPTED;
-        }
-    else if( strcmp( copy, "REJECTED" ) == 0 ) {
-        returnValue = REJECTED;
-        }
-    else if( strcmp( copy, "CM" ) == 0 ) {
+    if( strcmp( copy, "CM" ) == 0 ) {
         returnValue = COMPRESSED_MESSAGE;
         }
     else if( strcmp( copy, "MC" ) == 0 ) {
@@ -1102,6 +1106,24 @@ messageType getMessageType( char *inMessage ) {
         }
     else if( strcmp( copy, "PONG" ) == 0 ) {
         returnValue = PONG;
+        }
+    else if( strcmp( copy, "SHUTDOWN" ) == 0 ) {
+        returnValue = SHUTDOWN;
+        }
+    else if( strcmp( copy, "SERVER_FULL" ) == 0 ) {
+        returnValue = SERVER_FULL;
+        }
+    else if( strcmp( copy, "SN" ) == 0 ) {
+        returnValue = SEQUENCE_NUMBER;
+        }
+    else if( strcmp( copy, "ACCEPTED" ) == 0 ) {
+        returnValue = ACCEPTED;
+        }
+    else if( strcmp( copy, "REJECTED" ) == 0 ) {
+        returnValue = REJECTED;
+        }
+    else if( strcmp( copy, "NO_LIFE_TOKENS" ) == 0 ) {
+        returnValue = NO_LIFE_TOKENS;
         }
     else if( strcmp( copy, "SD" ) == 0 ) {
         returnValue = FORCED_SHUTDOWN;
@@ -3192,6 +3214,10 @@ void LivingLifePage::handleAnimSound( int inObjectID, double inAge,
             
     double newTimeVal = frameRateFactor * inNewFrameCount / 60.0;
                 
+    if( inType == ground2 ) {
+        inType = ground;
+        }
+
 
     AnimationRecord *anim = getAnimation( inObjectID, inType );
     if( anim != NULL ) {
@@ -11430,6 +11456,16 @@ void LivingLifePage::step() {
             delete [] message;
             return;
             }
+        else if( type == NO_LIFE_TOKENS ) {
+            closeSocket( mServerSocket );
+            mServerSocket = -1;
+            
+            setWaiting( false );
+            setSignal( "noLifeTokens" );
+            
+            delete [] message;
+            return;
+            }
         else if( type == APOCALYPSE ) {
             apocalypseDisplayProgress = 0;
             apocalypseInProgress = true;
@@ -11535,10 +11571,13 @@ void LivingLifePage::step() {
             }
         else if( type == GRAVE_MOVE ) {
             int posX, posY, posXNew, posYNew;
+
+            int swapDest = 0;
             
-            int numRead = sscanf( message, "GM\n%d %d %d %d",
-                                  &posX, &posY, &posXNew, &posYNew );
-            if( numRead == 4 ) {
+            int numRead = sscanf( message, "GM\n%d %d %d %d %d",
+                                  &posX, &posY, &posXNew, &posYNew,
+                                  &swapDest );
+            if( numRead == 4 || numRead == 5 ) {
                 applyReceiveOffset( &posX, &posY );
                 applyReceiveOffset( &posXNew, &posYNew );
 
@@ -11558,6 +11597,7 @@ void LivingLifePage::step() {
                 // it will "cover up" the label of the still-matching
                 // grave further down on the list, which we will find
                 // and fix later when it fininall finishes moving.
+                char found = false;
                 for( int i=mGraveInfo.size() - 1; i >= 0; i-- ) {
                     GraveInfo *g = mGraveInfo.getElement( i );
                     
@@ -11570,8 +11610,26 @@ void LivingLifePage::step() {
                         GraveInfo gStruct = *g;
                         mGraveInfo.deleteElement( i );
                         mGraveInfo.push_front( gStruct );
+                        found = true;
                         break;
                         }    
+                    }
+                
+                if( found && ! swapDest ) {
+                    // do NOT need to keep any extra ones around
+                    // this fixes cases where old grave info is left
+                    // behind, due to decay
+                    for( int i=1; i < mGraveInfo.size(); i++ ) {
+                        GraveInfo *g = mGraveInfo.getElement( i );
+                        
+                        if( g->worldPos.x == posXNew &&
+                            g->worldPos.y == posYNew ) {
+                            
+                            // a stale match
+                            mGraveInfo.deleteElement( i );
+                            i--;
+                            }
+                        }
                     }
                 }            
             }
@@ -11579,6 +11637,9 @@ void LivingLifePage::step() {
             int posX, posY, playerID, displayID;
             double age;
             
+            int eveID = -1;
+            
+
             char nameBuffer[200];
             
             nameBuffer[0] = '\0';
@@ -11616,8 +11677,23 @@ void LivingLifePage::step() {
                 if( numLines > 1 ) {
                     SimpleVector<char *> *tokens = 
                         tokenizeString( lines[1] );
+                    
+                    int numNormalTokens = tokens->size();
+                                
+                    if( tokens->size() > 6 ) {
+                        char *lastToken =
+                            tokens->getElementDirect( 
+                                tokens->size() - 1 );
+                                    
+                        if( strstr( lastToken, "eve=" ) ) {   
+                            // eve tag at end
+                            numNormalTokens--;
+                            
+                            sscanf( lastToken, "eve=%d", &( eveID ) );
+                            }
+                        }
 
-                    for( int t=6; t<tokens->size(); t++ ) {
+                    for( int t=6; t<numNormalTokens; t++ ) {
                         char *tok = tokens->getElementDirect( t );
                                     
                         int mID = 0;
@@ -11647,7 +11723,9 @@ void LivingLifePage::step() {
                     ourLiveObject->displayID,
                     displayID,
                     ourLiveObject->age,
-                    age );
+                    age,
+                    ourLiveObject->lineageEveID,
+                    eveID );
 
                 GraveInfo g;
                 g.worldPos.x = posX;
@@ -11684,6 +11762,10 @@ void LivingLifePage::step() {
                 
                 if( desToDelete != NULL ) {
                     delete [] desToDelete;
+                    }
+                
+                if( relationName != NULL ) {
+                    delete [] relationName;
                     }
                 
                 g.creationTime = 
@@ -13177,6 +13259,8 @@ void LivingLifePage::step() {
                 o.dying = false;
                 o.sick = false;
                 
+                o.lineageEveID = -1;
+
                 o.name = NULL;
                 o.relationName = NULL;
 
@@ -13611,7 +13695,7 @@ void LivingLifePage::step() {
                                 // PU destination matches our current path dest
                                 // no move truncation
                                 }
-                            else {
+                            else if( done_moving > 0 ) {
                                 // PU should be somewhere along our path
                                 // a truncated move
                                 
@@ -13649,17 +13733,26 @@ void LivingLifePage::step() {
                                     }
                                 }
                             }
-
-                        // defer it until they're done moving
-                        printf( "Holding PU message for "
-                                "%d until later, "
-                                "%d other messages pending for them\n",
-                                existing->id,
-                                existing->pendingReceivedMessages.size() );
-                                
-                        existing->pendingReceivedMessages.push_back(
-                            autoSprintf( "PU\n%s\n#",
-                                         lines[i] ) );
+                        
+                        if( done_moving > 0  ||
+                            existing->pendingReceivedMessages.size() > 0 ) {
+                            
+                            // this PU happens after they are done moving
+                            // or it happens mid-move, but we already
+                            // have messages held, so it may be meant
+                            // to happen in the middle of their next move
+                            
+                            // defer it until they're done moving
+                            printf( "Holding PU message for "
+                                    "%d until later, "
+                                    "%d other messages pending for them\n",
+                                    existing->id,
+                                    existing->pendingReceivedMessages.size() );
+                            
+                            existing->pendingReceivedMessages.push_back(
+                                autoSprintf( "PU\n%s\n#",
+                                             lines[i] ) );
+                            }
                         }
                     else if( existing != NULL &&
                              existing->heldByAdultID != -1 &&
@@ -14616,7 +14709,7 @@ void LivingLifePage::step() {
                         
                         char babyDropped = false;
                         
-                        if( done_moving && existing->heldByAdultID != -1 ) {
+                        if( done_moving > 0 && existing->heldByAdultID != -1 ) {
                             babyDropped = true;
                             }
                         
@@ -14685,7 +14778,7 @@ void LivingLifePage::step() {
 
                             existing->heldByAdultID = -1;
                             }
-                        else if( done_moving && forced ) {
+                        else if( done_moving > 0 && forced ) {
                             
                             // don't ever force-update these for
                             // our locally-controlled object
@@ -15585,6 +15678,14 @@ void LivingLifePage::step() {
                                         // off old path before or after 
                                         // where we are
                                         
+                                        printf( "    CUR PATH:  " );
+                                        printPath( oldPath.getElementArray(), 
+                                                   oldPathLength );
+                                        printf( "    WE AT:  %d (%d,%d)  \n",
+                                                oldCurrentPathIndex,
+                                                oldCurrentPathPos.x,
+                                                oldCurrentPathPos.y );
+
                                         int foundStartIndex = -1;
                                         
                                         for( int i=0; i<oldPathLength; i++ ) {
@@ -15698,25 +15799,32 @@ void LivingLifePage::step() {
                                     
                                     printf( "Manually forced\n" );
                                     
-                                    // prev step
-                                    int b = 
-                                        (int)floor( 
-                                            fractionPassed * 
-                                            ( existing->pathLength - 1 ) );
-                                    // next step
-                                    int n =
-                                        (int)ceil( 
-                                            fractionPassed *
-                                            ( existing->pathLength - 1 ) );
+                                    // find closest spot along path
+                                    // to our current pos
+                                    double minDist = DBL_MAX;
                                     
-                                    if( n == b ) {
-                                        if( n < existing->pathLength - 1 ) {
-                                            n ++ ;
-                                            }
-                                        else {
-                                            b--;
+                                    // prev step
+                                    int b = -1;
+                                    
+                                    for( int testB=0; 
+                                         testB < existing->pathLength - 1; 
+                                         testB ++ ) {
+                                        
+                                        doublePair worldPos = gridToDouble( 
+                                            existing->pathToDest[testB] );
+                                        
+                                        double thisDist = 
+                                            distance( worldPos,
+                                                      existing->currentPos );
+                                        if( thisDist < minDist ) {
+                                            b = testB;
+                                            minDist = thisDist;
                                             }
                                         }
+                                    
+
+                                    // next step
+                                    int n = b + 1;
                                     
                                     existing->currentPathStep = b;
                                     
@@ -15767,7 +15875,14 @@ void LivingLifePage::step() {
                                     double timeAdjust =
                                         existing->moveTotalTime * fractionDiff;
                                     
-                                    existing->moveEtaTime += timeAdjust;
+                                    if( fractionDiff < 0 ) {
+                                        // only speed up...
+                                        // never slow down, because
+                                        // it's always okay if we show
+                                        // player arriving early
+
+                                        existing->moveEtaTime += timeAdjust;
+                                        }
                                     }
                                 
 
@@ -16104,7 +16219,23 @@ void LivingLifePage::step() {
                                 SimpleVector<char *> *tokens = 
                                     tokenizeString( linStart );
 
-                                for( int t=0; t<tokens->size(); t++ ) {
+                                int numNormalTokens = tokens->size();
+                                
+                                if( tokens->size() > 0 ) {
+                                    char *lastToken =
+                                        tokens->getElementDirect( 
+                                            tokens->size() - 1 );
+                                    
+                                    if( strstr( lastToken, "eve=" ) ) {   
+                                        // eve tag at end
+                                        numNormalTokens--;
+
+                                        sscanf( lastToken, "eve=%d",
+                                                &( existing->lineageEveID ) );
+                                        }
+                                    }
+
+                                for( int t=0; t<numNormalTokens; t++ ) {
                                     char *tok = tokens->getElementDirect( t );
                                     
                                     int mID = 0;
@@ -17062,7 +17193,26 @@ void LivingLifePage::step() {
                              t,
                              oldFrameCount, o->animationFrameCount,
                              pos.x,
-                             pos.y );                
+                             pos.y );    
+
+            if( o->currentEmot != NULL ) {
+                int numSlots = getEmotionNumObjectSlots();
+                
+                for( int e=0; e<numSlots; e++ ) {
+                    int oID =
+                        getEmotionObjectByIndex( o->currentEmot, e );
+                    
+                    if( oID != 0 ) {
+                        
+                        handleAnimSound( oID,
+                                         0,
+                                         t,
+                                         oldFrameCount, o->animationFrameCount,
+                                         pos.x,
+                                         pos.y ); 
+                        }
+                    }
+                }
             }
             
         
@@ -17516,7 +17666,8 @@ void LivingLifePage::step() {
                             }
                         }
 
-                    printf( "Reached dest %f seconds early\n",
+                    printf( "Reached dest (%.0f,%.0f) %f seconds early\n",
+                            endPos.x, endPos.y,
                             o->moveEtaTime - game_getCurrentTime() );
                     }
                 else {
@@ -19145,6 +19296,103 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
     
 
     checkForPointerHit( &p, inX, inY );
+
+
+
+    // new semantics
+    // as soon as we trigger a kill attempt, we go into kill mode
+    // by sending server a KILL message right away
+    char killMode = false;
+ 
+
+    // don't allow weapon-drop on kill-click unless there's really
+    // no one around
+    if( ! mouseAlreadyDown &&
+        modClick && ourLiveObject->holdingID > 0 &&
+        getObject( ourLiveObject->holdingID )->deadlyDistance > 0 &&
+        isShiftKeyDown() &&
+        ! p.hitOtherPerson ) {
+        
+        // everything good to go for a kill-click, but they missed
+        // hitting someone (and maybe they clicked on an object instead)
+
+        // find closest person for them to hit
+        
+        doublePair clickPos = { inX, inY };
+        
+        
+        int closePersonID = -1;
+        double closeDistance = DBL_MAX;
+        
+        for( int i=gameObjects.size()-1; i>=0; i-- ) {
+        
+            LiveObject *o = gameObjects.getElement( i );
+
+            if( o->id == ourID ) {
+                // don't consider ourself as a kill target
+                continue;
+                }
+            
+            if( o->outOfRange ) {
+                // out of range, but this was their last known position
+                // don't draw now
+                continue;
+                }
+            
+            if( o->heldByAdultID != -1 ) {
+                // held by someone else, can't click on them
+                continue;
+                }
+            
+            if( o->heldByDropOffset.x != 0 ||
+                o->heldByDropOffset.y != 0 ) {
+                // recently dropped baby, skip
+                continue;
+                }
+                
+                
+            double oX = o->xd;
+            double oY = o->yd;
+                
+            if( o->currentSpeed != 0 && o->pathToDest != NULL ) {
+                oX = o->currentPos.x;
+                oY = o->currentPos.y;
+                }
+
+            oY *= CELL_D;
+            oX *= CELL_D;
+            
+
+            // center of body up from feet position in tile
+            oY += CELL_D / 2;
+            
+            doublePair oPos = { oX, oY };
+            
+
+            double thisDistance = distance( clickPos, oPos );
+            
+            if( thisDistance < closeDistance ) {
+                closeDistance = thisDistance;
+                closePersonID = o->id;
+                }
+            }
+
+        if( closePersonID != -1 && closeDistance < 4 * CELL_D ) {
+            // somewhat close to clicking on someone
+            p.hitOtherPerson = true;
+            p.hitOtherPersonID = closePersonID;
+            p.hitAnObject = false;
+            p.hit = true;
+            killMode = true;
+            }
+        
+        }
+
+
+
+
+
+
     
     mCurMouseOverPerson = p.hitOtherPerson || p.hitSelf;
 
@@ -19251,7 +19499,8 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
             clickDestX, clickDestY, 
             mapX, mapY,
             ourLiveObject->xd, ourLiveObject->yd );
-    if( mapY >= 0 && mapY < mMapD &&
+    if( ! killMode && 
+        mapY >= 0 && mapY < mMapD &&
         mapX >= 0 && mapX < mMapD ) {
         
         destID = mMap[ mapY * mMapD + mapX ];
@@ -19507,11 +19756,10 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
     
 
 
-    // new semantics
-    // as soon as we trigger a kill attempt, we go into kill mode
-    // by sending server a KILL message right away
-    char killMode = false;
+   
     
+    
+
 
     if( destID == 0 &&
         p.hitOtherPerson &&
@@ -19523,52 +19771,50 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
 
         // check for possible kill attempt at a distance
 
-        doublePair targetPos = { (double)clickDestX, (double)clickDestY };
-        
         LiveObject *o = getLiveObject( p.hitOtherPersonID );
         
-        if( o->id != ourID &&
-            
+        if( o->id != ourID &&            
             o->heldByAdultID == -1 ) {
                 
             // can't kill by clicking on ghost-location of held baby
             
-            if( distance( targetPos, o->currentPos ) < 1 ) {
-                // clicked on someone
+            // clicked on someone
                     
-                // new semantics:
-                // send KILL to server right away to
-                // tell server of our intentions
-                // (whether or not we are close enough)
+            // new semantics:
+            // send KILL to server right away to
+            // tell server of our intentions
+            // (whether or not we are close enough)
                 
-                // then walk there
+            // then walk there
                 
-                if( nextActionMessageToSend != NULL ) {
-                    delete [] nextActionMessageToSend;
-                    nextActionMessageToSend = NULL;
-                    }
-                        
-                        
-                char *killMessage = 
-                    autoSprintf( "KILL %d %d %d#",
-                                 sendX( clickDestX ), 
-                                 sendY( clickDestY ),
-                                 p.hitOtherPersonID );
-                printf( "KILL with direct-click target player "
-                        "id=%d\n", p.hitOtherPersonID );
-                    
-                sendToServerSocket( killMessage );
-
-                // try to walk near victim right away
-                killMode = true;
-                    
-                ourLiveObject->killMode = true;
-                ourLiveObject->killWithID = ourLiveObject->holdingID;
-
-                // ignore mod-click from here on out, to avoid
-                // force-dropping weapon
-                modClick = false;
+            if( nextActionMessageToSend != NULL ) {
+                delete [] nextActionMessageToSend;
+                nextActionMessageToSend = NULL;
                 }
+                        
+                        
+            char *killMessage = 
+                autoSprintf( "KILL %d %d %d#",
+                             sendX( clickDestX ), 
+                             sendY( clickDestY ),
+                             p.hitOtherPersonID );
+            printf( "KILL with direct-click target player "
+                    "id=%d\n", p.hitOtherPersonID );
+                    
+            sendToServerSocket( killMessage );
+
+            delete [] killMessage;
+            
+
+            // try to walk near victim right away
+            killMode = true;
+                    
+            ourLiveObject->killMode = true;
+            ourLiveObject->killWithID = ourLiveObject->holdingID;
+
+            // ignore mod-click from here on out, to avoid
+            // force-dropping weapon
+            modClick = false;
             }
         }
     
@@ -19921,6 +20167,43 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
                     
                     }
                 }
+
+
+            if( !foundEmpty && 
+                ! sideAccess &&
+                nStart > 0 &&
+                destID > 0 &&
+                ! getObject( destID )->blocksWalking ) {
+                
+                // all neighbors blocked
+                // we didn't consider tile itself before
+                // but now we will, as last resort.
+
+                // consider tile itself as dest
+                int oldXD = ourLiveObject->xd;
+                int oldYD = ourLiveObject->yd;
+                        
+                // set this temporarily for pathfinding
+                ourLiveObject->xd = clickDestX;
+                ourLiveObject->yd = clickDestY;
+                        
+                computePathToDest( ourLiveObject );
+                        
+                if( ourLiveObject->pathToDest != NULL  ) {
+                            
+                    // can get there
+                    
+                    moveDestX = clickDestX;
+                    moveDestY = clickDestY;
+                            
+                    foundEmpty = true;
+                    }
+                        
+                // restore our old dest
+                ourLiveObject->xd = oldXD;
+                ourLiveObject->yd = oldYD; 
+                }
+            
             
             if( oldPathExists ) {
                 // restore it
@@ -20781,6 +21064,11 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                                 pingSentTime = game_getCurrentTime();
                                 pongDeltaTime = -1;
                                 pingDisplayStartTime = -1;
+                                }
+                            else if( strstr( typedText,
+                                             translate( "disconnectCommand" ) ) 
+                                     == typedText ) {
+                                forceDisconnect = true;
                                 }
                             else {
                                 // filter hints

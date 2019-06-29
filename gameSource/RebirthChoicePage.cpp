@@ -3,6 +3,9 @@
 #include "buttonStyle.h"
 #include "message.h"
 
+#include "lifeTokens.h"
+#include "fitnessScore.h"
+
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
 
@@ -28,6 +31,8 @@ RebirthChoicePage::RebirthChoicePage()
                        translate( "postReviewButton" ) ),
           mRebornButton( mainFont, 150, -128, 
                          translate( "reborn" ) ),
+          mGenesButton( mainFont, -300, 64, 
+                        translate( "geneticHistoryButton" ) ),
           mTutorialButton( mainFont, tutorialButtonPos.x, tutorialButtonPos.y, 
                            translate( "tutorial" ) ),
           mMenuButton( mainFont, -tutorialButtonPos.x, tutorialButtonPos.y, 
@@ -38,21 +43,26 @@ RebirthChoicePage::RebirthChoicePage()
         addComponent( &mMenuButton );
         }
     else {
-        mRebornButton.setPosition( 0, -128 );
+        mRebornButton.setPosition( 0, -200 );
+        mGenesButton.setPosition( 0, 0 );
         }
     
     addComponent( &mRebornButton );
     addComponent( &mTutorialButton );
-    
+    addComponent( &mGenesButton );
+
     setButtonStyle( &mQuitButton );
     setButtonStyle( &mReviewButton );
     setButtonStyle( &mRebornButton );
+    setButtonStyle( &mGenesButton );
+    
     setButtonStyle( &mTutorialButton );
     setButtonStyle( &mMenuButton );
     
     mQuitButton.addActionListener( this );
     mReviewButton.addActionListener( this );
     mRebornButton.addActionListener( this );
+    mGenesButton.addActionListener( this );
     mTutorialButton.addActionListener( this );
     mMenuButton.addActionListener( this );
 
@@ -82,6 +92,9 @@ void RebirthChoicePage::actionPerformed( GUIComponent *inTarget ) {
     else if( inTarget == &mRebornButton ) {
         setSignal( "reborn" );
         }
+    else if( inTarget == &mGenesButton ) {
+        setSignal( "genes" );
+        }
     else if( inTarget == &mTutorialButton ) {
         setSignal( "tutorial" );
         }
@@ -95,15 +108,22 @@ void RebirthChoicePage::actionPerformed( GUIComponent *inTarget ) {
 void RebirthChoicePage::draw( doublePair inViewCenter, 
                                   double inViewSize ) {
     
-    //doublePair pos = { 0, 200 };
+    doublePair pos = { 0, 200 };
     
     // no message for now
     //drawMessage( "", pos );
+
+    drawTokenMessage( pos );
+
+    pos.y += 104;
+    drawFitnessScore( pos );
     }
 
 
 
 void RebirthChoicePage::makeActive( char inFresh ) {
+    triggerLifeTokenUpdate();
+    triggerFitnessScoreUpdate();
     
     int reviewPosted = SettingsManager::getIntSetting( "reviewPosted", 0 );
     

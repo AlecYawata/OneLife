@@ -102,6 +102,12 @@ ACCEPTED
 REJECTED
 #
 
+-or-
+
+NO_LIFE_TOKENS
+REJECTED
+#
+
 
 After ACCEPTED, normal client-server messaging commences.
 
@@ -553,11 +559,11 @@ Tells player about their current heat value.
 
 
 LN
-p_id mother_id grandmother_id great_grandmother_id ... eve_id
-p_id mother_id grandmother_id great_grandmother_id ... eve_id
-p_id mother_id grandmother_id great_grandmother_id ... eve_id
+p_id mother_id grandmother_id great_grandmother_id ... eve_id eve=eve_id
+p_id mother_id grandmother_id great_grandmother_id ... eve_id eve=eve_id
+p_id mother_id grandmother_id great_grandmother_id ... eve_id eve=eve_id
 ...
-p_id mother_id grandmother_id great_grandmother_id ... eve_id
+p_id mother_id grandmother_id great_grandmother_id ... eve_id eve=eve_id
 #
 
 
@@ -568,6 +574,10 @@ back to Eve is.
 
 Also, if lineages get very long (like hundreds of links), the server may
 cut them off beyond some point.
+
+For long lineages, they may not go all the way back to eve_id.  To cover
+these cases, the actual eve_id, even if the provided lineage doesn't reach it,
+is included at the end with the eve= tag in front of it.
 
 This message describes known lineages.
 
@@ -663,16 +673,19 @@ Grave at x y belongs to player p_id.
 
 
 GM
-xs ys xd yd
+xs ys xd yd swap_dest
 #
 
 
 Grave at xs,ys moved to xd,yd.
 
+If optional swap_dest parameter is 1, it means that some other grave at 
+destination is in mid-air.  If 0, not
+
 
 
 GO
-x y p_id po_id death_age underscored_name mother_id grandmother_id great_grandmother_id ... eve_id
+x y p_id po_id death_age underscored_name mother_id grandmother_id great_grandmother_id ... eve_id eve=eve_id
 #
 
 
@@ -683,6 +696,8 @@ underscored_name is name with spaces replaced by _
 If player has no name, this will be ~ character instead.
 
 death_age is how long the player has been dead (in in-game years)
+
+Same semantics for eve= tag at end as for LN message.
 
 
 
