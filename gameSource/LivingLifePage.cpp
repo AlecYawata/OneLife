@@ -18320,6 +18320,14 @@ void LivingLifePage::checkForPointerHit( PointerHitRecord *inRecord,
         
         // check this cell first
 
+        // force close by shift key
+        if( isShiftKeyDown() ) {
+            p->hitOurPlacement = true;
+            p->closestCellX = clickDestX;
+            p->closestCellY = clickDestY;
+            p->hitAnObject = true;
+            }
+
         // all short objects are mouse-through-able
         
         if( oID > 0 && 
