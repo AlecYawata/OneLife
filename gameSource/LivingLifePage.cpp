@@ -17657,8 +17657,8 @@ void LivingLifePage::step() {
         //  animation will play long enough without waiting ahead of time)
         // AND server agrees with our position
         if( ! ourLiveObject->inMotion && 
-            currentTime - ourLiveObject->pendingActionAnimationStartTime > 
-            0.166 - ourLiveObject->lastResponseTimeDelta &&
+            //currentTime - ourLiveObject->pendingActionAnimationStartTime > 
+            //0.166 - ourLiveObject->lastResponseTimeDelta &&
             ourLiveObject->xd == ourLiveObject->xServer &&
             ourLiveObject->yd == ourLiveObject->yServer ) {
             
