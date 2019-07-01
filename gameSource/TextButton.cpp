@@ -59,7 +59,7 @@ void TextButton::setPadding( double inHorizontalPadding,
 void TextButton::drawContents() {
     // leave draw color set by Button
     
-    doublePair textPos = { 0, 6 };
+    doublePair textPos = { 0, 0 };
     
     mFont->drawString( mLabelText, textPos, alignCenter );
     }
