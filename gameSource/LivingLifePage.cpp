@@ -8690,8 +8690,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                 }
                             else {
                                 deathPhrase = 
-                                    autoSprintf( "%s%s%s ",
-                                                 translate( "died" ),
+                                    autoSprintf( "%s%s ",
                                                  yearsString, yearWord );
                                 }
 

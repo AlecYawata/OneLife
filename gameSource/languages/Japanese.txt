@@ -44,6 +44,8 @@ atSignTip "'@'を入力する"
 loginButton "ログイン"
 friendsButton "双子機能"
 familyTrees "家系図"
+genesButton "遺伝"
+geneticHistoryButton "遺伝歴"
 
 clearAccount "クリア"
 settingsButton "設定"
@@ -79,6 +81,9 @@ reviewUpdated "レビューが更新されました"
 reviewRemoved "レビューが削除されました"
 
 
+
+poll "投票"
+submit "送信"
 
 saveTip "ログインしてアカウント情報を保存します"
 clearAccountTip "アカウント情報を消去します"
@@ -116,11 +121,11 @@ targetFPS "設定FPS:"
 vsyncOn "VSYNCを使用:"
 vsyncYes "はい"
 vsyncNo "いいえ"
-redetectButton "FPS再検出"
+retryButton "再試行"
+redetectButton "FPS再設定"
 
 
 cursor "マウスポインター:"
-
 system "OSカーソル"
 drawn "ゲームカーソル"
 both "両方"
@@ -173,6 +178,40 @@ serverFull "サーバーが満員"
 
 connectionFailed "接続失敗"
 
+
+noLifeTokens "ログインチケット不足です"
+
+
+tokenMessage "ログインチケット数: %d/%d %s##(%d %s 毎に 最大 %d %s まで回復)"
+
+livesPlural "人生"
+lifeSingular "人生"
+
+minutesPlural "分"
+minuteSingular "分"
+
+tokenTimeMessage "ログインチケット付与:  "
+
+
+scoreMessage "遺伝スコア:##%s (%d%s位)"
+
+scoreMessageNoRank "遺伝スコア:##%s"
+
+
+
+refreshButton "更新"
+
+age "歳"
+
+leaderboardMessage "ランキング用の名前:%s##順位:%d位"
+
+leaderboard "ランキング"
+
+scrollTip "矢印キーで##スクロール"
+
+geneticHistoryTitle "最近の遺伝データ:"
+
+fitnessTitle "スコア"
 
 customServerMesssage "カスタムサーバー:  %s : %d"
 
@@ -326,7 +365,12 @@ unknownPerson "不明"
 yearAgo "年前に亡くなった"
 yearsAgo "年前に亡くなった"
 
-died ""
+centuriesAgo "世紀前"
+
+millenniaAgo "千年前"
+
+
+died "に死亡"
 
 zero "ZERO"
 one "ONE"

@@ -529,7 +529,7 @@ void drawFitnessScoreDetails( doublePair inPos, int inSkip ) {
             
             char *leaderboardString = 
                 autoSprintf( translate( "leaderboardMessage" ), 
-                             rank, rankSuffix, leaderboardName );
+                             leaderboardName, rank );
             
             drawMessage( leaderboardString, namePos );
             delete [] leaderboardString;
@@ -613,29 +613,17 @@ void drawFitnessScoreDetails( doublePair inPos, int inSkip ) {
             
             char *diedAgoString;
             
-            if( yearsAgo == 1 ) {
-                diedAgoString = autoSprintf( "%s %d %s", 
-                                             translate( "died" ),
+            if( yearsAgo < 1000 ) {
+                diedAgoString = autoSprintf( "%d%s%s", 
                                              yearsAgo,
-                                             translate( "yearAgo" ) );
-                }
-            else if( yearsAgo < 1000 ) {
-                diedAgoString = autoSprintf( "%s %d %s", 
-                                             translate( "died" ),
-                                             yearsAgo,
-                                             translate( "yearsAgo" ) );
-                }
-            else if( yearsAgo < 10000 ) {
-                diedAgoString = autoSprintf( "%s %d %s", 
-                                             translate( "died" ),
-                                             yearsAgo / 100,
-                                             translate( "centuriesAgo" ) );
+                                             translate( "yearsAgo" ),
+                                             translate( "died" ) );
                 }
             else {
-                diedAgoString = autoSprintf( "%s %d %s", 
-                                             translate( "died" ),
-                                             yearsAgo / 1000,
-                                             translate( "millenniaAgo" ) );
+                diedAgoString = autoSprintf( "%d%s%s", 
+                                             yearsAgo / 100,
+                                             translate( "centuriesAgo" ),
+                                             translate( "died" ) );
                 }
             
             
@@ -645,9 +633,9 @@ void drawFitnessScoreDetails( doublePair inPos, int inSkip ) {
             
             pos.y += 32;
             
-            char *ageString = autoSprintf( "%s %0.1f",
-                                           translate( "age" ),
-                                           r.age );
+            char *ageString = autoSprintf( "%0.1f%s",
+                                           r.age,
+                                           translate( "age" ) );
             
             mainFont->drawString( ageString, pos, alignLeft );
             
