@@ -20962,8 +20962,14 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                 // end up in speech history, but are invisible
                 SimpleVector<char *> *tokens = 
                     tokenizeStringW( typedText );
-                
-                if( tokens->size() > 0 ) {
+
+                char out;
+                char* replacedSpaceToEmpty = replaceAll( typedText, " ", "", &out );
+                if( strlen( replacedSpaceToEmpty ) == 0 ) {
+                    delete [] typedText;
+                    typedText = stringDuplicate( "" );
+                    }
+                else if( tokens->size() > 0 ) {
                     char *oldTypedText = typedText;
                     
                     char **strings = tokens->getElementArray();
@@ -20981,6 +20987,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                     typedText = stringDuplicate( "" );
                     }
                 
+                delete [] replacedSpaceToEmpty;
                 tokens->deallocateStringElements();
                 delete tokens;
                     
