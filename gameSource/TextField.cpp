@@ -1277,7 +1277,8 @@ void TextField::keyDown( unsigned char inASCII ) {
 
         unsigned char *pProcessedChar = processCharacter( &inASCII );    
 
-        if( mAllowHiragana ) {
+        bool isFirstSlash = ( strcmp( mText, "" ) == 0 ) && pProcessedChar[0] == '/';
+        if( mAllowHiragana && !isFirstSlash ) {
             int pendingFuriganaLen = 0;
             for( int i = 0; i <= mCursorPosition; i++ ) {
                 unsigned int cLen = mbclen( mText + i );
