@@ -2999,7 +2999,7 @@ void LivingLifePage::drawChalkBackgroundString( doublePair inPos,
         }
 
     // FOVMOD NOTE:  Change 5/27 - Take these lines during the merge process
-    double lineSpacing = handwritingFont->getFontHeight() / 2 + ( 5 * gui_fov_scale_hud );
+    double lineSpacing = handwritingFont->getFontHeight() * 1.2 / gui_fov_scale_hud;
     
     double firstLineY =  inPos.y + ( lines->size() - 1 ) * lineSpacing;
     
@@ -3053,24 +3053,24 @@ void LivingLifePage::drawChalkBackgroundString( doublePair inPos,
         double length = handwritingFont->measureString( line );
 
         // FOVMOD NOTE:  Change 6/27 - Take these lines during the merge process
-        /*int numBlots = lrint( 0.25 + length / 20 ) + 1;
+        int numBlots = lrint( 0.25 + length / 20 / gui_fov_scale_hud ) + 1;
         
         if( inForceMinChalkBlots != -1 && numBlots < inForceMinChalkBlots ) {
             numBlots = inForceMinChalkBlots;
             }
     
-        doublePair blotSpacing = { 20, 0 };*/
+        doublePair blotSpacing = { 1, 0 };
     
         doublePair firstBlot = 
             { inPos.x, firstLineY - i * lineSpacing};
 
-        
-        for( doublePair blotPos = firstBlot; blotPos.x < inPos.x + ( length + 20 * gui_fov_scale_hud ); blotPos.x += 20 * gui_fov_scale_hud ) {
-            //doublePair blotPos = add( firstBlot, mult( blotSpacing, b ) );
+        for( int j=0; j<numBlots; j++) {
+//        for( doublePair blotPos = firstBlot; blotPos.x < inPos.x + ( length + 20 * gui_fov_scale_hud ); blotPos.x += 20 * gui_fov_scale_hud ) {
+            doublePair blotPos = {};
+            blotPos.x = firstBlot.x + (length) * (j / (numBlots - 1.0));
 			blotPos.y = firstBlot.y;
         
             double rot = blotRandSource.getRandomDouble();
-            drawSprite( mChalkBlotSprite, blotPos, gui_fov_scale_hud, rot );
             drawSprite( mChalkBlotSprite, blotPos, gui_fov_scale_hud, rot );
             
             // double hit vertically
