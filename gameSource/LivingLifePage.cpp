@@ -2906,6 +2906,29 @@ SimpleVector<char*> *splitLines( const char *inString,
     // collect all lines before drawing them
     SimpleVector<char *> *lines = new SimpleVector<char*>();
     
+    char* srcString = stringDuplicate( inString );
+    char* itrString = srcString;
+    char* itrLineHead = srcString;
+    while ( (*itrString) != '\0' ) {
+        int cLen = mbclen( itrString );
+        char swap = itrString[cLen];
+        itrString[cLen] = '\0';
+
+        if( handwritingFont->measureString( itrLineHead ) > inMaxWidth || *itrString == '\n' ) {
+            char swap2 = *itrString;
+            *itrString = '\0';
+            lines->push_back( stringDuplicate( itrLineHead ) );
+            *itrString = swap2;
+            itrLineHead= itrString;
+        }
+
+        itrString[cLen] = swap;
+        itrString += cLen;
+        }
+    lines->push_back( stringDuplicate( itrLineHead ) );
+    delete [] srcString;
+    return lines;
+
     
     if( tokens->size() > 0 ) {
         // start with firt token
