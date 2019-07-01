@@ -20714,7 +20714,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
         return;
         }
 
-    if( inASCII == 63 ) { // Question Mark
+    if( inASCII == 63 && vogMode ) { // Question Mark
         if( ! mSayField.isFocused() ) {
             showCursorZoom = !showCursorZoom;
         }
