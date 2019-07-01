@@ -8523,7 +8523,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             if( ourLiveObject->name != NULL ) {
                                 des = autoSprintf( "あなた - %s %d%s を抱えた %s",
                                                    otherHoldingLiveObject->name,
-                                                   (int)computeCurrentAge( otherObj ),
+                                                   (int)computeCurrentAge( otherHoldingLiveObject ),
                                                    translate( "age" ),
                                                    des );
                                 if( desToDelete != NULL ) {
@@ -8533,7 +8533,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                 }
                             else {
                                 des = autoSprintf( "あなた %d%s を抱えた %s",
-                                                   (int)computeCurrentAge( otherObj ),
+                                                   (int)computeCurrentAge( ourLiveObject ),
                                                    translate( "age" ),
                                                    des );
                                 if( desToDelete != NULL ) {
@@ -8546,7 +8546,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             des = autoSprintf( "%sの%s %d%s を抱えた %s",
                                                otherHoldingLiveObject->relationName != NULL ? otherHoldingLiveObject->relationName : (char*)translate( "unrelated" ),
                                                otherHoldingLiveObject->name,
-                                               (int)computeCurrentAge( otherObj ),
+                                               (int)computeCurrentAge( otherHoldingLiveObject ),
                                                translate( "age" ),
                                                des );
                             if( desToDelete != NULL ) {
@@ -8557,7 +8557,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                         else {
                             des = autoSprintf( "%s %d%s を抱えた %s",
                                                otherHoldingLiveObject->relationName != NULL ? otherHoldingLiveObject->relationName : (char*)translate( "unrelated" ),
-                                               (int)computeCurrentAge( otherObj ),
+                                               (int)computeCurrentAge( otherHoldingLiveObject ),
                                                translate( "age" ),
                                                des );
                             if( desToDelete != NULL ) {
@@ -8570,10 +8570,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 else if( otherObj->holdingID > 0 ) {
                     ObjectRecord* otherHoldingObject = getObject( otherObj->holdingID );
                     if( otherHoldingObject != NULL && otherHoldingObject->localizedName != NULL ) {
-                        des = autoSprintf( "%s %d%s を持った %s", 
+                        des = autoSprintf( "%s を持った %s", 
                                            otherHoldingObject->localizedName,
-                                           (int)computeCurrentAge( otherObj ),
-                                           translate( "age" ),
                                            des);
                         if( desToDelete != NULL ) {
                             delete [] desToDelete;
