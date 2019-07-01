@@ -173,7 +173,7 @@ static char *eveName = NULL;
 static char allowedSayCharMap[256];
 
 static const char *allowedSayChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& ";
-static const wchar_t *allowedSayCharsW = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉゎがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ、。ー！？（）";
+static const wchar_t *allowedSayCharsW = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,'?!& あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんゃゅょっぁぃぅぇぉゎがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ、。ー！？（）～";
 
 
 static int killEmotionIndex = 2;
