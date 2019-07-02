@@ -1922,7 +1922,7 @@ void drawFrame( char inUpdate ) {
                         getServerAddressPage->getResponseInt( 
                             "requiredVersionNumber" );
                     
-                    if( false && versionNumber < requiredVersion ) {
+                    if( versionNumber < requiredVersion ) {
 
                         if( SettingsManager::getIntSetting( 
                                 "useSteamUpdate", 0 ) ) {
