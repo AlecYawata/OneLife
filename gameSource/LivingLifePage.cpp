@@ -4707,6 +4707,8 @@ static void drawHUDBarPart( double x, double y, double width, double height ) {
     drawSprite( guiPanelTileSprite, barPos, barTexCoords );
     }
 
+bool waitedBirth = true;
+
 void LivingLifePage::draw( doublePair inViewCenter, 
                            double inViewSize ) {
     
@@ -4718,11 +4720,11 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
     if( mFirstServerMessagesReceived != 3 ) {
         // haven't gotten first messages from server yet
-        stillWaitingBirth = true;
+        waitedBirth = stillWaitingBirth = true;
         }
     else if( mFirstServerMessagesReceived == 3 ) {
         if( !mDoneLoadingFirstObjectSet ) {
-            stillWaitingBirth = true;
+            waitedBirth = stillWaitingBirth = true;
             }
         }
 
@@ -4848,6 +4850,12 @@ void LivingLifePage::draw( doublePair inViewCenter,
         return;
         }
 
+    if( waitedBirth ) {
+       if( getOurLiveObject()->lineage.size() == 0 && getOurLiveObject()->name == NULL ) {
+            mSayField.focus();
+            }
+        waitedBirth = false;
+    }
 
     //setDrawColor( 1, 1, 1, 1 );
     //drawSquare( lastScreenViewCenter, viewWidth );
@@ -16316,9 +16324,6 @@ void LivingLifePage::step() {
                                                                other );
                         }
                     }
-                }
-            if( ourObject->lineage.size() == 0 ) {
-                mSayField.focus();
                 }
             }
         else if( type == CURSED ) {
