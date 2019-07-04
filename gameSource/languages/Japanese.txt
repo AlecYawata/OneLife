@@ -247,8 +247,8 @@ YOU "あなた"
 eat ""
 eatAfter "を食べる"
 
-youWith "あなたと"
-youWithAfter ""
+youWith ""
+youWithAfter "を負った"
 with "と"
 
 yum "美味しい"
