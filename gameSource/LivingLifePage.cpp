@@ -21365,7 +21365,7 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
             return;
             }
         mSayField.focus();
-        char* newText = autoSprintf( "%sのものよ", targetName );
+        char* newText = autoSprintf( "%sのものです", targetName );
         mSayField.setText(newText);
         delete [] newText;
         }
