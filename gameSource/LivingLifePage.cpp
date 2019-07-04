@@ -20752,8 +20752,34 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
             showCursorZoom = !showCursorZoom;
         }
     }
+
+    if( userTwinCode == NULL || mStartedLoadingFirstObjectSet ) {
+        if( ! mSayField.isFocused() && inASCII != 'Q' && inASCII != 'q' &&
+            ( ('a' <= inASCII && inASCII <= 'z') || ('A' <= inASCII && inASCII <= 'Z') ) ) {
+            mSayField.focus();
+            mSayField.keyDown( inASCII );
+            }
+        }
 	
     switch( inASCII ) {
+        case '!':
+        case '?':
+        case '/':
+        case '-':
+        case '~':
+        case '^':
+        case '.':
+        case ',':
+        case '\'':
+        case '"':
+        case '(':
+        case ')':
+            if( ! mSayField.isFocused() ) {
+                mSayField.focus();
+                mSayField.keyDown( inASCII );
+                }
+            break;
+
         case 'q':
         case 'Q':
             if( !mSayField.isFocused() ) {
@@ -20979,20 +21005,6 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                         mNextHintIndex += num;
                         }
                     }
-                }
-            break;
-        case '/':
-            if( ! mSayField.isFocused() ) {
-                // start typing a filter
-                mSayField.setText( "/" );
-                mSayField.focus();
-                }
-            break;
-		case '.':
-            if( ! mSayField.isFocused() ) {
-                // start typing a filter
-                mSayField.setText( "." );
-                mSayField.focus();
                 }
             break;
         case 13:  // enter
