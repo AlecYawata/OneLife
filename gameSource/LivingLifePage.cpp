@@ -21328,10 +21328,18 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         if( strcmp( curseName, "" ) == 0 ) {
             return;
             }
-        mSayField.focus();
         char* newText = autoSprintf( "%sをのろう", curseName );
-        mSayField.setText(newText);
-        delete [] newText;
+
+        if( strcmp( mSayField.getText(), newText) == 0 ) {
+            mSayField.setText( "" );
+            mSayField.unfocus();
+            delete [] newText;
+            }
+        else {
+            mSayField.focus();
+            mSayField.setText(newText);
+            delete [] newText;
+            }
         }
 
     if( inKeyCode == MG_KEY_F2 ) {
