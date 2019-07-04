@@ -1245,9 +1245,9 @@ function ls_logLife() {
     $killer_id = ls_requestFilter( "killer_id", "/[0-9\-]+/i", "-1" );
     $display_id = ls_requestFilter( "display_id", "/[0-9]+/i", "0" );
 
-    $name = ls_requestFilter( "name", "/[A-Z ]+/i", "" );
+    $name = ls_requestFilter( "name", "/[A-Z 名無ぁ-ん。、！？ー（）”’・＾;:]+/i", "" );
     $last_words = ls_requestFilter(
-        "last_words", "/[ABCDEFGHIJKLMNOPQRSTUVWXYZ.\-,'?! ]+/i", "" );
+        "last_words", "/[ABCDEFGHIJKLMNOPQRSTUVWXYZ.\-,'?! ぁ-ん。、！？ー（）”’・＾;:]+/i", "" );
 
     // force sentence capitalization and spaces after end punctuation
     // found here:
@@ -1495,7 +1495,7 @@ function ls_frontPage() {
     $emailFilter = "";
         //ls_requestFilter( "filter", "/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+/i", "" );
 
-    $nameFilter = ls_requestFilter( "filter", "/[A-Z ]+/i", "" );
+    $nameFilter = ls_requestFilter( "filter", "/[A-Z 名無ぁ-ん。、！？ー（）”’・＾]+/i", "" );
 
     $email_sha1 = ls_requestFilter( "email_sha1", "/[a-f0-9]+/i", "" );
 
@@ -1544,15 +1544,12 @@ function ls_frontPage() {
             $string_to_hash =
                 ls_requestFilter( "string_to_hash", "/[A-Z0-9]+/i", "0" );
 
-
-            $encodedEmail = urlencode( $emailFilter );
-            
             $correct = false;
             
             global $ticketServerURL;
             $url = "$ticketServerURL".
                 "?action=check_ticket_hash".
-                "&email=$encodedEmail".
+                "&email=$emailFilter".
                 "&hash_value=$ticket_hash".
                 "&string_to_hash=$string_to_hash";
             
@@ -1644,10 +1641,10 @@ function ls_frontPage() {
 ?>
             <FORM ACTION="server.php" METHOD="post">
     <INPUT TYPE="hidden" NAME="action" VALUE="front_page">
-             Character Name:
+             名前で絞込:
     <INPUT TYPE="text" MAXLENGTH=40 SIZE=20 NAME="filter"
              VALUE="<?php echo $filterToShow;?>">
-    <INPUT TYPE="Submit" VALUE="Filter">
+    <INPUT TYPE="Submit" VALUE="検索">
     </FORM>
   
 <?php
@@ -1672,26 +1669,26 @@ function ls_frontPage() {
 
     $numPerList = floor( $usersPerPage / 4 );
 
+    echo "<tr><td colspan=6><font size=5>今までで一番長く続いた家系:".
+        "</font></td></tr>\n";
+    
+    ls_printFrontPageRows(
+        $forceIndexClause,
+        "$rootFilterClause AND ".
+        "death_time >= DATE_SUB( NOW(), INTERVAL 1 WEEK )",
+        "lineage_depth DESC, death_time DESC",
+        1 );
+
     echo "<tr><td colspan=6>".
-        "<font size=5>Recent Elder Deaths:</font></td></tr>\n";
+        "<font size=5>最近死亡した高齢プレイヤー:</font></td></tr>\n";
 
     ls_printFrontPageRows( $forceIndexClause,
                            "$filterClause AND age >= 50", "death_time DESC",
                            $numPerList );
 
 
-    echo "<tr><td colspan=6><font size=5>Today's Deep Roots:".
-        "</font></td></tr>\n";
-    
-    ls_printFrontPageRows(
-        $forceIndexClause,
-        "$rootFilterClause AND death_time >= DATE_SUB( NOW(), INTERVAL 1 DAY )",
-        "lineage_depth DESC, death_time DESC",
-        $numPerList );
-    
-    
     echo "<tr><td colspan=6>".
-        "<font size=5>Recent Adult Deaths:</font></td></tr>\n";
+        "<font size=5>最近死亡した大人プレイヤー:</font></td></tr>\n";
 
     ls_printFrontPageRows( $forceIndexClause,
                            "$filterClause AND age >= 20 AND age < 50",
@@ -1700,7 +1697,7 @@ function ls_frontPage() {
 
 
     echo "<tr><td colspan=6>".
-        "<font size=5>Recent Youth Deaths:</font></td></tr>\n";
+        "<font size=5>最近死亡した子供プレイヤー:</font></td></tr>\n";
     
     ls_printFrontPageRows( $forceIndexClause,
                            "$filterClause AND age < 20", "death_time DESC",
@@ -1708,7 +1705,7 @@ function ls_frontPage() {
 
 
     
-    echo "<tr><td colspan=6><font size=5>This Week's Deep Roots:".
+    echo "<tr><td colspan=6><font size=5>今週の長く続いた家系ランキング:".
         "</font></td></tr>\n";
     
     ls_printFrontPageRows(
@@ -1719,7 +1716,7 @@ function ls_frontPage() {
         $numPerList );
 
 
-    echo "<tr><td colspan=6><font size=5>All Time Deep Roots:".
+    echo "<tr><td colspan=6><font size=5>長く続いた家系ランキング:".
         "</font></td></tr>\n";
     
     ls_printFrontPageRows(
@@ -1728,49 +1725,6 @@ function ls_frontPage() {
         "lineage_depth DESC, death_time DESC",
         $numPerList );
 
-    
-    
-    echo "<tr><td colspan=6><font size=5>Today's Long Lines:".
-        "</font></td></tr>\n";
-
-    $specialForceIndexClause = $forceIndexClause;
-
-    if( $specialForceIndexClause == "" ) {
-        // we need to speed this query up by forcing an index on death_time
-        // otherwise, mysql orders them by generation number first, and
-        // then walks through to find $numPerList with matching death times
-        // there are way too many long lines beyond what we will have
-        // today, so this is a lot to walk through
-        $specialForceIndexClause = " FORCE INDEX( death_time ) ";
-        }
-    
-    ls_printFrontPageRows(
-        $specialForceIndexClause,
-        "$filterClause AND death_time >= DATE_SUB( NOW(), INTERVAL 1 DAY )",
-        "generation DESC, death_time DESC",
-        $numPerList );
-    
-    
-    echo "<tr><td colspan=6><font size=5>This Week's Long Lines:".
-        "</font></td></tr>\n";
-    
-    ls_printFrontPageRows(
-        $forceIndexClause,
-        "$filterClause AND death_time >= DATE_SUB( NOW(), INTERVAL 1 WEEK )",
-        "generation DESC, death_time DESC",
-        $numPerList );
-
-    
-
-    echo "<tr><td colspan=6><font size=5>All-Time Long Lines:".
-        "</font></td></tr>\n";
-    
-    ls_printFrontPageRows( $forceIndexClause,
-                           $filterClause, "generation DESC, death_time DESC",
-                           $numPerList );
-
-
-    
     
     echo "</table></center>";
     
@@ -1799,8 +1753,7 @@ function ls_printFrontPageRows( $inForceIndexClause,
                                 $inFilterClause, $inOrderBy, $inNumRows ) {
     global $tableNamePrefix;
     global $photoServerURL, $usePhotoServer;
-
-    $startTime = microtime( true );
+    
 
     $query = "SELECT lives.id, display_id, player_id, name, ".
         "age, generation, death_time, deepest_descendant_generation, ".
@@ -1814,6 +1767,7 @@ function ls_printFrontPageRows( $inForceIndexClause,
         "$inFilterClause ".
         "ORDER BY $inOrderBy ".
         "LIMIT $inNumRows;";
+    ls_log( $query );
     
     
     $result = ls_queryDatabase( $query );
@@ -1847,14 +1801,14 @@ function ls_printFrontPageRows( $inForceIndexClause,
         
         if( $generation == -1 ) {
             if( $deathAgoSec >= 3600 ) {
-                $generationString = "Ancestor unknown";
+                $generationString = "祖先が分からない";
                 }
             else {
-                $generationString = "Mother still living";
+                $generationString = "母親がまだ生きている";
                 }
             }
         else {
-            $generationString = "Generation: $generation";
+            $generationString = "第${generation}世代";
             }
 
         if( $deepest_descendant_generation != -1 &&
@@ -1863,16 +1817,9 @@ function ls_printFrontPageRows( $inForceIndexClause,
 
             $descendFurther = $deepest_descendant_generation - $generation;
             $generationString = $generationString . "<br>" .
-                "Lineage Depth: $descendFurther";
+                "家系の最大世代数: 第${descendFurther}世代";
             }
         
-        
-        $age = floor( $age );
-
-        $yearWord = "years";
-        if( $age == 1 ) {
-            $yearWord = "year";
-            }
         
         
         
@@ -1918,28 +1865,13 @@ function ls_printFrontPageRows( $inForceIndexClause,
             }
         
         echo "</td>";
-        echo "<td>$age $yearWord old</td>";
+        echo "<td>" . floor($age) . "歳</td>";
         echo "<td>$generationString</td>";
-        echo "<td>Died $deathAgo ago</td>";
+        echo "<td>${deathAgo}前に死亡</td>";
 
         echo "</tr>";
         }
 
-    $runTime = microtime( true ) - $startTime;
-
-    $runTimeMS = number_format( $runTime * 1000, 0 );
-    
-    $plural = "";
-    if( $runTimeMS != 1 ) {
-        $plural = "s";
-        }
-    
-    echo "<tr><td colspan=6 align=right>".
-        "(query took $runTimeMS milisecond$plural)</td></tr>";
-
-    if( $runTime > 0.5 ) {
-        ls_log( "This query took $runTimeMS miliseconds:  $query" );
-        }
     }
 
 
@@ -2054,16 +1986,22 @@ function ls_getRelName( $inFromID, $inToID, $inLimit ) {
     $parIndex = array_search( $inToID, $fromLine );
 
     if( $parIndex != FALSE ) {
-        $rootWord = "Mother";
+        $rootWord = "母";
         if( $male ) {
-            $rootWord = "Father";
+            $rootWord = "父";
             }
         if( $parIndex > 1 ) {
-            $rootWord = "Grand" . strtolower( $rootWord );
+            $rootWord = "祖" . strtolower( $rootWord );
             }
         $numGreats = $parIndex - 2;
-        for( $i=0; $i<$numGreats; $i++ ) {
-            $rootWord = "Great " . $rootWord;
+        if( $numGreats == 1 ) {
+            $rootWord = "曾" . $rootWord;
+            }
+        else if( $numGreats == 2 ) {
+            $rootWord = "高" . $rootWord;
+            }
+        else {
+            $rootWord = "" . ($numGreats + 2) . "代前の" . $rootWord;
             }
         return $rootWord;
         }
@@ -2075,16 +2013,34 @@ function ls_getRelName( $inFromID, $inToID, $inLimit ) {
     $parIndex = array_search( $inFromID, $toLine );
 
     if( $parIndex != FALSE ) {
-        $rootWord = "Daughter";
+        $rootWord = "娘";
         if( $male ) {
-            $rootWord = "Son";
+            $rootWord = "息子";
             }
         if( $parIndex > 1 ) {
-            $rootWord = "Grand" . strtolower( $rootWord );
+            $rootWord = "孫" . strtolower( $rootWord );
             }
         $numGreats = $parIndex - 2;
-        for( $i=0; $i<$numGreats; $i++ ) {
-            $rootWord = "Great " . $rootWord;
+        if( $numGreats == 1 ) {
+            $rootWord = "曾" . $rootWord;
+            }
+        else if( $numGreats == 2 ) {
+            $rootWord = "玄" . $rootWord;
+            }
+        else if( $numGreats == 2 ) {
+            $rootWord = "来" . $rootWord;
+            }
+        else if( $numGreats == 2 ) {
+            $rootWord = "昆" . $rootWord;
+            }
+        else if( $numGreats == 2 ) {
+            $rootWord = "仍" . $rootWord;
+            }
+        else if( $numGreats == 2 ) {
+            $rootWord = "雲" . $rootWord;
+            }
+        else {
+            $rootWord = "" . ($numGreats + 2) . "代目の" . $rootWord;
             }
         return $rootWord;
         }
@@ -2133,55 +2089,60 @@ function ls_getRelName( $inFromID, $inToID, $inLimit ) {
         // some relationship
 
         if( $sharedFromIndex == 1 && $sharedToIndex == 1 ) {
-            // sibs
-            $rootWord = "Sister";
-            
-            if( $male ) {
-                $rootWord = "Brother";
-                }
+
             $fromBirthTime = ls_getBirthSecAgo( $inFromID );
             $toBirthTime = ls_getBirthSecAgo( $inToID );
 
-            if( $fromBirthTime < $toBirthTime - 10 ) {
-                $rootWord = "Big $rootWord";
+            if( $fromBirthTime < $toBirthTime ) {
+                if( $male ) {
+                    $rootWord = "兄";
+                    }
+                else {
+                    $rootWord = "姉";
+                    }
                 }
             else if( $fromBirthTime > $toBirthTime + 10 ) {
-                $rootWord = "Little $rootWord";
+                if( $male ) {
+                    $rootWord = "弟";
+                    }
+                else {
+                    $rootWord = "妹";
+                    }
                 }
-            else {
+            if( $fromBirthTime > $toBirthTime - 10 ) {
                 // close in age
-                $rootWord = "Twin $rootWord";
+                $rootWord = "双子の$rootWord";
 
                 if( ls_getDisplayID( $inFromID ) ==
                     ls_getDisplayID( $inToID ) ) {
-                    $rootWord = "Identical $rootWord";
+                    $rootWord = "そっくりな$rootWord";
                     }
                 }
             return $rootWord;
             }
 
         if( $sharedToIndex == 1 ) {
-            $rootWord = "Aunt";
+            $rootWord = "叔母";
             if( $male ) {
-                $rootWord = "Uncle";
+                $rootWord = "叔父";
                 }
             
             $numGreats = $sharedFromIndex - 2;
-            for( $i=0; $i<$numGreats; $i++ ) {
-                $rootWord = "Great " . $rootWord;
+            if( $numGreats >= 1) {
+                $rootWord = "親戚の" . $rootWord . "さん";
                 }
             return $rootWord;
             }    
 
         if( $sharedFromIndex == 1 ) {
-            $rootWord = "Niece";
+            $rootWord = "姪";
             if( $male ) {
-                $rootWord = "Nephew";
+                $rootWord = "甥";
                 }
             
             $numGreats = $sharedToIndex - 2;
-            for( $i=0; $i<$numGreats; $i++ ) {
-                $rootWord = "Great " . $rootWord;
+            if( $numGreats >= 1) {
+                $rootWord = "親戚の" . $rootWord . "っこ";
                 }
             return $rootWord;
             }    
@@ -2196,29 +2157,19 @@ function ls_getRelName( $inFromID, $inToID, $inLimit ) {
             }
         $cousinNumber -= 1;
 
-        $onesDigit = $cousinNumber % 10;
-
-        $numSuffix = "th";
-        if( $onesDigit == 1 ) {
-            $numSuffix = "st";
+        if( $cousinNumber == 1 ) {
+            return "いとこ";
             }
-        else if( $onesDigit == 2 ) {
-            $numSuffix = "nd";
+        else if( $cousinNumber == 2 ) {
+            return "はとこ";
             }
-        else if( $onesDigit == 3 ) {
-            $numSuffix = "rd";
+        else if( $cousinNumber == 3 ) {
+            return "みいとこ";
             }
-
-        $cousinName = ls_getCousinNumberWord( $cousinNumber ) . " Cousin";
-
-        $numRemoved = abs( $sharedFromIndex - $sharedToIndex );
-
-        if( $numRemoved > 0 ) {
-            $cousinName = $cousinName . "<br>(" .
-                ls_getCousinRemovedWord( $numRemoved ) . " Removed)";
+        else if( $cousinNumber == 4 ) {
+            return "よいとこ";
             }
-        
-        return $cousinName;
+        return "遠い親戚";
         }
     
     
@@ -2372,11 +2323,6 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
             }
         
         echo "</a>";
-        
-        $yearWord = "years";
-        if( $age == 1 ) {
-            $yearWord = "year";
-            }
 
         
         echo "<br>\n$name<br>\n";
@@ -2391,7 +2337,7 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
             $relName = ls_getRelName( $inRelID, $inID, 25 );
 
             if( $relName == "No Relation" ) {
-                $relName = "Distant Relative";
+                $relName = "遠い親戚";
                 }
             }
         
@@ -2399,8 +2345,8 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
         if( $relName != "" ) {
             echo "$relName<br>\n";
             }
-        echo "$age $yearWord old<br>\n";
-        echo "$deathAgo ago\n";
+        echo "享年 ${age}歳<br>\n";
+        echo "${deathAgo}前に死亡\n";
 
         if( ! $inFullWords ) {
             if( strlen( $last_words ) > 18 ) {
@@ -2431,7 +2377,7 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
         
         if( $last_words != "" ) {
             echo "<br>\n";
-            echo "Final words: \"$last_words\"\n";
+            echo "遺言: 「{$last_words}」\n";
             }
         }
     
@@ -2454,14 +2400,14 @@ function ls_displayGenRow( $inGenArray, $inCenterID, $inRelID, $inFullWords ) {
 
         if( $gen == -1 ) {
             if( ls_getDeathSecAgo( $full[0] ) >= 3600 ) {
-                $genString = "Generation ? (Ancestor unknown):";
+                $genString = "祖先が分からない:";
                 }
             else {
-                $genString = "Generation ? (Mother still living):";
+                $genString = "母親がまだ生きている:";
                 }
             }
         else {
-            $genString = "Generation $gen:";
+            $genString = "第${gen}世代:";
             }
         
         echo "<center><font size=5>$genString</font></center>\n";
@@ -2486,7 +2432,7 @@ function ls_displayGenRow( $inGenArray, $inCenterID, $inRelID, $inFullWords ) {
         
         ls_displayPerson( $full[$i], $inRelID,
                           $inFullWords &&
-                          ( $full[$i] == $inCenterID ) );
+                          true );
         echo "</td>\n";
         }
     echo "</tr></table>\n";
@@ -2531,7 +2477,7 @@ function ls_getDeathHTML( $inID, $inRelID ) {
         $numRows = mysqli_num_rows( $result );
         
         if( $numRows == 0 ) {
-            return "Murdered";
+            return "殺された";
             }
 
         $id = ls_mysqli_result( $result, 0, "id" );
@@ -2539,11 +2485,11 @@ function ls_getDeathHTML( $inID, $inRelID ) {
 
         if( $id == $inID ) {
             // killed self
-            return "Sudden Infant Death";
+            return "乳幼児突然死症候群";
             }
         else {
-            return "Killed by <a href='server.php?action=character_page&".
-                "id=$id&rel_id=$inRelID'>$name</a>";
+            return "<a href='server.php?action=character_page&".
+                "id=$id&rel_id=$inRelID'>$name</a>に殺された";
             }
         }
     else if( $killer_id <= -1 ) {
@@ -2552,10 +2498,10 @@ function ls_getDeathHTML( $inID, $inRelID ) {
         
         if( $killer_id == -1 ) {
             if( $age >= 60 ) {
-                $deathString = "Died of Old Age";
+                $deathString = "老衰";
                 }
             else {
-                $deathString = "Starved";
+                $deathString = "餓死";
                 }
             }
         else {
@@ -2577,8 +2523,8 @@ function ls_getDeathHTML( $inID, $inRelID ) {
                         if( $commentPos != FALSE ) {
                             $line = substr( $line, 0, $commentPos );
                             }
-                        $line = trim( $line );
-                        $deathString = "Killed by $line";
+
+                        $deathString = "$lineに殺された";
                         }
                     }
                 
@@ -2833,6 +2779,7 @@ function ls_characterPage() {
         }
     
 
+    setlocale( LC_CTYPE, "ja_JP.UTF-8" );
     
     echo "</center>\n";
 
@@ -3033,36 +2980,44 @@ function ls_secondsToTimeSummary( $inSeconds ) {
  *            2.5 years
  */
 function ls_secondsToAgeSummary( $inSeconds ) {
-    if( $inSeconds < 120 ) {
-        if( $inSeconds == 1 ) {
-            return "$inSeconds second";
+    $summaryWord = "";
+    for($i=0; $i<2; $i++ ) {
+        if( $inSeconds >= 24 * 3600 * 365.2425 ) {
+            // same logic behind computing average length of a year
+            $years = floor( $inSeconds / ( 3600 * 24 * 365.2425 ) );
+            $summaryWord .= "${years}年";
+            $inSeconds -= (24 * 3600 * 365.2425) * $years;
             }
-        return "$inSeconds seconds";
+        else if( $inSeconds >= 24 * 3600 * 30.436875 ) {
+            // average number of days per month
+            // based on 400 year calendar cycle
+            // we skip a leap year every 100 years unless the year is divisible by 4
+            $months = floor( $inSeconds / ( 3600 * 24 * 30.436875 ) );
+            $summaryWord .= "${months}ヵ月";
+            $inSeconds -= (24 * 3600 * 30.436875) * $months;
+            }
+        else if( $inSeconds >= 24 * 3600 ) {
+            $days = floor( $inSeconds / ( 3600 * 24 ) );
+            $summaryWord .= "${days}日";
+            $inSeconds -= (24 * 3600) * $days;
+            }
+        else if( $inSeconds > 3600 ) {
+            $hours = floor( $inSeconds / 3600 );
+            $summaryWord .= "${hours}時間";
+            $inSeconds -= (3600) * $hours;
+            }
+        else if( $inSeconds > 60 ) {
+            $minutes = floor( $inSeconds / 60 );
+            $summaryWord .= "${minutes}分";
+            $inSeconds -= (60) * $minutes;
+            }
+        else if ( $inSeconds > 0 ) {
+            $second = floor( $inSeconds );
+            $summaryWord .= "${second}秒";
+            $inSeconds -= $inSeconds;
+            }
         }
-    else if( $inSeconds < 3600 * 2 ) {
-        $min = number_format( $inSeconds / 60, 0 );
-        return "$min minutes";
-        }
-    else if( $inSeconds < 24 * 3600 * 2 ) {
-        $hours = number_format( $inSeconds / 3600, 0 );
-        return "$hours hours";
-        }
-    else if( $inSeconds < 24 * 3600 * 60 ) {
-        $days = number_format( $inSeconds / ( 3600 * 24 ), 0 );
-        return "$days days";
-        }
-    else if( $inSeconds < 24 * 3600 * 365 * 2 ) {
-        // average number of days per month
-        // based on 400 year calendar cycle
-        // we skip a leap year every 100 years unless the year is divisible by 4
-        $months = number_format( $inSeconds / ( 3600 * 24 * 30.436875 ), 0 );
-        return "$months months";
-        }
-    else {
-        // same logic behind computing average length of a year
-        $years = number_format( $inSeconds / ( 3600 * 24 * 365.2425 ), 1 );
-        return "$years years";
-        }
+    return $summaryWord;
     }
 
 

@@ -93,7 +93,7 @@ void recordPlayerLineage( char *inEmail, double inAge,
     if( useLineageServer ) {
 
         if( inName == NULL ) {
-            inName = "NAMELESS";
+            inName = "名無し";
             }
         if( inLastSay == NULL ) {
             inLastSay = "";

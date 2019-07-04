@@ -89,7 +89,7 @@ void monumentAction( int inX, int inY, int inObjectID, int inPlayerID,
         if( f != NULL ) {
             const char *name = getPlayerName( inPlayerID );
             if( name == NULL ) {
-                name = "NAMELESS";
+                name = "名無し";
                 }
             
             fprintf( f, "%d: %d %d %d %d %s time_%.f\n", 

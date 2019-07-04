@@ -44,7 +44,7 @@ char *nameFromLine( char *inLine ) {
 
         delete tok;
 
-        return stringDuplicate( "Nameless" );
+        return stringDuplicate( "名無し" );
         }
     
     

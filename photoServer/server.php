@@ -725,13 +725,13 @@ function ps_displayPhoto( $url, $author_name, $subject_names,
     echo "<img src='$url'></td></tr>";
 
         
-    echo "<tr><td>by $author_name</td>";
+    echo "<tr><td>${author_name}による撮影</td>";
 
     $agoSec = strtotime( "now" ) - strtotime( $submission_time );
         
     $ago = ps_secondsToAgeSummary( $agoSec );
 
-    echo "<td align=right>$ago ago</td></tr><br>";
+    echo "<td align=right>${ago}前</td></tr><br>";
 
     if( $subject_names != "" ) {
         echo "<tr><td colspan=2>featuring $subject_names</td></tr>";
@@ -879,7 +879,7 @@ function ps_frontPage() {
 
     echo "<center>";
 
-    echo "<br><font size=5>Recent Photographs:</font><br><br>";
+    echo "<br><font size=5>最近撮られた写真:</font><br><br>";
     
     
     ps_displayPhotoList( "", "LIMIT 10" );
@@ -1050,9 +1050,9 @@ function ps_submitPhoto() {
     $photo_subject_ids =
         ps_requestFilter( "photo_subjects_ids", "/[0-9,]+/i", "0" );
     $photo_author_name =
-        ps_requestFilter( "photo_author_name", "/[A-Z ]+/i", "" );
+        ps_requestFilter( "photo_author_name", "/[A-Z 名無しぁ-ん。、！？ー（）”’・＾]+/i", "" );
     $photo_subjects_names =
-        ps_requestFilter( "photo_subjects_names", "/[A-Z ,]+/i", "" );
+        ps_requestFilter( "photo_subjects_names", "/[A-Z ,ぁ-ん。、！？ー（）”’・＾]+/i", "" );
 
     $subjectIDs = explode( ",", $photo_subject_ids );
     $subjectNames = explode( ",", $photo_subjects_names );
@@ -1270,36 +1270,44 @@ function ps_secondsToTimeSummary( $inSeconds ) {
  *            2.5 years
  */
 function ps_secondsToAgeSummary( $inSeconds ) {
-    if( $inSeconds < 120 ) {
-        if( $inSeconds == 1 ) {
-            return "$inSeconds second";
+    $summaryWord = "";
+    for($i=0; $i<2; $i++ ) {
+        if( $inSeconds >= 24 * 3600 * 365.2425 ) {
+            // same logic behind computing average length of a year
+            $years = floor( $inSeconds / ( 3600 * 24 * 365.2425 ) );
+            $summaryWord .= "${years}年";
+            $inSeconds -= (24 * 3600 * 365.2425) * $years;
             }
-        return "$inSeconds seconds";
+        else if( $inSeconds >= 24 * 3600 * 30.436875 ) {
+            // average number of days per month
+            // based on 400 year calendar cycle
+            // we skip a leap year every 100 years unless the year is divisible by 4
+            $months = floor( $inSeconds / ( 3600 * 24 * 30.436875 ) );
+            $summaryWord .= "${months}ヵ月";
+            $inSeconds -= (24 * 3600 * 30.436875) * $months;
+            }
+        else if( $inSeconds >= 24 * 3600 ) {
+            $days = floor( $inSeconds / ( 3600 * 24 ) );
+            $summaryWord .= "${days}日";
+            $inSeconds -= (24 * 3600) * $days;
+            }
+        else if( $inSeconds > 3600 ) {
+            $hours = floor( $inSeconds / 3600 );
+            $summaryWord .= "${hours}時間";
+            $inSeconds -= (3600) * $hours;
+            }
+        else if( $inSeconds > 60 ) {
+            $minutes = floor( $inSeconds / 60 );
+            $summaryWord .= "${minutes}分";
+            $inSeconds -= (60) * $minutes;
+            }
+        else if ( $inSeconds > 0 ) {
+            $second = floor( $inSeconds );
+            $summaryWord .= "${second}秒";
+            $inSeconds -= $inSeconds;
+            }
         }
-    else if( $inSeconds < 3600 * 2 ) {
-        $min = number_format( $inSeconds / 60, 0 );
-        return "$min minutes";
-        }
-    else if( $inSeconds < 24 * 3600 * 2 ) {
-        $hours = number_format( $inSeconds / 3600, 0 );
-        return "$hours hours";
-        }
-    else if( $inSeconds < 24 * 3600 * 60 ) {
-        $days = number_format( $inSeconds / ( 3600 * 24 ), 0 );
-        return "$days days";
-        }
-    else if( $inSeconds < 24 * 3600 * 365 * 2 ) {
-        // average number of days per month
-        // based on 400 year calendar cycle
-        // we skip a leap year every 100 years unless the year is divisible by 4
-        $months = number_format( $inSeconds / ( 3600 * 24 * 30.436875 ), 0 );
-        return "$months months";
-        }
-    else {
-        // same logic behind computing average length of a year
-        $years = number_format( $inSeconds / ( 3600 * 24 * 365.2425 ), 1 );
-        return "$years years";
-        }
+    return $summaryWord;
     }
 
 

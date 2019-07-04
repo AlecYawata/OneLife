@@ -59,3 +59,38 @@ gameSource/icon.ico
 gameSource/icon.rc
 gameSource/OneLife.exe
 gameSource/graphics/*.tga
+
+// Log or data file at operation
+server/settings/nextPlayerID.ini
+server/lastEveLocation.txt
+server/settings/sequenceNumber.ini
+server/settings/remoteReport.ini
+
+// Server's unique file for identifier
+server/settings/port.ini
+server/settings/serverID.ini
+
+// PHP setting files
+curseServer/settings.php
+lineageServer/settings.php
+photoServer/settings.php
+reflector/sharedSecret.php
+reflector/remoteServerList.ini
+
+// Photo files
+photoServer/photos
+
+// Secret serverside setting files
+server/settings/curseServerSharedSecret.ini
+server/settings/lineageServerSharedSecret.ini
+server/settings/photoServerSharedSecret.ini
+server/settings/useStatsServer.ini
+server/settings/vogAllowAccounts.ini
+
+// Original URL of php
+server/settings/curseServerURL.ini
+server/settings/lineageServerURL.ini
+server/settings/photoServerURL.ini
+server/settings/reflectorURL.ini
+server/settings/ticketServerURL.ini
+
