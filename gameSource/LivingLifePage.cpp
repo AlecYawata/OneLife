@@ -20743,6 +20743,25 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
     }
 	
     switch( inASCII ) {
+        case 'q':
+        case 'Q':
+            if( !mSayField.isFocused() ) {
+                if( nextActionMessageToSend != NULL ) {
+                    delete [] nextActionMessageToSend;
+                    nextActionMessageToSend = NULL;
+                    }
+
+                if( getOurLiveObject()->holdingID > 0 &&
+                    isFood( getOurLiveObject()->holdingID) ) {
+                    nextActionEating = true;
+                    }
+
+                nextActionMessageToSend = 
+                    autoSprintf( "SELF %d %d %d#",
+                                 sendX( getOurLiveObject()->currentPos.x ), sendY( getOurLiveObject()->currentPos.y ), 
+                                 -1 );
+                }
+            break;
         /*
         // useful for testing
         case '+':
