@@ -8444,67 +8444,73 @@ void LivingLifePage::draw( doublePair inViewCenter,
             char *desToDelete = NULL;
             
             if( idToDescribe == -99 ) {
+                char* you;
+                if( ourLiveObject->name != NULL) {
+                    you = autoSprintf( "%s %s %d%s", (char*)translate( "you" ),
+                                       ourLiveObject->name,
+                                       (int)computeCurrentAge( ourLiveObject ),
+                                       translate( "age" ) );
+                    }
+                else {
+                    you = autoSprintf( "%s %d%s", (char*)translate( "you" ),
+                                       (int)computeCurrentAge( ourLiveObject ),
+                                       translate( "age" ) );
+                    }
                 if( ourLiveObject->holdingID > 0 &&
                     getObject( ourLiveObject->holdingID )->foodValue > 0 ) {
                     
-                    des = autoSprintf( "%s%s%s",
+                    des = autoSprintf( "%s%s%s %s",
                                        translate( "eat" ),
                                        getObject( ourLiveObject->holdingID )->
                                        localizedName,
-                                       translate( "eatAfter" ) );
+                                       translate( "eatAfter" ),
+                                       you );
                     desToDelete = des;
                     }
                 else if( ourLiveObject->dying &&
                          ourLiveObject->holdingID > 0 ) {
-                    des = autoSprintf( "%s%s",
+                    des = autoSprintf( "%s%s%s %s",
                                        translate( "youWith" ),
-                                       getObject( ourLiveObject->holdingID )->
-                                       localizedName,
-                                       translate( "youWithAfter" ) );
+                                       getObject( ourLiveObject->holdingID )->localizedName,
+                                       translate( "youWithAfter" ),
+                                       you );
                     desToDelete = des;
                     }
                 else {
-                    des = (char*)translate( "you" );
 
                     if( ourLiveObject->holdingID > 0 &&
                         getObject( ourLiveObject->holdingID )->localizedName != NULL ) {
-                        des = autoSprintf( "%s を持った %s %d%s", 
-                                           getObject( ourLiveObject->holdingID )->localizedName, des,
-                                           (int)computeCurrentAge( ourLiveObject ),
-                                           translate( "age" ) );
+                        des = autoSprintf( "%s を持った %s", 
+                                           getObject( ourLiveObject->holdingID )->localizedName, you );
                         desToDelete = des;
                         }
                     else if( ourLiveObject->holdingID < 0 ) {
                         LiveObject* babyObject = getLiveObject( -ourLiveObject->holdingID );
                         if( babyObject->name != NULL ) {
-                            des = autoSprintf( "%sの%s %d%s - %s %d%s", 
+                            des = autoSprintf( "%sの%s %d%s を抱えた %s", 
                                                babyObject->relationName != NULL ? babyObject->relationName : (char*)translate( "unrelated" ),
                                                babyObject->name,
                                                (int)computeCurrentAge( babyObject ),
                                                translate( "age" ),
-                                               des,
-                                               (int)computeCurrentAge( ourLiveObject ),
-                                               translate( "age" ) );
+                                               you );
                             desToDelete = des;
                             }
                         else {
-                            des = autoSprintf( "%s %d%s - %s %d%s", 
+                            des = autoSprintf( "%s %d%s を抱えた %s", 
                                                babyObject->relationName != NULL ? babyObject->relationName : (char*)translate( "unrelated" ),
                                                (int)computeCurrentAge( babyObject ),
                                                translate( "age" ),
-                                               des,
-                                               (int)computeCurrentAge( ourLiveObject ),
-                                               translate( "age" ) );
+                                               you );
                             desToDelete = des;
                             }
                         }
-                    else {
-                        des = autoSprintf( "%s %d%s", des,
-                                           (int)computeCurrentAge( ourLiveObject ),
-                                           translate( "age" ) );
-                        desToDelete = des;
-                        }
                     }
+                    if( des == NULL) {
+                        des = you;
+                        }
+                    else {
+                        delete [] you;
+                        }
                 }
             else if( idToDescribe < 0 ) {
                 LiveObject *otherObj = getLiveObject( -idToDescribe );
