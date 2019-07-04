@@ -49,7 +49,7 @@ void drawMessage( const char *inTranslationKey, doublePair inCenter,
                 
             doublePair thisMessagePos = inCenter;
                 
-            thisMessagePos.y -= i * 30;
+            thisMessagePos.y -= i * mainFont->getFontHeight();
                 
             mainFont->drawString( subMessages[i], 
                                   thisMessagePos, messageAlign );

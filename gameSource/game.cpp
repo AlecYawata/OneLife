@@ -101,6 +101,7 @@ CustomRandomSource randSource( 34957197 );
 #include "musicPlayer.h"
 
 #include "whiteSprites.h"
+#include "message.h"
 
 
 // should we pull the map
@@ -422,6 +423,7 @@ char gamePlayingBack = false;
 
 
 Font *mainFont;
+Font *middleFont;
 Font *mainFontFixed;
 // closer spacing
 Font *mainFontReview;
@@ -558,6 +560,9 @@ void initDrawString( int inWidth, int inHeight ) {
     mainFont = new Font( getFontTGAFileName(), 6, 16, false, 32 );
     mainFont->setMinimumPositionPrecision( 1 );
 
+    middleFont = new Font( getFontTGAFileName(), 6, 16, false, 24 );
+    middleFont->setMinimumPositionPrecision( 1 );
+
     setViewCenterPosition( lastScreenViewCenter.x, lastScreenViewCenter.y );
 
     viewHeightFraction = inHeight / (double)inWidth;
@@ -576,6 +581,7 @@ void initDrawString( int inWidth, int inHeight ) {
 
 void freeDrawString() {
     delete mainFont;
+    delete middleFont;
     }
 
 
@@ -955,24 +961,44 @@ static void drawPauseScreen() {
     doublePair messagePos = lastScreenViewCenter;
 
     messagePos.y += 4.5  * (viewHeight / 15);
-
-    mainFont->drawString( translate( "pauseMessage1" ), 
-                           messagePos, alignCenter );
-        
-    messagePos.y -= 1.25 * (viewHeight / 15);
-    mainFont->drawString( translate( "pauseMessage2" ), 
-                           messagePos, alignCenter );
-
-
-    if( currentGamePage == livingLifePage ) {
-        
-        doublePair drawPos = { -9, 0 };
-        
-        drawPos = add( drawPos, lastScreenViewCenter );
-
-        drawSprite( instructionsSprite, drawPos );
-        }
     
+    doublePair drawPos = { -9, 0 };
+    
+    drawPos = add( drawPos, lastScreenViewCenter );
+
+//        drawSprite( instructionsSprite, drawPos );
+
+    messagePos = lastScreenViewCenter;
+    messagePos.y += 5 * (viewHeight / 15);
+    mainFont->drawString( translate( "pauseHelpTitle" ), messagePos, alignCenter );
+
+    messagePos.y -= 1 * (viewHeight / 15);
+    messagePos.x -= 3 * (viewHeight / 15);
+    drawMessage( "pauseHelpMessage1", messagePos, 0, pauseScreenFade );
+    messagePos.x += 6 * (viewHeight / 15);
+    drawMessage( "pauseHelpMessage2", messagePos, 0, pauseScreenFade );
+    
+    messagePos.x -= 3 * (viewHeight / 15);
+    messagePos.y -= 0.8 * (viewHeight / 15);
+    messagePos.y -= 0.8 * (viewHeight / 15);
+    messagePos.y -= 0.8 * (viewHeight / 15);
+    messagePos.y -= 0.8 * (viewHeight / 15);
+    messagePos.x -= 3 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage3" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage4" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage5" ), messagePos, alignLeft );
+    messagePos.y -= 0.8 * (viewHeight / 15);
+
+    middleFont->drawString( translate( "pauseHelpMessage6" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage7" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage8" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage9" ), messagePos, alignLeft );
+
 
     if( currentUserTypedMessage != NULL ) {
             
@@ -1176,13 +1202,20 @@ static void drawPauseScreen() {
 
     messagePos = lastScreenViewCenter;
 
-    messagePos.y -= 3.75 * ( viewHeight / 15 );
     //mainFont->drawString( translate( "pauseMessage3" ), 
     //                      messagePos, alignCenter );
 
-    messagePos.y -= 0.625 * (viewHeight / 15);
+    messagePos.y -= 3.6 * (viewHeight / 15);
 
-    const char* quitMessageKey = "pauseMessage3";
+    mainFont->drawString( translate( "pauseMessage1" ), 
+                           messagePos, alignCenter );
+        
+    messagePos.y -= 1 * (viewHeight / 15);
+    mainFont->drawString( translate( "pauseMessage3" ), 
+                           messagePos, alignCenter );
+
+    messagePos.y -= 1 * (viewHeight / 15);
+    const char* quitMessageKey = "pauseMessage2";
     
     if( isQuittingBlocked() ) {
         quitMessageKey = "pauseMessage3b";
