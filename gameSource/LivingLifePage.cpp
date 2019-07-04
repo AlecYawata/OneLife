@@ -21370,6 +21370,19 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         delete [] newText;
         }
 
+    if( inKeyCode == MG_KEY_F3 ) {
+        if( computeCurrentAge( getOurLiveObject() ) < 2 ) {
+            if( strcmp( mSayField.getText(), "/しぬ" ) == 0 ) {
+                mSayField.setText( "" );
+                mSayField.unfocus();
+                }
+            else {
+                mSayField.focus();
+                mSayField.setText( "/しぬ" );
+                }
+            }
+        }
+
 	if( inKeyCode == MG_KEY_LEFT || 
 		inKeyCode == MG_KEY_RIGHT ) {
 		float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
