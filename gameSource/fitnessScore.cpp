@@ -291,7 +291,7 @@ static void stepActiveRequest() {
 
         if( strcmp( nextAction, "get_client_score_details" ) == 0 ) {
             // parse details too
-            SimpleVector<char *> *lines = tokenizeString( readyResult );
+            SimpleVector<char *> *lines = tokenizeStringW( readyResult );
 
             // skip already-parsed header and OK at end
             for( int i=3; i< lines->size()-1; i++ ) {
