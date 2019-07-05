@@ -623,14 +623,15 @@ pauseMessage1 "ゲームを終了しますか"
 
 
 
-pauseMessage3 "[%]   終了"
+pauseMessage3 "[%] 終了"
 pauseMessage2 "[Esc] キャンセル"
 pauseMessage3b "今はゲームを終了できません"
 
 pauseMessage4 "-"
 
-pauseHelpMessage1 "左クリック: ## ・移動 ## ・拾う ##・使う"
-pauseHelpMessage2 "右クリック: ## ・置く ## ・入れ替え ##・取り外す"
+pauseHelpTitle "■操作説明■"
+pauseHelpMessage1 " 左クリック:##・移動##・拾う##・使う"
+pauseHelpMessage2 " 右クリック:##・置く##・入れ替え##・取り外す"
 pauseHelpMessage3 "Space: 画面を固定"
 pauseHelpMessage4 "Shift: ダイレクト選択"
 pauseHelpMessage5 "Shift-右クリック: 人を攻撃"
