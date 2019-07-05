@@ -614,16 +614,14 @@ void drawFitnessScoreDetails( doublePair inPos, int inSkip ) {
             char *diedAgoString;
             
             if( yearsAgo < 1000 ) {
-                diedAgoString = autoSprintf( "%d%s%s", 
+                diedAgoString = autoSprintf( "%d%s", 
                                              yearsAgo,
-                                             translate( "yearsAgo" ),
-                                             translate( "died" ) );
+                                             translate( "yearsAgo" ) );
                 }
             else {
-                diedAgoString = autoSprintf( "%d%s%s", 
+                diedAgoString = autoSprintf( "%d%s", 
                                              yearsAgo / 100,
-                                             translate( "centuriesAgo" ),
-                                             translate( "died" ) );
+                                             translate( "centuriesAgo" ) );
                 }
             
             

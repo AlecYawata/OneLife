@@ -365,7 +365,7 @@ unknownPerson "不明"
 yearAgo "年前に亡くなった"
 yearsAgo "年前に亡くなった"
 
-centuriesAgo "世紀前"
+centuriesAgo "世紀前に亡くなった"
 
 millenniaAgo "千年前"
 
