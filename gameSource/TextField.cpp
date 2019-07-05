@@ -1601,6 +1601,10 @@ void TextField::keyDown( unsigned char inASCII ) {
                                 for( int k = 0; k < furiganaLen - 1; k++ ) {
                                     deleteHit();
                                     }
+                                if( mText[mCursorPosition-1] == furiganaSrc[i][0] ) {
+                                    deleteHit();
+                                    insertString( "っ" );
+                                    }
                                 insertString( furiganaDist[i] );
                                 pProcessedChar[0] = '\0';
                                 if( mMaxLength > 0 ) {
