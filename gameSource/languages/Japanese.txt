@@ -193,7 +193,7 @@ minuteSingular "分"
 tokenTimeMessage "ログインチケット付与:  "
 
 
-scoreMessage "遺伝スコア:##%s (%d%s位)"
+scoreMessage "遺伝スコア:##%s (%d位)"
 
 scoreMessageNoRank "遺伝スコア:##%s"
 
@@ -207,7 +207,7 @@ leaderboardMessage "ランキング用の名前:%s##順位:%d位"
 
 leaderboard "ランキング"
 
-scrollTip "矢印キーで##スクロール"
+scrollTip "矢印##キー##で##移動"
 
 geneticHistoryTitle "最近の遺伝データ:"
 

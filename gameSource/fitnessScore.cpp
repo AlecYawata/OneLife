@@ -395,7 +395,7 @@ void drawFitnessScore( doublePair inPos, char inMoreDigits ) {
         if( rank != 0 ) {
             message = 
                 autoSprintf( translate( "scoreMessage" ), 
-                             scoreString, rank, rankSuffix );
+                             scoreString, rank );
             }
         else {
             // no rank
