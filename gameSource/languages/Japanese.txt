@@ -271,7 +271,7 @@ enterHint "[Enter]"
 familyNameHint "[苗字を入力]"
 firstNameHint "[名前を入力]"
 babyNameHint "[子供の名前を入力]"
-
+emotHint "Q:まゆひそめ W:かなしい E:ふまん R:おこる T:びっくり Y:はきそう##1:わらう 2:にがわらい 3:どやがお 4:てれる 5:はーと 6:くちぶえ 7:まゆげ"
 
 making "作成法:"
 notRelevant "(%sには関連しません)"

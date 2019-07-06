@@ -207,6 +207,8 @@ static SimpleVector<double> bytesOutHistoryGraph;
 static SimpleVector<GridPos> graveRequestPos;
 static SimpleVector<GridPos> ownerRequestPos;
 
+static bool showEmotSheet = false;
+static double emotSheetOffsetRate = 0;
 
 
 static char showPing = false;
@@ -7982,7 +7984,17 @@ void LivingLifePage::draw( doublePair inViewCenter,
             }
         }
 
-
+    if( emotSheetOffsetRate > 0.0 ) {
+        doublePair emotHintPos = { lastScreenViewCenter.x - 230 * gui_fov_scale_hud, lastScreenViewCenter.y + (400 - emotSheetOffsetRate * 80) * gui_fov_scale_hud };
+        setDrawColor( 1, 1, 1, 1 );
+        drawSprite( mHintSheetSprites[0], emotHintPos, gui_fov_scale_hud * 0.8, 0.5,
+                    false );
+        setDrawColor( 0, 0, 0, 1.0f );
+        emotHintPos.x -= 400 * gui_fov_scale_hud;
+        emotHintPos.y -= 20 * gui_fov_scale_hud;
+        handwritingFont->drawString( translate( "emotHint" ), 
+                                     emotHintPos, alignLeft );
+        }
 
 
 
@@ -11019,6 +11031,18 @@ void LivingLifePage::step() {
         }
     
 
+    if( showEmotSheet && emotSheetOffsetRate < 1.0 ) {
+        emotSheetOffsetRate += frameRateFactor * 0.05;
+        if( emotSheetOffsetRate > 1.0) {
+            emotSheetOffsetRate = 1;
+            }
+        }
+    else if( !showEmotSheet && emotSheetOffsetRate > 0.0 ) {
+        emotSheetOffsetRate -= frameRateFactor * 0.05;
+        if( emotSheetOffsetRate < 0.0) {
+            emotSheetOffsetRate = 0;
+            }
+        }
 
 
     // pos for tutorial sheets
@@ -20753,6 +20777,40 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
         }
     }
 
+    if( showEmotSheet ) {
+        char emotId = -1;
+        switch( inASCII ) {
+            case '1': emotId = 0; break;
+            case '2': emotId = 5; break;
+            case '3': emotId = 4; break;
+            case '4': emotId = 6; break;
+            case '5': emotId = 13; break;
+            case '6': emotId = 11; break;
+            case '7': emotId = 9; break;
+            case '0': emotId = 14; break;
+            case 'q': emotId = 12; break;
+            case 'w': emotId = 3; break;
+            case 'e': emotId = 1; break;
+            case 'r': emotId = 2; break;
+            case 't': emotId = 15; break;
+            case 'y': emotId = 10; break;
+            case 'Q': emotId = 12; break;
+            case 'W': emotId = 3; break;
+            case 'E': emotId = 1; break;
+            case 'R': emotId = 2; break;
+            case 'T': emotId = 15; break;
+            case 'Y': emotId = 10; break;
+            }
+        if( emotId != -1 ) {
+            char* emotSockMessage = autoSprintf( "EMOT 0 0 %d#", emotId );
+            sendToServerSocket( emotSockMessage );
+            delete[] emotSockMessage;
+            lastEmotUseTime = game_getCurrentTime();
+            showEmotSheet = false;
+            return;
+            }
+        }
+
     if( userTwinCode == NULL || mStartedLoadingFirstObjectSet ) {
         if( ! mSayField.isFocused() && inASCII != 'Q' && inASCII != 'q' &&
             ( ('a' <= inASCII && inASCII <= 'z') || ('A' <= inASCII && inASCII <= 'Z') ) ) {
@@ -21381,6 +21439,11 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
                 mSayField.setText( "/しぬ" );
                 }
             }
+        }
+
+    bool canUseEmot = (game_getCurrentTime() - lastEmotUseTime) > 2.0;
+    if( inKeyCode == MG_KEY_F4 && canUseEmot ) {
+        showEmotSheet = !showEmotSheet;
         }
 
 	if( inKeyCode == MG_KEY_LEFT || 
