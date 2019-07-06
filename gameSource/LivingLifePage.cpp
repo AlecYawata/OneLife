@@ -18588,6 +18588,7 @@ void LivingLifePage::checkForPointerHit( PointerHitRecord *inRecord,
     // start in front row
     // right to left
     // (check things that are in front first
+    if( !isShiftKeyDown() )
     for( int y=clickDestY-3; y<=clickDestY+3 && ! p->hit; y++ ) {
         float clickOffsetY = ( clickDestY  - y ) * CELL_D + clickExtraY;
 
