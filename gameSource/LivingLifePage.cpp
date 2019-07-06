@@ -521,7 +521,7 @@ char *getRelationName( SimpleVector<int> *ourLin,
         found = true;
 
         if( theirMatchIndex == 0 && ourMatchIndex == 0 ) {
-            if( ourID < theirID ) {
+            if( ourID > theirID ) {
                 if( theyMale ) {
                     main = translate( "bigBrother" );
                     }
