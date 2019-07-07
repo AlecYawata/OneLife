@@ -21245,6 +21245,13 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
                 }
             else if( mSayField.isFocused() ) {
                 char *typedText = mSayField.getText();
+                size_t len = strlen( typedText );
+                if( typedText[ len - 1 ] == 'n' ) {
+                    typedText[ len - 1 ] = '\0';
+                    char* newText = autoSprintf( "%sん", typedText );
+                    delete[] typedText;
+                    typedText = newText;
+                    }
                 
                 
                 // tokenize and then recombine with single space

@@ -1603,7 +1603,11 @@ void TextField::keyDown( unsigned char inASCII ) {
                                     }
                                 if( mText[mCursorPosition-1] == furiganaSrc[i][0] ) {
                                     deleteHit();
-                                    insertString( "っ" );
+                                    insertString( (char*)"っ" );
+                                    }
+                                if( mText[mCursorPosition-1] == 'n' ) {
+                                    deleteHit();
+                                    insertString( (char*)"ん" );
                                     }
                                 insertString( furiganaDist[i] );
                                 pProcessedChar[0] = '\0';
