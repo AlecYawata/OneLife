@@ -27,6 +27,7 @@ static JenkinsRandomSource randSource;
 
 
 extern Font *mainFont;
+extern Font *middleFont;
 
 
 extern char gamePlayingBack;
@@ -65,7 +66,7 @@ ExistingAccountPage::ExistingAccountPage()
                          translate( "quit" ) ),
           mSettingsButton( mainFont, -400, -120, 
                            translate( "settingsButton" ) ),
-          mReviewButton( mainFont, -400, -200, 
+          mReviewButton( mainFont, -10400, -200, 
                          translate( "postReviewButton" ) ),
           mRetryButton( mainFont, -100, 198, translate( "retryButton" ) ),
           mRedetectButton( mainFont, 100, 198, translate( "redetectButton" ) ),
@@ -642,10 +643,10 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
     setDrawColor( 1, 1, 1, 1 );
     
 
-    doublePair pos = { -9, -225 };
+    doublePair pos = { -250, -300 };
     
-    drawSprite( instructionsSprite, pos );
-
+    //drawSprite( instructionsSprite, pos );
+    middleFont->drawString( translate( "titleInstruction" ), pos, alignLeft );
 
     if( ! mEmailField.isVisible() ) {
         char *email = mEmailField.getText();

@@ -35,6 +35,8 @@ animationsRebuild "アニメーションデータ##(キャッシュ作成中)"
 categoriesRebuild "アイテムグループデータ##(キャッシュ作成中)"
 
 
+loadingInstruction "このゲームはJasonRohrer原作「OneHourOneLife」の非公式日本語版MODです"
+titleInstruction "アカウントキーが必要です##プレイするにはJasonRohrerから購入した、##ゲームは日本語専用のサーバーに接続されますが、##原作はJasonRohrerです。##このゲームはOneHourOneLifeの非公式MODであり、"
 
 
 email "メールアドレス:"

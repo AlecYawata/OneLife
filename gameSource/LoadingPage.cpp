@@ -20,8 +20,11 @@ void LoadingPage::setCurrentProgress( float inProgress ) {
 void LoadingPage::draw( doublePair inViewCenter, 
                         double inViewSize ) {
 
-    doublePair labelPos = { 0, 0 };
+    doublePair labelPos = { 0, 100 };
 
+    drawMessage( translate("loadingInstruction"), labelPos, false );
+
+    labelPos.y = 0;
     drawMessage( translate("loading"), labelPos, false );
 
     labelPos.y = -100;
