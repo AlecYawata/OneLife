@@ -116,6 +116,8 @@ borderless "最大化ウィンドウ:"
 musicLoudness "BGM音量:"
 soundLoudness "SE音量:"
 
+alwaysCameraCenter "キャラを真ん中に:"
+
 currentFPS "現在のFPS:"
 targetFPS "設定FPS:"
 vsyncOn "VSYNCを使用:"

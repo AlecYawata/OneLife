@@ -35,6 +35,7 @@ SettingsPage::SettingsPage()
                                        0.0, 1.0, 
                                        translate( "soundLoudness" ) ),
           mUseCustomServerBox( -168, -148, 4 ),
+          mAlwaysCameraCenterBox( 561, 128, 4 ),
           mCustomServerAddressField( mainFont, 306, -150, 14, false, 
                                      translate( "address" ),
                                      NULL,
@@ -94,6 +95,7 @@ SettingsPage::SettingsPage()
     mRedetectButton.addActionListener( this );
 
     addComponent( &mUseCustomServerBox );
+    addComponent( &mAlwaysCameraCenterBox );
     addComponent( &mCustomServerAddressField );
     addComponent( &mCustomServerPortField );
     
@@ -155,6 +157,7 @@ void SettingsPage::actionPerformed( GUIComponent *inTarget ) {
         if( mUseCustomServerBox.getToggled() ) {
             useCustomServer = 1;
             }
+        SettingsManager::setSetting( "alwaysCameraCenter", mAlwaysCameraCenterBox.getToggled() );        
         
         SettingsManager::setSetting( "useCustomServer_ja", useCustomServer );
         char *address = mCustomServerAddressField.getText();
@@ -344,6 +347,11 @@ void SettingsPage::draw( doublePair inViewCenter,
     pos.y -= 2;
     
     mainFont->drawString( translate( "useCustomServer" ), pos, alignRight );
+
+    pos = mAlwaysCameraCenterBox.getPosition();
+    pos.x -= 30;
+    pos.y -= 2;
+    mainFont->drawString( translate( "alwaysCameraCenter" ), pos, alignRight );
     
 
     if( mBorderlessBox.isVisible() ) {
@@ -441,6 +449,8 @@ void SettingsPage::makeActive( char inFresh ) {
             SettingsManager::getIntSetting( "useCustomServer_ja", 0 );
         
         mUseCustomServerBox.setToggled( useCustomServer );
+
+        mAlwaysCameraCenterBox.setToggled( SettingsManager::getIntSetting( "alwaysCameraCenter", 0 ) );
         
 
         char *address = 

@@ -48,6 +48,7 @@ class SettingsPage : public GamePage, public ActionListener {
 
         CheckboxButton mFullscreenBox;
         CheckboxButton mBorderlessBox;
+        CheckboxButton mAlwaysCameraCenterBox;
         
 
         ValueSlider mMusicLoudnessSlider;

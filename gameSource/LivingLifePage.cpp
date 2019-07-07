@@ -17193,6 +17193,10 @@ void LivingLifePage::step() {
             if( screenCenterPlayerOffsetY >  viewHeight / 6 ) {
                 screenCenterPlayerOffsetY =  viewHeight / 6;
                 }
+            if( SettingsManager::getIntSetting( "alwaysCameraCenter", 0 ) ) {
+                screenCenterPlayerOffsetX = 0;
+                screenCenterPlayerOffsetY = 0;
+                }
             }
         else if( false ) { // skip for now
             // stopped moving
@@ -17262,6 +17266,10 @@ void LivingLifePage::step() {
         int maxRY = viewHeight / 15;
         int maxR = 0;
         double moveSpeedFactor = 20 * cameraFollowsObject->currentSpeed;
+        if( SettingsManager::getIntSetting( "alwaysCameraCenter", 0 ) ) {
+            maxRX = 0;
+            maxRY = 0;
+            }
         
         if( moveSpeedFactor < 1 ) {
             moveSpeedFactor = 1 * frameRateFactor;
