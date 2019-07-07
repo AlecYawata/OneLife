@@ -637,10 +637,11 @@ pauseHelpMessage2 " 右クリック:##・置く##・入れ替え##・取り外�
 pauseHelpMessage3 "Space: 画面を固定"
 pauseHelpMessage4 "Shift: ダイレクト選択"
 pauseHelpMessage5 "Shift-右クリック: 人を攻撃"
-pauseHelpMessage6 "F1: 呪う"
-pauseHelpMessage7 "F2: 所有権付与"
-pauseHelpMessage8 "F3: 自殺する（赤子のみ）"
-pauseHelpMessage9 "F4: 表情を変える"
+pauseHelpMessage6 "Q/q: 食べる・着る"
+pauseHelpMessage7 "F1: 呪う"
+pauseHelpMessage8 "F2: 所有権付与"
+pauseHelpMessage9 "F3: 自殺する（赤子のみ）"
+pauseHelpMessage10 "F4: 表情を変える"
 
 
 quitMessage "[ESC]キーを押すとゲームを終了します"

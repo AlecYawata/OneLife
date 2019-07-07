@@ -989,15 +989,17 @@ static void drawPauseScreen() {
     middleFont->drawString( translate( "pauseHelpMessage4" ), messagePos, alignLeft );
     messagePos.y -= 0.5 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage5" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage6" ), messagePos, alignLeft );
     messagePos.y -= 0.8 * (viewHeight / 15);
 
-    middleFont->drawString( translate( "pauseHelpMessage6" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage7" ), messagePos, alignLeft );
     messagePos.y -= 0.5 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage8" ), messagePos, alignLeft );
     messagePos.y -= 0.5 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage9" ), messagePos, alignLeft );
+    messagePos.y -= 0.5 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage10" ), messagePos, alignLeft );
 
 
     if( currentUserTypedMessage != NULL ) {
@@ -1205,16 +1207,17 @@ static void drawPauseScreen() {
     //mainFont->drawString( translate( "pauseMessage3" ), 
     //                      messagePos, alignCenter );
 
-    messagePos.y -= 3.6 * (viewHeight / 15);
+    messagePos.y -= 4.0 * (viewHeight / 15);
 
     mainFont->drawString( translate( "pauseMessage1" ), 
                            messagePos, alignCenter );
         
-    messagePos.y -= 1 * (viewHeight / 15);
+    messagePos.x -= 2.5 * (viewHeight / 15);
+    messagePos.y -= 0.8 * (viewHeight / 15);
     mainFont->drawString( translate( "pauseMessage3" ), 
-                           messagePos, alignCenter );
+                           messagePos, alignLeft );
 
-    messagePos.y -= 1 * (viewHeight / 15);
+    messagePos.y -= 0.8 * (viewHeight / 15);
     const char* quitMessageKey = "pauseMessage2";
     
     if( isQuittingBlocked() ) {
@@ -1222,7 +1225,7 @@ static void drawPauseScreen() {
         }
 
     mainFont->drawString( translate( quitMessageKey ), 
-                          messagePos, alignCenter );
+                          messagePos, alignLeft );
 
     }
 
