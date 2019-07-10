@@ -1324,7 +1324,7 @@ void initObjectBankFinish() {
         idMap[ r->id ] = r;
 
         if( makeNewObjectsSearchable ) {    
-            char *lowercase = stringToLowerCase( r->description );
+            char *lowercase = stringToLowerCase( r->localizedName );
 
             tree.insert( lowercase, r );
             
@@ -1919,7 +1919,7 @@ static void freeObjectRecord( int inID ) {
     if( inID < mapSize ) {
         if( idMap[inID] != NULL ) {
             
-            char *lower = stringToLowerCase( idMap[inID]->description );
+            char *lower = stringToLowerCase( idMap[inID]->localizedName );
             
             tree.remove( lower, idMap[inID] );
             
@@ -3074,7 +3074,7 @@ int addObject( const char *inDescription,
 
     // grab this before freeing, in case inDescription is the same as
     // idMap[newID].description
-    char *lower = stringToLowerCase( inDescription );
+    char *lower = stringToLowerCase( inLocalizedName );
 
 
     ObjectRecord *oldRecord = getObject( newID );

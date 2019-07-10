@@ -644,6 +644,8 @@ pauseHelpMessage7 "F1: 呪う"
 pauseHelpMessage8 "F2: 所有権付与"
 pauseHelpMessage9 "F3: 自殺する（赤子のみ）"
 pauseHelpMessage10 "F4: 表情を変える"
+pauseHelpMessage11 "F5: クラフトレシピを探す"
+pauseHelpMessage12 "F6: レシピを先に進める"
 
 
 quitMessage "[ESC]キーを押すとゲームを終了します"

@@ -985,21 +985,28 @@ static void drawPauseScreen() {
     messagePos.y -= 0.8 * (viewHeight / 15);
     messagePos.x -= 3 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage3" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
+    messagePos.y -= 0.6 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage4" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
+    messagePos.y -= 0.6 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage5" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
+    messagePos.y -= 0.6 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage6" ), messagePos, alignLeft );
     messagePos.y -= 0.8 * (viewHeight / 15);
 
+    messagePos.x -= 2.5 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage7" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
+    messagePos.y -= 0.51 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage8" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
+    messagePos.y -= 0.51 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage9" ), messagePos, alignLeft );
-    messagePos.y -= 0.5 * (viewHeight / 15);
+    messagePos.y += 0.51 * (viewHeight / 15);
+    messagePos.y += 0.51 * (viewHeight / 15);
+    messagePos.x += 5.7 * (viewHeight / 15);
     middleFont->drawString( translate( "pauseHelpMessage10" ), messagePos, alignLeft );
+    messagePos.y -= 0.51 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage11" ), messagePos, alignLeft );
+    messagePos.y -= 0.51 * (viewHeight / 15);
+    middleFont->drawString( translate( "pauseHelpMessage12" ), messagePos, alignLeft );
 
 
     if( currentUserTypedMessage != NULL ) {

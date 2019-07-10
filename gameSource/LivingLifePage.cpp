@@ -278,6 +278,7 @@ static doublePair recalcOffset( doublePair ofs, bool force = false ) {
     }
 
 int lastCursorLiveObjectID = 0;
+int lastCursorObjectID = 0;
 char* lastCursorGraveName = NULL;
 
 
@@ -8597,7 +8598,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
             toggleMultiplicativeBlend( false );
             }
 
-        
+        lastCursorObjectID = 0;
         if( mCurMouseOverID != 0 || mLastMouseOverID != 0 ) {
             int idToDescribe = mCurMouseOverID;
             
@@ -8613,6 +8614,10 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
             char *des = NULL;
             char *desToDelete = NULL;
+
+            if(idToDescribe > 0) {
+                lastCursorObjectID = idToDescribe;
+                }
             
             if( idToDescribe == -99 ) {
                 char* you;
@@ -21644,6 +21649,26 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
                 mSayField.focus();
                 mSayField.setText( "/しぬ" );
                 }
+            }
+        }
+    if( inKeyCode == MG_KEY_F5 ) {
+        if( lastCursorObjectID != 0 ) {
+            ObjectRecord* lastCursorObject = getObject( lastCursorObjectID );
+            mHintFilterString = stringDuplicate( lastCursorObject->localizedName );
+            mForceHintRefresh = true;
+            mNextHintIndex = 0;
+            }
+        else {
+            mHintFilterString = NULL;
+            mForceHintRefresh = true;
+            mNextHintIndex = 0;
+            }
+        }
+    if( inKeyCode == MG_KEY_F6 ) {
+        if( mCurrentHintIndex < mLastHintSortedList.size() ) {    
+            mNextHintObjectID  = getTransMostImportantResult( mLastHintSortedList.getElementDirect( mCurrentHintIndex ) );
+            getNumHints( mNextHintObjectID );
+            mForceHintRefresh = true;
             }
         }
 
