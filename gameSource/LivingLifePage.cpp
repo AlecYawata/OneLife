@@ -4990,7 +4990,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
         }
 
     if( waitedBirth ) {
-       if( getOurLiveObject()->lineage.size() == 0 && getOurLiveObject()->name == NULL ) {
+       if( getOurLiveObject()->lineage.size() == 0 && getOurLiveObject()->name == NULL && mTutorialNumber == 0 ) {
             mSayField.focus();
             }
         waitedBirth = false;
