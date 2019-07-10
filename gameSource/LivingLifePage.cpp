@@ -7774,6 +7774,16 @@ void LivingLifePage::draw( doublePair inViewCenter,
         setDrawColor( 0, 0, 0, 1 );
 
         const char* hint = translate( "enterHint" );
+        char* hintToDelete = NULL;
+
+        if( mPendingFamilyName ) {
+            char* pendingFamilyNameHint = autoSprintf( translate( "pendingFamilyNameHint" ), mPendingFamilyName );
+            handwritingFont->drawString( pendingFamilyNameHint, 
+                                         drawPos,
+                                         alignRight );
+            drawPos.y -= lineSpacing + 2;
+            delete[] pendingFamilyNameHint;
+            }
 
         // if Eve and
         if( mPendingFamilyName != NULL ) {
@@ -7794,6 +7804,9 @@ void LivingLifePage::draw( doublePair inViewCenter,
         handwritingFont->drawString( hint, 
                                      drawPos,
                                      alignRight );
+        if( hintToDelete != NULL ) {
+            delete[] hintToDelete;
+            }
         }
         
 
@@ -7815,11 +7828,18 @@ void LivingLifePage::draw( doublePair inViewCenter,
         if( lines->size() > 1 ) {    
             mNotePaperPosTargetOffset.y += 20 * ( lines->size() - 1 );
             }
+        if( mPendingFamilyName != NULL ) {
+            mNotePaperPosTargetOffset.y += 20;
+            }
         
         doublePair drawPos = paperPos;
 
         drawPos.x -= 160 * gui_fov_scale_hud;
         drawPos.y += 79 * gui_fov_scale_hud;
+
+        if( mPendingFamilyName != NULL ) {
+            drawPos.y -= lineSpacing;
+            }
 
 
         doublePair drawPosTemp = drawPos;
