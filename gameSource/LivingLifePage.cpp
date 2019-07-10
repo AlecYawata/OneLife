@@ -21064,20 +21064,25 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
         case 'q':
         case 'Q':
             if( !mSayField.isFocused() ) {
-                if( nextActionMessageToSend != NULL ) {
-                    delete [] nextActionMessageToSend;
-                    nextActionMessageToSend = NULL;
-                    }
+                LiveObject* ourLiveObject = getOurLiveObject();
+                if( ourLiveObject->currentSpeed == 0 ) {
+                    if( nextActionMessageToSend != NULL ) {
+                        delete [] nextActionMessageToSend;
+                        nextActionMessageToSend = NULL;
+                        }
 
-                if( getOurLiveObject()->holdingID > 0 &&
-                    isFood( getOurLiveObject()->holdingID) ) {
-                    nextActionEating = true;
-                    }
+                    if( getOurLiveObject()->holdingID > 0 &&
+                        isFood( ourLiveObject->holdingID) ) {
+                        nextActionEating = true;
+                        }
 
-                nextActionMessageToSend = 
-                    autoSprintf( "SELF %d %d %d#",
-                                 sendX( getOurLiveObject()->currentPos.x ), sendY( getOurLiveObject()->currentPos.y ), 
-                                 -1 );
+                    nextActionMessageToSend = 
+                        autoSprintf( "SELF %d %d %d#",
+                                     sendX( ourLiveObject->currentPos.x ), sendY( ourLiveObject->currentPos.y ), 
+                                     -1 );
+                    playerActionTargetX = ourLiveObject->currentPos.x;
+                    playerActionTargetY = ourLiveObject->currentPos.y;
+                    }
                 }
             break;
         /*
