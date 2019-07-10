@@ -253,7 +253,8 @@ eatAfter "を食べる"
 
 youWith ""
 youWithAfter "を負った"
-with "と"
+with ""
+withAfter "を負った"
 
 yum "美味しい"
 meh "飽きた"
@@ -268,17 +269,18 @@ eventuallyHint "(ランダムで)"
 
 noHint "情報なし" 
 
-ofHint "OF"
+ofHint "/"
 tabHint "[TAB]"
 
-enterHint "[Enter]"
-familyNameHint "[苗字を入力]"
-firstNameHint "[名前を入力]"
-babyNameHint "[子供の名前を入力]"
+enterHint "[Enterで発言]"
+familyNameHint "[苗字を入力してEnter]"
+firstNameHint "[名前を入力してEnter]"
+pendingFamilyNameHint "苗字:%s"
+babyNameHint "[子供の名前を入力してEnter]"
 emotHint "Q:まゆひそめ W:かなしい E:ふまん R:おこる T:びっくり Y:はきそう##1:わらう 2:にがわらい 3:どやがお 4:てれる 5:はーと 6:くちぶえ 7:まゆげ"
 
 making "作成法:"
-notRelevant "(%sには関連しません)"
+notRelevant "(%sからは作れません)"
 noMatch "(見つかりませんでした)"
 
 
@@ -366,10 +368,10 @@ forgottenPerson "忘れ去られた人"
 
 unknownPerson "不明"
 
-yearAgo "年前に亡くなった"
-yearsAgo "年前に亡くなった"
+yearAgo "年前"
+yearsAgo "年前"
 
-centuriesAgo "世紀前に亡くなった"
+centuriesAgo "世紀前"
 
 millenniaAgo "千年前"
 
@@ -483,141 +485,141 @@ bugMessage2 "PRESS [%] TO CONTINUE PLAYING"
 
 
 
-tutorial_1 "YOU HAVE NOT BEEN BORN INTO THE GAME YET.##THIS IS THE TUTORIAL.  CLICK THE LEFT MOUSE BUTTON TO WALK."
+tutorial_1 "これはチュートリアルです。クリアするとゲームをプレイすることができます##まず、マウスの左クリックで歩いてみましょう"
 
 
-tutorial_1001 "THE TUTORIAL TAKES FIFTEEN MINUTES.  YOU WILL LEARN COOL STUFF,##AND THERE ARE EVEN SOME SURPRISES HIDDEN IN HERE FOR YOU."
+tutorial_1001 "このチュートリアルには１５分ほどかかります##有益な情報と、ちょっとした驚きを用意してあります"
 
-tutorial_1002 "BUT FAIR WARNING:  THIS WORKS JUST LIKE THE REAL GAME.##YOU CAN DIE IN HERE IF YOU'RE NOT CAREFUL!"
-
-
-tutorial_2 "NAVIGATION IS AUTOMATIC, EVEN AROUND COMPLEX OBSTACLES.  OPEN THE##DOOR, THEN CLICK THE BERRY BUSH TO WALK THERE AND PICK A BERRY."
-
-tutorial_3 "STARVATION MEANS CERTAIN DEATH.  CLICK THE BUSH TO PICK A BERRY.##CLICK YOURSELF TO EAT.  PICK AND EAT MORE UNTIL YOU ARE FULL."
-
-tutorial_4 "CLICK AND HOLD NEAR THE EDGE OF THE SCREEN TO KEEP##WALKING IN THAT DIRECTION.  USEFUL FOR LONG JOURNEYS."
-
-tutorial_5 "CLICK THE BRANCH TO PICK IT UP.##CLICK THE ROCK UP AHEAD TO TRY USING THE BRANCH ON THE ROCK."
-
-tutorial_6 "NO, NOTHING HAPPENS.  THE [TAB] KEY PAGES THROUGH IDEAS.##A BRANCH ISN'T ON THE LIST OF THINGS THAT WORK ON A ROCK."
-
-tutorial_601 "GETTING HUNGRY?##RIGHT-CLICK AN EMPTY GROUND TILE TO DROP THE BRANCH."
-
-tutorial_7 "MAKE A SHARP STONE.##TAKE IT WITH YOU."
+tutorial_1002 "注意：このチュートリアルは実際のゲームと同じように死にます！餓死にご注意ください！"
 
 
+tutorial_2 "複雑な道であっても歩く道は自動で計算されます##ドアを開けたら右の野生のスグリの茂みをクリックしてみましょう"
 
-tutorial_8 "[TAB] SHOWS THAT A SHARP STONE WORKS ON MANY THINGS.##CTRL-TAB FOR BIGGER PAGE JUMPS.  SHIFT-TAB PAGES BACKWARDS."
+tutorial_3 "左下のFOOD MATERが無くなると死にます。スグリの茂みをクリックして実を取り、##自分をクリックするか「Q」キーを押して食べましょう。お腹がいっぱいになるまで何度でも！"
+
+tutorial_4 "画面の端近くをクリックしっぱなしにすると、歩き続けることができます##長い旅の際には便利ですね"
+
+tutorial_5 "長い枝が落ちていますね。クリックして拾いましょう##そして大岩をクリックすることで長い枝を大岩に対して使うことができます"
+
+tutorial_6 "ああ、すみません、長い枝を大岩に使っても何も起きないんでした##Tabキーを押すと右下に大岩を使ってできることの組み合わせが表示されますよ"
+
+tutorial_601 "え、おなか減ってきました？##右クリックで手に持っている長い枝を地面に置けますよ"
+
+tutorial_7 "鋭い石を作ってみましょう。石を拾って大岩に使います##できたらそれを持っておいてくださいね。"
+
+
+
+tutorial_8 "Tabキーを押すと、右下に鋭い石でできるたくさんのことが表示されます##Shiftを押しながらTabを押すと一つ戻れます"
 
 tutorial_8_steam "[TAB] SHOWS THAT A SHARP STONE WORKS ON MANY THINGS.##CTRL-TAB FOR BIGGER PAGE JUMPS.  Z-TAB PAGES BACKWARDS."
 
 
 
 
-tutorial_9 "YOU ARE PROBABLY PRETTY HUNGRY AT THIS POINT.##THESE ARE A BIT HARDER TO EAT THAN BERRIES."
+tutorial_9 "さて、おなかがかなり減ってきたでしょう？##先ほどのスグリと比べると少し食べるのが難しいですよ"
 
-tutorial_10 "A CHAIN OF UNIQUE FOODS INCREASES A VARIETY BONUS MULTIPLIER##ABOVE YOUR FOOD METER.  EATING A 'MEH' FOOD BREAKS THE CHAIN."
+tutorial_10 "まだ食べていない食べ物を食べるたび、フードメーターにボーナスがつきます##ボーナスは徐々に増えていきますが、今まで食べたことのあるものを食べるとリセットされます"
 
-tutorial_1010 "I KNOW, THAT'S A LITTLE HARD TO UNDERSTAND.  JUST WATCH##FOR 'YUM' AND 'MEH' ABOVE YOUR FOOD METER BEFORE EATING."
+tutorial_1010 "まぁでも、今の段階では難しい話でしょうね。とにかく、食べ物を持った時に##左下が「飽きた」ではなく「美味しい」になる食べ物をなるべく食べるようにしましょう"
 
-tutorial_1011 "A MONO-DIET IS WAY LESS EFFICIENT THAN A DIET FULL OF VARIETY.##BUT OF COURSE, SOMETIMES YOU HAVE NO CHOICE."
+tutorial_1011 "もちろん食べ物を選んでいる余裕なんてないこともありますが・・・##このボーナスを活用すれば食べ物の消費量を大幅に減らすことができますよ"
 
 
 
-tutorial_11 "MAKE A BASKET.  RIGHT-CLICK THE BASKET TO PUT##THE SHARP STONE INSIDE.  TAKE THE BASKET WITH YOU."
+tutorial_11 "さて、ここでカゴを作って下さい。できたら鋭い石を作って右クリックで入れましょう##そしてカゴを左クリックで持ち上げれば・・・そうです、カゴに物を入れて運べるのです！"
 
-tutorial_1101 "HARD TO SEE, BUT THERE IS A VERTICAL DOOR HERE.##CLICK THE DOOR TO OPEN IT.  WATCH FOR MORE VERTICAL DOORS UP AHEAD."
+tutorial_1101 "ちょっとわかりにくいですが、ここには縦のドアがあります##クリックで開けられます。先へ進みましょう"
 
 
-tutorial_12 "DROP THE BASKET, THEN RIGHT-CLICK TO REMOVE THE STONE.##PUT SOME FOOD IN THE BASKET TO TAKE WITH YOU."
+tutorial_12 "右クリックでカゴを置きましょう。カゴを右クリックすれば鋭い石を取り出せますよ##カゴには３つまでアイテムが入りますから、食べ物を入れて持っていきましょう"
 
 
-tutorial_1201 "HOLD [SPACE] TO FREEZE THE CAMERA WHILE YOU WORK IN ONE AREA.##NOW YOU CAN STOKE THE FIRE WITHOUT FIGHTING THE CAMERA."
+tutorial_1201 "スペースキーを押すと、画面のスクロールが止まります##集中して作業したいときは便利でしょうね"
 
-tutorial_1202 "RELEASE [SPACE] TO UNFREEZE THE CAMERA.##IT RESUMES MOVING AUTOMATICALLY WHILE YOU NAVIGATE."
+tutorial_1202 "Shiftキーを押している間はアイテムを直接クリックしなくてもその場所のアイテムを選択できます##木や人の裏に隠れたアイテムだって拾えちゃいますよ！"
 
 
 
-tutorial_13 "YOU CONSUME FOOD MORE SLOWLY WHEN YOUR TEMP METER IS IN THE MIDDLE.##STAND BY THE FIRE TO WARM UP.  TOO COLD OR TOO HOT SPEEDS UP HUNGER."
+tutorial_13 "右下のTEMP MATERは今の気温を示しています。火の近くに行ってみましょう##メーターが真ん中に近ければ近いほど空腹になる速度が遅くなります"
 
-tutorial_14 "WALLS AND FLOORS HOLD HEAT IN A LARGER AREA.##CLOSE THE DOOR TO STOP HEAT FROM LEAKING OUT."
+tutorial_14 "壁や床があれば、広範囲が温かくなります##ただし空気が逃げてしまうのでドアはちゃんと閉めましょうね"
 
 
-tutorial_15 "COLD AREAS DRAMATICALLY INCREASE YOUR HUNGER RATE.##WARM UP HERE BEFORE CROSSING THE SNOW."
+tutorial_15 "寒い場所は劇的に空腹速度を上げます##そういう場所に行く前には体を温めておきましょうね"
 
-tutorial_1501 "CLOTHING REDUCES YOUR RATE OF HEAT LOSS.##WHILE HOLDING CLOTHES, CLICK YOURSELF TO PUT THEM ON."
+tutorial_1501 "服を着ると体から熱が逃げるのを防げます##服を持って自分をクリックするか「Q」キーを押せば着れます"
 
 
-tutorial_16 "EXCESSIVE HEAT CAN BE JUST AS DANGEROUS AS COLD.##CLOTHING CAN PROTECT YOU FROM HEAT TOO."
+tutorial_16 "暑すぎる場所も寒い場所と同じくらい危険です##服を着ることは暑さからもあなたを守ります"
 
-tutorial_1601 "IF YOU EVER NEED TO REMOVE CLOTHING,##JUST CLICK THEM TO TAKE THEM OFF."
+tutorial_1601 "もし服を脱ぎたい場合は##脱ぎたい服を左クリックしてください"
 
 
 
-tutorial_17 "PRESS [ENTER] AND TYPE, AND THEN PRESS [ENTER] AGAIN TO SPEAK.##YOU CAN SAY LONGER AND LONGER PHRASES AS YOU GET OLDER AND OLDER."
+tutorial_17 "あなたはイブなのでまず自分の苗字と名前を決められます。Enterを押してみましょう##漢字は使えません。入力したらEnterキーで決定です"
 
-tutorial_18 "PRESS [ENTER] TO SPEAK AGAIN, OR PRESS [UP ARROW] AND##[DOWN ARROW] TO CYCLE THROUGH PREVIOUSLY SPOKEN PHRASES."
+tutorial_18 "名前が決まったら、Enterキーで話すことができます##話せる文字数は年齢に応じて長くなっていきます"
 
-tutorial_19 "SAY   I AM JONES   TO SET YOUR LAST NAME.##MOUSE OVER YOURSELF TO SEE YOUR NAME."
+tutorial_19 "名前のついていない子供に名前を付けるのも同じです##抱っこしてから名前を打ち込んであげましょうね"
 
-tutorial_1921 "SAY   YOU ARE SALLY   TO SET THE FIRST NAME OF YOUR HELD BABY.##(TRY IT LATER, WHEN YOU HAVE A BABY IN THE GAME.)"
+tutorial_1921 "苗字と名前はそれぞれ１０文字までです##ひどい名前を付けたらだめですよ"
 
 
 
-tutorial_1901 "HOLD THE STONE, THEN SAY   /HATCHET   AND PRESS [ENTER] TO SHOW##ONLY HATCHET-MAKING STEPS WITH [TAB].  A MUCH SHORTER LIST."
+tutorial_1901 "アイテムを持ちながら作りたいアイテムにカーソルを合わせ##F5を押してみましょう。作るためのレシピが順に表示されます"
 
-tutorial_1902 "SAY   /   BY ITSELF AND PRESS [ENTER] TO GO##BACK TO THE FULL, UNFILTERED [TAB] LIST."
+tutorial_1902 "一つ先のレシピが見たければF6を押します##万能ではありませんが作りたいものを作る手助けになります"
 
 
-tutorial_20 "A FINAL CHALLENGE:  MAKE A HATCHET TO CHOP KINDLING.##GET THE FIRE GOING AGAIN.  LIGHT THE TORCH."
+tutorial_20 "さて、チュートリアル最後の試練です##石斧を組み立てて焚き付けを作り、トーチに火をともしてください"
 
 
-tutorial_21 "TUTORIAL COMPLETE.  AFTER YOU DIE, YOU'LL BE BORN FOR REAL.##A DEADLY PIT OF RATTLESNAKES IS PROVIDED FOR YOUR CONVENIENCE."
+tutorial_21 "これでチュートリアルは終わりです。次の人生では実際のゲームが始まります##自殺部屋が右に用意してありますので必要であればどうぞ"
 
 
 
-tutorial_2201 "WHAT ARE YOU DOING DOWN HERE?##GO BACK UP AND LIGHT THE TORCH (IT SAYS 'TORCH' ON THE FRONT)."
+tutorial_2201 "おや、なぜこちらに来たんですか？##戻ってトーチに火をともしてくださいね"
 
 
-tutorial_22 "THIS HALLWAY EXPLAINS A FEW MORE THINGS.##IT IS OPTIONAL AND WON'T HELP YOU PASS THE TUTORIAL."
+tutorial_22 "この先はチュートリアルのクリアの助けにはなりませんが##便利ないくつかのTIPSを紹介します"
 
 
-tutorial_23 "SAY   CURSE SALLY JONES   TO SPEND YOUR ONLY##CURSE TOKEN AND ADD TO SALLY'S CURSE SCORE."
+tutorial_23 "人や骨にカーソルを合わせてF1を押すと、呪うコマンドが入力されます##Enterを押すと呪うことができます"
 
-tutorial_24 "WHEN YOU SPEND IT, YOUR CURSE TOKEN IS RESTORED AFTER##TWO HOURS OF PLAY.  IT APPEARS NEAR YOUR TEMP METER."
+tutorial_24 "一度呪うと、次に呪うことができるようになるのは２時間のプレイ時間の後です##呪える時は温度メーターの右上にマークが表示されます"
 
-tutorial_25 "IF SALLY'S CURSE SCORE IS HIGH ENOUGH, SHE##WILL BE MARKED AT BIRTH IN FUTURE LIVES."
+tutorial_25 "もし一定回数以上呪われると、呪われた人はしばらくはるか遠くで生まれます##そこで呪いが消えるのを待つ必要があります"
 
-tutorial_26 "EVERYONE LOSES ONE FROM THEIR CURSE SCORE AFTER##EVERY HOUR OF PLAY, SO REDEMPTION IS POSSIBLE."
+tutorial_26 "F2でカーソルの対象に「占有ゲート」の所有権を付与できます##F3で赤子が自殺でき、F4で表情リストが出ます"
 
-tutorial_27 "HMM..."
+tutorial_27 "さて、ここから出られますか？"
 
-tutorial_2701 "THIS OPTIONAL AREA WILL NOT HELP YOU PASS THE TUTORIAL.##GO BACK AND LIGHT THE TORCH INSTEAD."
+tutorial_2701 "ここからオプションエリアです##戻ってトーチに火をともしましょう"
 
 
 
-tutorial_28 "HEAD SOUTH FOR HINTS, BUT ONLY IF YOU'RE REALLY STUCK.  YOU CAN'T OPEN##THIS DOOR UNLESS YOU'VE BEEN TRYING FOR TWENTY MINUTES."
+tutorial_28 "もし行き詰ってしまったなら、下に行ってください##ただし20分経たないとドアは開けられません"
 
 
 
-tutorial_29 "TWO MILKWEED STALKS MAKE THREAD.##TWO THREADS MAKE ROPE."
+tutorial_29 "トウワタの茎を二つ合わせると「いと」になります##いとを二本合わせると「ロープ」になります"
 
-tutorial_30 "CARVE THE BRANCH TWO TIMES WITH THE SHARP STONE.##YOU GET A SHORT SHAFT.  (YOU HAVE THREE BRANCHES FOR THREE CHANCES.)"
+tutorial_30 "鋭い石で長い枝を二回加工しましょう##すると短い棒になります（やりすぎちゃだめですよ）"
 
-tutorial_31 "TIE THE ROPE ON THE END OF THE SHAFT.##NOW PUT THE SHARP STONE ONTO THE TIED SHAFT.  YOU MADE A HATCHET."
+tutorial_31 "ロープを短い棒に結び付け、鋭い石を括り付けましょう##これで「石斧」の完成です"
 
-tutorial_32 "A HATCHET CAN MAKE KINDLING OUT OF BRANCHES.##PUT KINDLING ON HOT COALS TO GET A FIRE GOING."
+tutorial_32 "石斧を枝に使うことで「焚き付け」が作れます##焚き付けを炭火に入れると火が復活します"
 
-tutorial_33 "STICK A LONG STRAIGHT SHAFT INTO THE FIRE.##YOU GET A FIREBRAND."
+tutorial_33 "長い棒を火に入れると火付け棒になります##火付け棒の火は時間がたつと消えます"
 
-tutorial_34 "YOU CAN USE THE FIREBRAND TO GO BACK AND LIGHT THE TORCH.##(HINT:  IT LITERALLY SAYS THE WORD  TORCH  ON IT.)"
+tutorial_34 "火付け棒を持って戻り、トーチに使って火をつけましょう##そうしたらこのチュートリアルともおさらばです！"
 
 
 
 
 
 
-tutorial_99 "THIS IS THE END OF THE TUTORIAL.##AFTER YOU DIE HERE, YOU WILL BE BORN INTO THE REAL GAME."
+tutorial_99 "ここがチュートリアルの最後です##死ぬと次の人生から実際のゲームが始まります"
 
 
 
@@ -638,7 +640,7 @@ pauseHelpMessage1 " 左クリック:##・移動##・拾う##・使う"
 pauseHelpMessage2 " 右クリック:##・置く##・入れ替え##・取り外す"
 pauseHelpMessage3 "Space: 画面を固定"
 pauseHelpMessage4 "Shift: ダイレクト選択"
-pauseHelpMessage5 "Shift-右クリック: 人を攻撃"
+pauseHelpMessage5 "Ctrl-右クリック: 人を攻撃"
 pauseHelpMessage6 "Q/q: 食べる・着る"
 pauseHelpMessage7 "F1: 呪う"
 pauseHelpMessage8 "F2: 所有権付与"
