@@ -3025,7 +3025,7 @@ void LivingLifePage::drawChalkBackgroundString( doublePair inPos,
         }
 
     // FOVMOD NOTE:  Change 5/27 - Take these lines during the merge process
-    double lineSpacing = handwritingFont->getFontHeight() * 1.2 / gui_fov_scale_hud;
+    double lineSpacing = handwritingFont->getFontHeight() * 1.2;
     
     double firstLineY =  inPos.y + ( lines->size() - 1 ) * lineSpacing;
     
