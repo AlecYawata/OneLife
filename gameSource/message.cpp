@@ -9,6 +9,7 @@
 
 
 extern Font *mainFont;
+extern float gui_fov_scale_hud;
 
 static TextAlignment messageAlign = alignCenter;
 
@@ -49,7 +50,7 @@ void drawMessage( const char *inTranslationKey, doublePair inCenter,
                 
             doublePair thisMessagePos = inCenter;
                 
-            thisMessagePos.y -= i * mainFont->getFontHeight();
+            thisMessagePos.y -= i * mainFont->getFontHeight() * gui_fov_scale_hud;
                 
             mainFont->drawString( subMessages[i], 
                                   thisMessagePos, messageAlign );
