@@ -8622,7 +8622,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
             if( idToDescribe == -99 ) {
                 char* you;
                 if( ourLiveObject->name != NULL) {
-                    you = autoSprintf( "%s %s %d%s", (char*)translate( "you" ),
+                    you = autoSprintf( "%s「%s」 %d%s", (char*)translate( "you" ),
                                        ourLiveObject->name,
                                        (int)computeCurrentAge( ourLiveObject ),
                                        translate( "age" ) );
@@ -8663,7 +8663,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                     else if( ourLiveObject->holdingID < 0 ) {
                         LiveObject* babyObject = getLiveObject( -ourLiveObject->holdingID );
                         if( babyObject->name != NULL ) {
-                            des = autoSprintf( "%sの%s %d%s を抱えた %s", 
+                            des = autoSprintf( "%sの「%s」 %d%s を抱えた %s", 
                                                babyObject->relationName != NULL ? babyObject->relationName : (char*)translate( "unrelated" ),
                                                babyObject->name,
                                                (int)computeCurrentAge( babyObject ),
@@ -8704,37 +8704,39 @@ void LivingLifePage::draw( doublePair inViewCenter,
                     des = (char*)translate( "unrelated" );
                     }
                 if( otherObj != NULL && otherObj->name != NULL ) {
-                    des = autoSprintf( "%sの%s",
+                    des = autoSprintf( "%sの「%s」",
                                        des, otherObj->name );
                     desToDelete = des;
                     }
                 if( otherObj != NULL && 
                     otherObj->dying && otherObj->holdingID > 0 ) {
-                    des = autoSprintf( "%s - %s %s",
-                                       des,
+                    des = autoSprintf( "%s%s%s%s",
                                        translate( "with" ),
-                                       getObject( otherObj->holdingID )->
-                                       localizedName );
+                                       getObject( otherObj->holdingID )->localizedName,
+                                       translate( "withAfter" ),
+                                       des );
                     if( desToDelete != NULL ) {
                         delete [] desToDelete;
                         }
                     
                     desToDelete = des;
                     }
-                des = autoSprintf( "%s %d%s", des,
-                                   (int)computeCurrentAge( otherObj ),
-                                   translate( "age" ) );
-                if( desToDelete != NULL ) {
-                    delete [] desToDelete;
+                if( otherObj != NULL ) {
+                    des = autoSprintf( "%s %d%s", des,
+                                       (int)computeCurrentAge( otherObj ),
+                                       translate( "age" ) );
+                    if( desToDelete != NULL ) {
+                        delete [] desToDelete;
+                        }
+                    desToDelete = des;
                     }
-                desToDelete = des;
 
-                if( otherObj->holdingID < 0 ) {
+                if( otherObj != NULL && otherObj->holdingID < 0 ) {
                     LiveObject* otherHoldingLiveObject = getLiveObject( -otherObj->holdingID );
                     if( otherHoldingLiveObject != NULL ) {
                         if( otherHoldingLiveObject->id == ourLiveObject->id ) {
                             if( ourLiveObject->name != NULL ) {
-                                des = autoSprintf( "あなた - %s %d%s を抱えた %s",
+                                des = autoSprintf( "あなた「%s」 %d%s を抱えた %s",
                                                    otherHoldingLiveObject->name,
                                                    (int)computeCurrentAge( otherHoldingLiveObject ),
                                                    translate( "age" ),
@@ -8756,7 +8758,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                 }
                             }
                         else if( otherHoldingLiveObject->name != NULL ) {
-                            des = autoSprintf( "%sの%s %d%s を抱えた %s",
+                            des = autoSprintf( "%sの「%s」 %d%s を抱えた %s",
                                                otherHoldingLiveObject->relationName != NULL ? otherHoldingLiveObject->relationName : (char*)translate( "unrelated" ),
                                                otherHoldingLiveObject->name,
                                                (int)computeCurrentAge( otherHoldingLiveObject ),
@@ -8780,7 +8782,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             }
                         }
                     }
-                else if( otherObj->holdingID > 0 ) {
+                else if( otherObj != NULL && otherObj->holdingID > 0 && !otherObj->dying ) {
                     ObjectRecord* otherHoldingObject = getObject( otherObj->holdingID );
                     if( otherHoldingObject != NULL && otherHoldingObject->localizedName != NULL ) {
                         des = autoSprintf( "%s を持った %s", 
@@ -8979,6 +8981,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
                             const char *personName = 
                                 translate( "unknownPerson" );
+                            char* nameToDelete = NULL;
                             
                             double minDist = DBL_MAX;
                             LiveObject *ourLiveObject = getOurLiveObject();
@@ -8998,7 +9001,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                     if( thisDist < minDist ) {
                                         minDist = thisDist;
                                         if( pO->name != NULL ) {
-                                            personName = pO->name;
+                                            personName = nameToDelete = autoSprintf( "「%s」", pO->name );
                                             }
                                         else {
                                             personName = 
@@ -9015,6 +9018,9 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                                translate( "ownedBy" ),
                                                personName );
                             delete [] desNoComment;
+                            if( nameToDelete != NULL ) {
+                                delete[] nameToDelete;
+                                }
                             
                             desToDelete = des;
                             found = true;
@@ -11776,8 +11782,8 @@ void LivingLifePage::step() {
                             }
                         }
                     if( gravePerson->name != NULL ) {
-                        des = autoSprintf( "%s - %s",
-                                           gravePerson->name, des );
+                        des = autoSprintf( "%sの「%s」",
+                                           des, gravePerson->name );
                         desToDelete = des;
                         }
 
@@ -11987,8 +11993,8 @@ void LivingLifePage::step() {
                     }
                 if( strcmp( nameBuffer, "" ) != 0 &&
                     strcmp( nameBuffer, "~" ) != 0 ) {
-                    des = autoSprintf( "%s - %s",
-                                       nameBuffer, des );
+                    des = autoSprintf( "%s「%s」",
+                                       des, nameBuffer );
                     desToDelete = des;
 
                     g.name = stringDuplicate( nameBuffer );
