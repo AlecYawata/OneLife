@@ -643,7 +643,7 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
     setDrawColor( 1, 1, 1, 1 );
     
 
-    doublePair pos = { -250, -300 };
+    doublePair pos = { -270, -300 };
     
     //drawSprite( instructionsSprite, pos );
     middleFont->drawString( translate( "titleInstruction" ), pos, alignLeft );
