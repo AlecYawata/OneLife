@@ -19471,13 +19471,7 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
 		if ( isShiftKeyDown() ) {
 			newScale = ( mouseButton == MouseButton::WHEELUP ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
             }
-        if ( isCommandKeyDown() ) {
-            float currentHUDScale = SettingsManager::getFloatSetting( "fovScaleHUD", 1.0f );
-            newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentHUDScale /= 1.5 : currentHUDScale *= 1.5;
-            changeHUDFOV( newScale );
-        } else {
-            changeFOV( newScale );
-            }
+        changeFOV( newScale );
 		return;
 	}
     
@@ -19587,7 +19581,7 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
     if( ! mouseAlreadyDown &&
         modClick && ourLiveObject->holdingID > 0 &&
         getObject( ourLiveObject->holdingID )->deadlyDistance > 0 &&
-        isShiftKeyDown() &&
+        isCommandKeyDown() &&
         ! p.hitOtherPerson ) {
         
         // everything good to go for a kill-click, but they missed
@@ -20046,7 +20040,7 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
         p.hitOtherPerson &&
         modClick && ourLiveObject->holdingID > 0 &&
         getObject( ourLiveObject->holdingID )->deadlyDistance > 0 &&
-        isShiftKeyDown() ) {
+        isCommandKeyDown() ) {
         
         // special case
 
@@ -21709,13 +21703,7 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         if ( isShiftKeyDown() ) {
             newScale = ( inKeyCode == MG_KEY_LEFT ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
             }
-        if ( isCommandKeyDown() ) {
-            float currentHUDScale = SettingsManager::getFloatSetting( "fovScaleHUD", 1.0f );
-            newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentHUDScale /= 1.5 : currentHUDScale *= 1.5;
-            changeHUDFOV( newScale );
-        } else {
-		    changeFOV( newScale );
-            }
+	    changeFOV( newScale );
 		return;
 	    }
 
