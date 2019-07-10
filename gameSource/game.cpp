@@ -1221,17 +1221,17 @@ static void drawPauseScreen() {
         
     messagePos.x -= 2.5 * (viewHeight / 15);
     messagePos.y -= 0.8 * (viewHeight / 15);
-    mainFont->drawString( translate( "pauseMessage3" ), 
+    middleFont->drawString( translate( "pauseMessage3" ), 
                            messagePos, alignLeft );
 
-    messagePos.y -= 0.8 * (viewHeight / 15);
+    messagePos.y -= 0.6 * (viewHeight / 15);
     const char* quitMessageKey = "pauseMessage2";
     
     if( isQuittingBlocked() ) {
         quitMessageKey = "pauseMessage3b";
         }
 
-    mainFont->drawString( translate( quitMessageKey ), 
+    middleFont->drawString( translate( quitMessageKey ), 
                           messagePos, alignLeft );
 
     }
