@@ -216,6 +216,9 @@ char *TextField::getText() {
 
 
 void TextField::setMaxLength( int inLimit ) {
+    while( inLimit && inLimit < mbslen( mText ) ) {
+        deleteHit();
+        }
     mMaxLength = inLimit;
     }
 
