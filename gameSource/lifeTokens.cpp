@@ -211,7 +211,7 @@ void drawTokenMessage( doublePair inPos ) {
 
             char *timeString = autoSprintf( "%d:%02d:%02d", h, m, s );
             
-            numbersFontFixed->drawString( timeString, 
+            mainFont->drawString( timeString, 
                                           inPos, alignLeft );
 
             delete [] timeString;
