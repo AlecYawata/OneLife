@@ -8245,7 +8245,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
             doublePair slipPos = 
                 add( mult( recalcOffset( mYumSlipPosOffset[i] ), gui_fov_scale ), lastScreenViewCenter );
             setDrawColor( 1, 1, 1, 1 );
-            drawSprite( mYumSlipSprites[i], slipPos, gui_fov_scale_hud );
+            drawSprite( mYumSlipSprites[i], slipPos, gui_fov_scale_hud * 1.3 );
             
             doublePair messagePos = slipPos;
             messagePos.y += 11 * gui_fov_scale_hud;
