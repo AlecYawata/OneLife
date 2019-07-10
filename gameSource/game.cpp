@@ -378,13 +378,13 @@ char isNonIntegerScalingAllowed() {
 
 
 const char *getWindowTitle() {
-    return "OneLife";
+    return "OHOL非公式日本語版MOD";
     }
 
 
 const char *getAppName() {
     // NAMEMOD NOTE:  Change 2/5 - Take these lines during the merge process
-    return "OneLife+";
+    return "OneLife";
     }
 
 int getAppVersion() {
