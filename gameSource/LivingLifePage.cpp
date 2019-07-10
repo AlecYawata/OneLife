@@ -8026,7 +8026,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
             setDrawColor( 0, 0, 0, 1.0f );
 
-            double lineSpacing = handwritingFont->getFontHeight() / 2 + ( 5 * gui_fov_scale_hud );
+            double lineSpacing = handwritingFont->getFontHeight() + ( 2 * gui_fov_scale_hud );
             
             int numLines;
             
