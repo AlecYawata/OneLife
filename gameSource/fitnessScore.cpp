@@ -195,6 +195,7 @@ void triggerFitnessScoreDetailsUpdate() {
 
 
 static void shortenLongString( char *inString ) {
+    return;
     
     while( mainFont->measureString( inString ) >= 460 ) {
         
@@ -294,7 +295,7 @@ static void stepActiveRequest() {
         
         sscanf( readyResult, "%99s\n%lf\n%d", leaderboardName, &score, &rank );
 
-        char *leaderUpper = stringToUpperCase( leaderboardName );
+        char *leaderUpper = stringDuplicate ( leaderboardName );
         delete [] leaderboardName;
         
         char found;
@@ -320,8 +321,8 @@ static void stepActiveRequest() {
                 if( numParts == 7 ) {
                     
                     OffspringRecord r;
-                    char *nameWorking = stringToUpperCase( parts[0] );
-                    char *relationWorking = stringToUpperCase( parts[1] );
+                    char *nameWorking = stringDuplicate( parts[0] );
+                    char *relationWorking = stringDuplicate( parts[1] );
                     
                     char found;
                     r.name = replaceAll( nameWorking, "_", " ", &found );
@@ -638,7 +639,7 @@ void drawFitnessScoreDetails( doublePair inPos, int inSkip ) {
             
             mainFont->drawString( r.relationName, pos, alignLeft );
             
-            pos.x = inPos.x;
+            pos.x = inPos.x + 200;
             
             int yearsAgo = r.diedSecAgo / 60;
             
@@ -670,7 +671,7 @@ void drawFitnessScoreDetails( doublePair inPos, int inSkip ) {
             
             delete [] ageString;
             
-            pos.x = inPos.x + 350;
+            pos.x = inPos.x + 400;
             
             double scoreDelt = r.newScore - r.oldScore;
             
