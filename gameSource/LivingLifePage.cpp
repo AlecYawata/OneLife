@@ -17140,8 +17140,27 @@ void LivingLifePage::step() {
             // don't want them typing long filters that overflow the display
             sayCap = 23;
             }
-        delete [] currentText;
 
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            sayCap = 10;
+            if( strstr( currentText, " " ) != NULL ) {
+                char out;
+                char* rep = replaceAll( currentText, " ", "", &out );
+                mSayField.setText(rep);
+                delete[] rep;
+                }
+            }
+        if( ourLiveObject->holdingID < 0 && getLiveObject( -ourLiveObject->holdingID )->name == NULL ) {
+            sayCap = 10;
+            if( strstr( currentText, " " ) != NULL ) {
+                char out;
+                char* rep = replaceAll( currentText, " ", "", &out );
+                mSayField.setText(rep);
+                delete[] rep;
+                }
+            }
+
+        delete [] currentText;
         mSayField.setMaxLength( sayCap );
 
 
