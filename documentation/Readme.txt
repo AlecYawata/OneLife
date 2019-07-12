@@ -1,51 +1,68 @@
-For more information, email jasonrohrer@fastmail.fm
+OHOL非公式日本語版MOD　取り扱い説明書
+
+■サポートサイト
+https://www.ohol.jp/
+
+■このゲームについて
+このゲームはJasonRohrer氏原作の「OneHourOneLife」を日本語対応したMODです。
+日本語の使用できるサーバーに自動で接続されます。
+
+■ゲームのプレイにあたって
+ゲームのプレイには以下の２つが必要です
+
+１－ａ．JasonRohrer氏より「OneHourOneLife」用のアカウントキーを購入する
+https://sites.fastspring.com/jasonrohrer/instant/onehouronelife?referrer=www.ohol.jp
+
+１－ｂ．Steamにて「OneHourOneLife」を購入し、以下のページを参考にSteamIDを調べる
+https://www.ohol.jp/archives/104
+
+２．サポートサイトにて会員登録を行う
+https://www.ohol.jp/%e7%84%a1%e6%96%99%e4%bc%9a%e5%93%a1%e7%99%bb%e9%8c%b2/
+
+■起動方法
+- Windows版
+「OneLife.exe」を実行してください。
+- Mac版
+「OneLife_（バージョン名）.app」を実行してください
+バージョンは更新のたびに変わりますので最新のものを使用してください
 
 
-==CONTROLS==
+■基本操作(デフォルト)
+[マウス]
+左クリック：移動、拾う、使う
+右クリック：置く、入れ替える、取り外す
+ホイール：ズーム変更
+Ctrl+右クリック：他プレイヤーを攻撃
 
-All in-game actions are accomplished with two mouse buttons, which do different
-things depending on what you click on.
-
-Left Click (main click):
---Walk somewhere
---Pick something up
---Do action
---Use held item
---Lots of other things, depending on context
-
-Right Click (special click):
---Put what you're holding down, or into a container
---Remove an item from a container
---Use a weapon to kill someone
-
-So, left for almost everything.  Right for drop/containers/killing.  
-
-
-
-==CHAT==
-
-The first thing that is not accomplished with the mouse is chat, which is
-invoked by pressing ENTER, typing what you want to say, and pressing ENTER
-again to say it.
+[キーボード]
+Shift（押している最中）：ダイレクト選択モード。アイテムを直接クリックしなくてもマス大体の位置でクリックでき、プレイヤーキャラクターの後ろに隠れたアイテムもクリックできるようになる
+Q/q：手に持っているものを食べる
+Enter: 名前決定・発言ウィンドウを出す、決定、発言
+Escのあと%キー：ゲームを終了する
+F1: 最後にカーソルを合わせたキャラクターを呪うためのメッセージを入力する（Enterで決定）
+F2: カーソルを合わせている人に近くのプロパティゲートの所有権を付与するためのメッセージを入力する（Enterで決定）
+F3: 2歳未満であれば自殺するためのコマンドを入力する（Enterで決定）
+F4: 表情リストを表示し、数字やアルファベットでの表情変更を待ち受ける
+F5: 現在カーソルしているアイテムを作るためのレシピを表示する。手に持ったアイテムがその材料でない場合は表示されない
+F6: 現在右下に表示されるレシピのクラフトでできる結果アイテムを使うと、次にどんなクラフトができる蚊のレシピを表示する
 
 
+■フォントについて
+同封のファイルは以下のサイトで配布されているものです。
 
-==CRAFTING NOTES==
+システムフォント：源暎（げんえい）ゴシックP（SIL Open Font License 1.1）
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+　【源暎（げんえい）ゴシックP Ver 1.1a】
 
-The second thing that is not accomplished with the mouse is paging through
-the crafting notes that appear in the lower right corner of the screen.
-Press TAB (as indicated) to go to the next page.  SHIFT-TAB goes to the
-previous page.  CTRL-TAB jumps ahead by five pages, and CTRL-SHIFT-TAB jumps
-back by five pages.
+　　配布者：おたもん　mail:o_tamon@okoneya.jp 
+　　配布サイト：http://okoneya.jp/font/
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+ゲーム内フォント：はなぞめフォント
+作者：さつやこ
+配布サイト：ASTERISM　（http://www.asterism-m.com/）
+★フォント利用規約：http://www.asterism-m.com/font/rules.php
 
 
-
-==SETTINGS==
-
-The game runs in fullscreen mode by default.  This behavior, and many other
-behaviors, can be changed by editing the .ini files in the settings folder.
-Simply open them in Notepad or any other text editor.  You can adjust the 
-volume of sounds and music, window size, target frame rate, and so on.
-
-Alt-Enter should work to toggle out of fullscreen mode and back into fullscreen
-again, but sometimes, on some platforms, this does not work properly. 
+■更新履歴
+2019年7月11日　オープンテストのためのバージョン1を公開
