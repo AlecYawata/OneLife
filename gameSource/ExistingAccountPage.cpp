@@ -581,8 +581,11 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
     
     
     if( !mFPSMeasureDone ) {
+        if( mFramesCounted == 0 ) {
+            mPageActiveStartTime = game_getCurrentTime();
+            }
         double timePassed = game_getCurrentTime() - mPageActiveStartTime;
-        double settleTime = 0.1;
+        double settleTime = 0.0;
 
         if ( timePassed > settleTime ) {
             mFramesCounted ++;
