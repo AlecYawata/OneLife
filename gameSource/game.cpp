@@ -159,6 +159,7 @@ double loadingPhaseStartTime;
 
 int numLoadingSteps = 20;
 
+int tutorialNumber = 1;
 
 
 SpriteHandle instructionsSprite;
@@ -2448,6 +2449,9 @@ void keyDown( unsigned char inASCII ) {
         currentGamePage->base_keyDown( inASCII );
         }
 
+    if ( '1' <= inASCII && inASCII <= '9' ) {
+        tutorialNumber = inASCII - '1' + 1;
+        }
 
     
     switch( inASCII ) {
@@ -2466,6 +2470,11 @@ void keyDown( unsigned char inASCII ) {
 
 
 void keyUp( unsigned char inASCII ) {
+
+    if ( '1' <= inASCII && inASCII <= '9' ) {
+        tutorialNumber = 1;
+        }
+
     if( inASCII == 127 || inASCII == 8 ) {
         // delete no longer held
         // even if pause screen no longer up, pay attention to this

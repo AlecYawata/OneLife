@@ -280,6 +280,7 @@ static doublePair recalcOffset( doublePair ofs, bool force = false ) {
 int lastCursorLiveObjectID = 0;
 int lastCursorObjectID = 0;
 char* lastCursorGraveName = NULL;
+extern int tutorialNumber;
 
 
 // most recent home at end
@@ -18507,7 +18508,7 @@ void LivingLifePage::makeActive( char inFresh ) {
         }
     
     if( mForceRunTutorial ) {
-        mTutorialNumber = 1;
+        mTutorialNumber = tutorialNumber;
         mForceRunTutorial = false;
         }
     
