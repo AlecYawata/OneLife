@@ -4183,15 +4183,16 @@ void handleDrop( int inX, int inY, LiveObject *inDroppingPlayer,
 
 
 
-        if( found ) {
+        if( found && inDroppingPlayer->holdingID > 0 ) {
             targetX = foundX;
             targetY = foundY;
             }
         else {
             // no place to drop it, it disappears
 
-            // UNLESS we're holding a baby,
+            // OR we're holding a baby,
             // then just put the baby where we are
+            // (don't ever throw babies, that's weird and exploitable)
             if( inDroppingPlayer->holdingID < 0 ) {
                 int babyID = - inDroppingPlayer->holdingID;
                 
@@ -4410,10 +4411,12 @@ static void swapHeldWithGround(
     LiveObject *inPlayer, int inTargetID, 
     int inMapX, int inMapY,
     SimpleVector<int> *inPlayerIndicesToSendUpdatesAbout) {
-
+    
+    
     timeSec_t newHoldingEtaDecay = getEtaDecay( inMapX, inMapY );
     
     FullMapContained f = getFullMapContained( inMapX, inMapY );
+    
     
     
     clearAllContained( inMapX, inMapY );
@@ -14711,15 +14714,32 @@ int main() {
                     
                         // player was born as a baby
                         
+                        int barrierRadius = 
+                            SettingsManager::getIntSetting( 
+                                "barrierRadius", 250 );
+                        int barrierOn = SettingsManager::getIntSetting( 
+                            "barrierOn", 1 );
+
+                        char insideBarrier = true;
+                        
+                        if( barrierOn &&
+                            ( abs( dropPos.x ) > barrierRadius ||
+                              abs( dropPos.y ) > barrierRadius ) ) {
+                            
+                            insideBarrier = false;
+                            }
+                              
+
                         float threshold = SettingsManager::getFloatSetting( 
                             "babySurvivalYearsBeforeApocalypse", 15.0f );
                         
-                        if( age > threshold ) {
+                        if( insideBarrier && age > threshold ) {
                             // baby passed threshold, update last-passed time
                             lastBabyPassedThresholdTime = curTime;
                             }
                         else {
                             // baby died young
+                            // OR older, outside barrier
                             // check if we're due for an apocalypse
                             
                             if( lastBabyPassedThresholdTime > 0 &&

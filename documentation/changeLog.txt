@@ -3,6 +3,17 @@ This file only list changes to game code.  Changes to content can be found here:
 http://onehouronelife.com/updateLog.php
 
 
+
+Server Fixes
+
+--Fixed baby teleportation glitch.  Now if there's no place to drop a baby, 
+  they go where you are standing instead of being thrown.
+
+--Babies born outside rift area don't count toward survival requirement for
+  determining group failure.
+
+
+
 Version 251    2019-July-25
 
 --Fixed weird initialization of OwnerInfo structure.
