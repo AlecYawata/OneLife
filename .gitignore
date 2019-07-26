@@ -76,6 +76,8 @@ lineageServer/settings.php
 photoServer/settings.php
 reflector/sharedSecret.php
 reflector/remoteServerList.ini
+fitnessServer/settings.php
+lifeTokenServer/settings.php
 
 // Photo files
 photoServer/photos
