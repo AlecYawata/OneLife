@@ -475,6 +475,16 @@ static void setupOwned( ObjectRecord *inR ) {
 
 
 
+static void setupNoHighlight( ObjectRecord *inR ) {
+    inR->noHighlight = false;
+    
+    if( strstr( inR->description, "+noHighlight" ) != NULL ) {
+        inR->noHighlight = true;
+        }
+    }
+
+
+
 int getMaxSpeechPipeIndex() {
     return maxSpeechPipeIndex;
     }
@@ -546,6 +556,8 @@ float initObjectBankStep() {
                 setupFlight( r );
                 
                 setupOwned( r );
+                
+                setupNoHighlight( r );
                 
 
                 next++;
