@@ -37,6 +37,9 @@ cd ../..
 cp ../gameSource/OneLife windows/OneLife_$1/OneLife.exe
 
 cp win32/*.dll windows/OneLife_$1/
+cp win32/GenEiGothicP-Bold.otf windows/OneLife_$1/
+cp win32/GenEiGothicP-Bold_LICENSE.txt windows/OneLife_$1/
+cp win32/font.ttf windows/OneLife_$1/
 
 
 g++ -o unix2dos unix2dos.c 
