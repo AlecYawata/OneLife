@@ -586,6 +586,7 @@ void EditorSpriteTrimPage::actionPerformed( GUIComponent *inTarget ) {
             
             
             addObject( objName,
+                       objName,
                        false,
                        1,
                        0,

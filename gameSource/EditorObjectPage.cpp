@@ -1437,6 +1437,7 @@ void EditorObjectPage::actionPerformed( GUIComponent *inTarget ) {
 
         int newID =
         addObject( text,
+                   text,
                    mCheckboxes[0]->getToggled(),
                    mContainSizeField.getFloat(),
                    mCurrentObject.vertContainRotationOffset,
@@ -1586,6 +1587,7 @@ void EditorObjectPage::actionPerformed( GUIComponent *inTarget ) {
 
 
         addObject( text,
+                   text,
                    mCheckboxes[0]->getToggled(),
                    mContainSizeField.getFloat(),
                    mCurrentObject.vertContainRotationOffset,
