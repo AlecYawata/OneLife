@@ -56,13 +56,13 @@ class PageComponent : public GUIComponent {
         void setIgnoreEvents( char inIgnoreEvents );
         
 
-        void base_pointerMove( float inX, float inY );
+        bool base_pointerMove( float inX, float inY );
 
-        void base_pointerDown( float inX, float inY );
+        bool base_pointerDown( float inX, float inY );
 
-        void base_pointerDrag( float inX, float inY );
+        bool base_pointerDrag( float inX, float inY );
 
-        void base_pointerUp( float inX, float inY );
+        bool base_pointerUp( float inX, float inY );
 
         virtual void base_keyDown( unsigned char inASCII );
         
@@ -75,6 +75,7 @@ class PageComponent : public GUIComponent {
         
         void base_clearState();
         
+        bool mFocused;
         
     protected:
         
@@ -177,6 +178,8 @@ class PageComponent : public GUIComponent {
         char mIgnoreEvents;
 
         PageComponent *mMouseEventHog;
+
+        bool mIgnoreViewCenter;
 
     };
 

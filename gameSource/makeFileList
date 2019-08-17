@@ -55,6 +55,7 @@ SettingsPage.cpp \
 CheckboxButton.cpp \
 ValueSlider.cpp \
 SpriteButton.cpp \
+ObjectButton.cpp \
 SpriteToggleButton.cpp \
 categoryBank.cpp \
 liveAnimationTriggers.cpp \
@@ -120,6 +121,7 @@ graphics/yumSlip2.tga \
 graphics/yumSlip3.tga \
 graphics/yumSlip4.tga \
 graphics/photoBorder.tga \
+graphics/objectButtonBackground.tga \
 
 
 

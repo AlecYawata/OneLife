@@ -578,7 +578,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos,
                        char inHeldNotInPlaceYet,
                        ClothingSet inClothing,
                        int inNumContained, int *inContainedIDs,
-                       SimpleVector<int> *inSubContained );
+                       SimpleVector<int> *inSubContained,
+                       double inScale = 1.0 );
 
 
 

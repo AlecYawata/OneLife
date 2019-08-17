@@ -19,6 +19,7 @@
 
 #include "photos.h"
 
+#include "buttonStyle.h"
 
 #include "liveAnimationTriggers.h"
 
@@ -243,6 +244,38 @@ static void clearLocationSpeech() {
     locationSpeech.deleteAll();
     }
 
+static int emotIds[] = {
+    0,
+    5,
+    4,
+    6,
+    13,
+    11,
+    9,
+    14,
+    12,
+    3,
+    1,
+    2,
+    15,
+    10,
+};
+static char* emotCaptions[] = {
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "0",
+    "Q",
+    "W",
+    "E",
+    "R",
+    "T",
+    "Y",
+};
 
 // LINEAGEFERTILITYMOD NOTE:  Change 1/4 - Take these lines during the merge process
 static char showFertilityPanel = true;
@@ -2236,11 +2269,28 @@ LivingLifePage::LivingLifePage()
           mShowHighlights( true ),
           mUsingSteam( false ),
           mZKeyDown( false ),
+          mEmoteShowButton( 2754, - 640 + 25, 360 - 110 - 25, 40, 40, -1, -80, 0, 0, NULL, 1.5),
           mObjectPicker( &objectPickable, +510, 90 ) {
 
 
     if( SettingsManager::getIntSetting( "useSteamUpdate", 0 ) ) {
         mUsingSteam = true;
+        }
+
+    mIgnoreViewCenter = false;
+
+    setButtonStyle( &mEmoteShowButton );
+    addComponent( &mEmoteShowButton );
+    mEmoteShowButton.addActionListener( this );
+    mEmoteShowButton.setVisible( false );
+
+    for( int i=0; i<sizeof(emotIds)/sizeof(*emotIds); i++ ) {
+        ObjectButton* button = new ObjectButton(19, -640 + 25 + 50 * (i%7), 360 + 100 - 25 + 50 * (i/7), 40, 40, 0, 0, 0, false, NULL, 0.6);
+        button->setEmoteId( emotIds[i] );
+        button->setCaption( emotCaptions[i] );
+        addComponent( button );
+        button->addActionListener( this );
+        mEmoteButtons.push_back( button );
         }
 
     mForceGroundClick = false;
@@ -4910,7 +4960,6 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
     char stillWaitingBirth = false;
     
-
     if( mFirstServerMessagesReceived != 3 ) {
         // haven't gotten first messages from server yet
         waitedBirth = stillWaitingBirth = true;
@@ -4924,6 +4973,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
     if( stillWaitingBirth ) {
         
+        mEmoteShowButton.setVisible( false );
+
         if( getSpriteBankLoadFailure() != NULL ||
             getSoundBankLoadFailure() != NULL ) {    
             setSignal( "loadFailure" );
@@ -5049,6 +5100,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
             }
         waitedBirth = false;
     }
+
+    mEmoteShowButton.setVisible( true );
 
     //setDrawColor( 1, 1, 1, 1 );
     //drawSquare( lastScreenViewCenter, viewWidth );
@@ -7424,7 +7477,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
         // skip gui
         return;
         }    
-        
+
     if( showFPS ) {
             
         doublePair pos = lastScreenViewCenter;
@@ -8197,16 +8250,23 @@ void LivingLifePage::draw( doublePair inViewCenter,
             }
         }
 
+    for( int i=0; i<mEmoteButtons.size(); i++ ){
+        ObjectButton* button = mEmoteButtons.getElementDirect( i );
+        button->setPosition( -640 + 25 + 50 * (i%7), 360 + 100 - 25 - 50 * (i/7) - emotSheetOffsetRate * 100 );
+        button->setLiveObject( getOurLiveObject() );
+        }
     if( emotSheetOffsetRate > 0.0 ) {
-        doublePair emotHintPos = { lastScreenViewCenter.x - 230 * gui_fov_scale_hud, lastScreenViewCenter.y + (400 - emotSheetOffsetRate * 80) * gui_fov_scale_hud };
+        doublePair emotHintPos = { lastScreenViewCenter.x - 590 * gui_fov_scale_hud, lastScreenViewCenter.y + (400 - emotSheetOffsetRate * 100) * gui_fov_scale_hud };
         setDrawColor( 1, 1, 1, 1 );
-        drawSprite( mHintSheetSprites[0], emotHintPos, gui_fov_scale_hud * 0.8, 0.5,
+        drawSprite( mHintSheetSprites[0], emotHintPos, gui_fov_scale_hud * 1.0, 0.5,
                     false );
         setDrawColor( 0, 0, 0, 1.0f );
         emotHintPos.x -= 400 * gui_fov_scale_hud;
         emotHintPos.y -= 20 * gui_fov_scale_hud;
+        /*
         handwritingFont->drawString( translate( "emotHint" ), 
                                      emotHintPos, alignLeft );
+                                     */
         }
 
 
@@ -9232,6 +9292,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
             }
         }
 
+    doublePair guiViewCenter = {0, 0};
+    PageComponent::base_draw( guiViewCenter, inViewSize );
     
     if( vogMode ) {
         // draw again, so we can see picker
@@ -22023,6 +22085,22 @@ void LivingLifePage::keyUp( unsigned char inASCII ) {
 
 
 void LivingLifePage::actionPerformed( GUIComponent *inTarget ) {
+    if( inTarget == &mEmoteShowButton ) {
+        showEmotSheet = !showEmotSheet;
+        }
+    if( showEmotSheet ) {
+        for( int i=0; i<mEmoteButtons.size(); i++ ) {
+            if( mEmoteButtons.getElementDirect( i ) == inTarget ) {
+                int emotId = emotIds[ i ];
+                char* emotSockMessage = autoSprintf( "EMOT 0 0 %d#", emotId );
+                sendToServerSocket( emotSockMessage );
+                delete[] emotSockMessage;
+                lastEmotUseTime = game_getCurrentTime();
+                showEmotSheet = false;
+                return;
+                }
+            }
+        }
     if( vogMode && inTarget == &mObjectPicker ) {
 
         char rightClick;
@@ -22289,7 +22367,7 @@ void LivingLifePage::changeFOV( float newScale, bool save ) {
 
 	calcFontScale( newScale, handwritingFont );
 	calcFontScale( newScale, pencilFont );
-	calcFontScale( newScale, pencilErasedFont );
+    calcFontScale( newScale, pencilErasedFont );
 	gui_fov_scale = newScale;
 	gui_fov_scale_hud = gui_fov_scale / gui_fov_target_scale_hud;
 

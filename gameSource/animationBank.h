@@ -281,6 +281,7 @@ typedef struct ObjectAnimPack {
         // this held id (meant for held wounds of babies, no contained
         // items, no animation, no rideable objects)
         int additionalHeldID;
+        double zoomScale;
     } ObjectAnimPack;
 
 
@@ -309,7 +310,9 @@ ObjectAnimPack drawObjectAnimPacked(
     int inNumContained, 
     // set to NULL if not used
     int *inContainedIDs,
-    SimpleVector<int> *inSubContained );
+    SimpleVector<int> *inSubContained,
+    double zoomScale = 1.0
+);
 
 
 // draw a packed animation now
@@ -353,7 +356,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                            // set to non-NULL properly sized arrays
                            // to receive info about slot rots and positions
                            double *outSlotRots = NULL,
-                           doublePair *outSlotOffsets = NULL );
+                           doublePair *outSlotOffsets = NULL,
+                           double zoomScale = 1.0 );
 
 
 HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
@@ -380,7 +384,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                            // set to non-NULL properly sized arrays
                            // to receive info about slot rots and positions
                            double *outSlotRots = NULL,
-                           doublePair *outSlotOffsets = NULL );
+                           doublePair *outSlotOffsets = NULL,
+                           double zoomScale = 1.0 );
 
 
 void drawObjectAnim( int inObjectID, AnimType inType, double inFrameTime, 
@@ -403,7 +408,8 @@ void drawObjectAnim( int inObjectID, AnimType inType, double inFrameTime,
                      ClothingSet inClothing,
                      SimpleVector<int> *inClothingContained,
                      int inNumContained, int *inContainedIDs,
-                     SimpleVector<int> *inSubContained );
+                     SimpleVector<int> *inSubContained,
+                     double zoomScale = 1.0 );
                      
 
 
@@ -429,7 +435,8 @@ void drawObjectAnim( int inObjectID, AnimationRecord *inAnim,
                      ClothingSet inClothing,
                      SimpleVector<int> *inClothingContained,
                      int inNumContained, int *inContainedIDs,
-                     SimpleVector<int> *inSubContained );
+                     SimpleVector<int> *inSubContained,
+                     double zoomScale = 1.0 );
 
 
 

@@ -3587,7 +3587,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                        char inHeldNotInPlaceYet,
                        ClothingSet inClothing,
                        int inNumContained, int *inContainedIDs,
-                       SimpleVector<int> *inSubContained ) {
+                       SimpleVector<int> *inSubContained,
+                       double inScale ) {
     
     drawObject( inObject, 0, inPos, inRot, inWorn, inFlipH, inAge, 
                 inHideClosestArm,
@@ -3657,7 +3658,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                         0,
                         false,
                         false,
-                        emptyClothing );
+                        emptyClothing,
+                        inScale );
 
             for( int s=0; s<contained->numSlots; s++ ) {
                 if( s < inSubContained[i].size() ) {
@@ -3706,7 +3708,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                     
                     drawObject( subContained, 2, subPos, subRot, 
                                 false, inFlipH,
-                                inAge, 0, false, false, emptyClothing );
+                                inAge, 0, false, false, emptyClothing,
+                                inScale );
                     }
                 }
                 
@@ -3715,7 +3718,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                         0,
                         false,
                         false,
-                        emptyClothing );
+                        emptyClothing,
+                        inScale );
 
             }
         else {
@@ -3725,7 +3729,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                         0,
                         false,
                         false,
-                        emptyClothing );
+                        emptyClothing,
+                        inScale );
             }
         
         }
@@ -3736,7 +3741,8 @@ HoldingPos drawObject( ObjectRecord *inObject, doublePair inPos, double inRot,
                        inHideClosestArm,
                        inHideAllLimbs,
                        inHeldNotInPlaceYet,
-                       inClothing );
+                       inClothing,
+                       inScale );
     }
 
 

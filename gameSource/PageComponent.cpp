@@ -3,9 +3,12 @@
 #include "minorGems/game/game.h"
 
 
+extern float gui_fov_scale;
+
 PageComponent::PageComponent( double inX, double inY )
         : mX( inX ), mY( inY ), mParent( NULL ), mVisible( true ),
           mIgnoreEvents( false ),
+          mIgnoreViewCenter( true ),
           mMouseEventHog( NULL ) {
     
     }
@@ -60,20 +63,27 @@ void PageComponent::base_draw( doublePair inViewCenter,
                                double inViewSize ){
 
     doublePair oldViewCenter = getViewCenterPosition();
+    setViewCenterPosition( inViewCenter.x - mX, inViewCenter.y - mY );
 
-    setViewCenterPosition( oldViewCenter.x - mX, 
-                           oldViewCenter.y - mY );
-    
+    if( mIgnoreViewCenter ) {
+        setLetterbox( 1280, 720 );
+        setViewSize( 1280 );
+        }
     for( int i=0; i<mComponents.size(); i++ ) {
         PageComponent *c = *( mComponents.getElement( i ) );
     
         if( c->isVisible() ) {
-            c->base_draw( inViewCenter, inViewSize );
+            doublePair childViewCenter = { inViewCenter.x - mX, inViewCenter.y - mY, };
+            c->base_draw( childViewCenter, inViewSize );
             }
         }
 
     draw();
 
+    if( mIgnoreViewCenter ) {
+        setLetterbox( 1280 * gui_fov_scale, 720 * gui_fov_scale );
+        setViewSize( 1280 * gui_fov_scale );
+        }
     setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
     }
 
@@ -117,14 +127,22 @@ void PageComponent::setIgnoreEvents( char inIgnoreEvents ) {
 
 
 
-void PageComponent::base_pointerMove( float inX, float inY ){
+bool PageComponent::base_pointerMove( float inX, float inY ){
+    bool focused = false;
     if( mIgnoreEvents ) {
-        return;
+        return false;
         }
     
+    doublePair oldViewCenter = getViewCenterPosition();
+    if( mIgnoreViewCenter ) {
+        setViewCenterPosition( 0, 0 );
+        inX -= oldViewCenter.x;
+        inY -= oldViewCenter.y;
+        inX /= gui_fov_scale;
+        inY /= gui_fov_scale;
+        }    
     inX -= mX;
     inY -= mY;
-    
 
     if( mMouseEventHog != NULL ) {
         if( mMouseEventHog->isVisible() && mMouseEventHog->isActive() ) {
@@ -136,24 +154,42 @@ void PageComponent::base_pointerMove( float inX, float inY ){
             PageComponent *c = *( mComponents.getElement( i ) );
             
             if( c->isVisible() && c->isActive() ) {
-                c->base_pointerMove( inX, inY );
+                focused = c->base_pointerMove( inX, inY );
+                if( focused ) {
+                    break;
+                    }
                 }
             }
         }
-    
-    pointerMove( inX, inY );
+
+    if( !focused ) {
+        mFocused = false;
+        pointerMove( inX, inY );
+        focused = mFocused;
+        }    
+    setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
+    return focused;
     }
 
 
 
-void PageComponent::base_pointerDown( float inX, float inY ){
+bool PageComponent::base_pointerDown( float inX, float inY ){
+    bool focused = false;
     if( mIgnoreEvents ) {
-        return;
+        return false;
         }
-    
+
+    doublePair oldViewCenter = getViewCenterPosition();
+    if( mIgnoreViewCenter ) {
+        setViewCenterPosition( 0, 0 );
+        inX -= oldViewCenter.x;
+        inY -= oldViewCenter.y;
+        inX /= gui_fov_scale;
+        inY /= gui_fov_scale;
+        }
     inX -= mX;
     inY -= mY;
-    
+
     if( mMouseEventHog != NULL ) {
         if( mMouseEventHog->isVisible() && mMouseEventHog->isActive() ) {
             mMouseEventHog->base_pointerDown( inX, inY );
@@ -164,24 +200,42 @@ void PageComponent::base_pointerDown( float inX, float inY ){
             PageComponent *c = *( mComponents.getElement( i ) );
             
             if( c->isVisible() && c->isActive() ) {
-                c->base_pointerDown( inX, inY );
+                focused = c->base_pointerDown( inX, inY );
+                if( focused ) {
+                    break;
+                    }
                 }
             }
         }
     
-    pointerDown( inX, inY );
+    if( !focused ) {
+        mFocused = false;
+        pointerDown( inX, inY );
+        focused = mFocused;
+        }    
+    setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
+    return focused;
     }
 
 
 
-void PageComponent::base_pointerDrag( float inX, float inY ){
+bool PageComponent::base_pointerDrag( float inX, float inY ){
+    bool focused = false;
     if( mIgnoreEvents ) {
-        return;
+        return false;
         }
     
+    doublePair oldViewCenter = getViewCenterPosition();
+    if( mIgnoreViewCenter ) {
+        setViewCenterPosition( 0, 0 );
+        inX -= oldViewCenter.x;
+        inY -= oldViewCenter.y;
+        inX /= gui_fov_scale;
+        inY /= gui_fov_scale;
+        }
     inX -= mX;
     inY -= mY;
-    
+
     if( mMouseEventHog != NULL ) {
         if( mMouseEventHog->isVisible() && mMouseEventHog->isActive() ) {
             mMouseEventHog->base_pointerDrag( inX, inY );
@@ -192,17 +246,36 @@ void PageComponent::base_pointerDrag( float inX, float inY ){
             PageComponent *c = *( mComponents.getElement( i ) );
             
             if( c->isVisible() && c->isActive() ) {
-                c->base_pointerDrag( inX, inY );
+                focused = c->base_pointerDrag( inX, inY );
+                if( focused ) {
+                    break;
+                    }
                 }
             }
         }
 
-    pointerDrag( inX, inY );
+    if( !focused ) {
+        mFocused = false;
+        pointerDrag( inX, inY );
+        focused = mFocused;
+        }    
+    setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
+    return focused;
     }
 
 
 
-void PageComponent::base_pointerUp( float inX, float inY ){
+bool PageComponent::base_pointerUp( float inX, float inY ){
+    bool focused = false;
+
+    doublePair oldViewCenter = getViewCenterPosition();
+    if( mIgnoreViewCenter ) {
+        setViewCenterPosition( 0, 0 );
+        inX -= oldViewCenter.x;
+        inY -= oldViewCenter.y;
+        inX /= gui_fov_scale;
+        inY /= gui_fov_scale;
+        }
     inX -= mX;
     inY -= mY;
 
@@ -216,12 +289,21 @@ void PageComponent::base_pointerUp( float inX, float inY ){
             PageComponent *c = *( mComponents.getElement( i ) );
             
             if( c->isVisible() && c->isActive() ) {
-                c->base_pointerUp( inX, inY );
+                focused = c->base_pointerUp( inX, inY );
+                if( focused ) {
+                    break;
+                    }
                 }
             }
         }
 
-    pointerUp( inX, inY );
+    if( !focused ) {
+        mFocused = false;
+        pointerUp( inX, inY );
+        focused = mFocused;
+        }    
+    setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
+    return focused;
     }
 
 

@@ -1225,7 +1225,8 @@ ObjectAnimPack drawObjectAnimPacked(
     ClothingSet inClothing,
     SimpleVector<int> *inClothingContained,
     int inNumContained, int *inContainedIDs,
-    SimpleVector<int> *inSubContained ) {
+    SimpleVector<int> *inSubContained,
+    double zoomScale ) {
     
     ObjectAnimPack outPack = {
         inObjectID,
@@ -1252,7 +1253,8 @@ ObjectAnimPack drawObjectAnimPacked(
         inContainedIDs,
         inSubContained,
         drawWithEmot,
-        0 };
+        0,
+        zoomScale, };
     
     return outPack;
     }
@@ -1291,7 +1293,10 @@ void drawObjectAnim( ObjectAnimPack inPack ) {
             inPack.inHideAllLimbs,
             inPack.inHeldNotInPlaceYet,
             inPack.inClothing,
-            inPack.inClothingContained );
+            inPack.inClothingContained,
+            NULL,
+            NULL,
+            inPack.zoomScale );
         }
     else {
         drawObjectAnim( 
@@ -1317,7 +1322,8 @@ void drawObjectAnim( ObjectAnimPack inPack ) {
             inPack.inClothingContained,
             inPack.inNumContained,
             inPack.inContainedIDs,
-            inPack.inSubContained );
+            inPack.inSubContained,
+            inPack.zoomScale );
         }
     
     drawWithEmot = oldEmot;
@@ -1356,7 +1362,10 @@ void drawObjectAnim( ObjectAnimPack inPack ) {
             false,
             false,
             emptyClothing,
-            NULL );
+            NULL,
+            0,
+            0,
+            inPack.zoomScale );
         }
     }
 
@@ -1383,7 +1392,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                            ClothingSet inClothing,
                            SimpleVector<int> *inClothingContained,
                            double *outSlotRots,
-                           doublePair *outSlotOffsets ) {
+                           doublePair *outSlotOffsets,
+                           double zoomScale ) {
     
     if( inType == ground2 ) {
         inType = ground;
@@ -1400,7 +1410,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                            inFlipH, inAge, 
                            inHideClosestArm, inHideAllLimbs, 
                            inHeldNotInPlaceYet,
-                           inClothing );
+                           inClothing,
+                           zoomScale );
         }
     else {
         if( inFadeTargetType == ground2 ) {
@@ -1437,7 +1448,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                                inHeldNotInPlaceYet,
                                inClothing,
                                inClothingContained,
-                               outSlotRots, outSlotOffsets );
+                               outSlotRots, outSlotOffsets,
+                               zoomScale );
         }
     }
 
@@ -1465,7 +1477,8 @@ void drawObjectAnimHighlighted(
     ClothingSet inClothing,
     SimpleVector<int> *inClothingContained,
     int inNumContained, int *inContainedIDs,
-    SimpleVector<int> *inSubContained ) {
+    SimpleVector<int> *inSubContained,
+    double zoomScale ) {
 
     
     // draw object normally
@@ -1489,7 +1502,8 @@ void drawObjectAnimHighlighted(
         inClothing,
         inClothingContained,
         inNumContained, inContainedIDs,
-        inSubContained );
+        inSubContained,
+        zoomScale );
 
     if( inHighlightFade > 0 ) {
         // draw highlight over top
@@ -1548,7 +1562,8 @@ void drawObjectAnimHighlighted(
                 inClothing,
                 inClothingContained,
                 inNumContained, inContainedIDs,
-                inSubContained );
+                inSubContained,
+                zoomScale );
             
             
             float mainFade = .35f;
@@ -1719,7 +1734,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                            ClothingSet inClothing,
                            SimpleVector<int> *inClothingContained,
                            double *outSlotRots,
-                           doublePair *outSlotOffsets ) {
+                           doublePair *outSlotOffsets,
+                           double zoomScale ) {
 
     HoldingPos returnHoldingPos = { false, {0, 0}, 0 };
 
@@ -1744,7 +1760,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
         drawObject( obj, inDrawBehindSlots,
                     inPos, inRot, inWorn, inFlipH, inAge, 
                     inHideClosestArm, inHideAllLimbs, inHeldNotInPlaceYet,
-                    inClothing );
+                    inClothing, zoomScale );
         return returnHoldingPos;
         }
 
@@ -2335,7 +2351,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             
 
         
-        doublePair pos = add( spritePos, inPos );
+        doublePair pos = add( mult( spritePos, zoomScale ), inPos );
 
 
         char skipSprite = false;
@@ -2421,7 +2437,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
 
             doublePair cPos = add( spritePos, offset );
 
-            cPos = add( cPos, inPos );
+            cPos = add( mult( cPos, zoomScale), inPos );
             
             backShoePos = cPos;
             }
@@ -2453,7 +2469,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             
                 doublePair cPos = add( spritePos, offset );
                 
-                cPos = add( cPos, inPos );
+                cPos = add( mult( cPos, zoomScale), inPos );
                 
                 tunicPos = cPos;
                 }
@@ -2483,7 +2499,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             
                 doublePair cPos = add( spritePos, offset );
                 
-                cPos = add( cPos, inPos );
+                cPos = add( mult( cPos, zoomScale ), inPos );
                 
                 bottomPos = cPos;
                 }
@@ -2512,7 +2528,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             
                 doublePair cPos = add( spritePos, offset );
                 
-                cPos = add( cPos, inPos );
+                cPos = add( mult( cPos, zoomScale ), inPos );
                 
                 backpackPos = cPos;
                 }
@@ -2538,7 +2554,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                                 &used,
                                 endAnimType,
                                 endAnimType,
-                                add( animBodyPos, inPos ),
+                                add( mult( animBodyPos, zoomScale ), inPos ),
                                 animBodyRotDelta,
                                 true,
                                 inFlipH,
@@ -2549,7 +2565,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                                 emptyClothing,
                                 NULL,
                                 0, NULL,
-                                NULL );
+                                NULL,
+                                zoomScale );
                 }
 
             if( inClothing.bottom != NULL ) {
@@ -2584,7 +2601,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                                 emptyClothing,
                                 NULL,
                                 numCont, cont,
-                                NULL );
+                                NULL,
+                                zoomScale );
                 
                 if( cont != NULL ) {
                     delete [] cont;
@@ -2621,7 +2639,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                                 emptyClothing,
                                 NULL,
                                 numCont, cont,
-                                NULL );
+                                NULL,
+                                zoomScale );
 
                 if( cont != NULL ) {
                     delete [] cont;
@@ -2658,7 +2677,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                                 emptyClothing,
                                 NULL,
                                 numCont, cont,
-                                NULL );
+                                NULL,
+                                zoomScale );
 
                 if( cont != NULL ) {
                     delete [] cont;
@@ -2693,7 +2713,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
 
             doublePair cPos = add( spritePos, offset );
 
-            cPos = add( cPos, inPos );
+            cPos = add( mult( cPos, zoomScale ), inPos );
             
             frontShoePos = cPos;
             }
@@ -2746,7 +2766,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
             if( drawMouthShapes && spriteID == mouthAnchorID &&
                 mouthShapeFrame < numMouthShapeFrames ) {
                 drawSprite( mouthShapeFrameList[ mouthShapeFrame ], 
-                            pos, 1.0, rot, 
+                            pos, zoomScale, rot, 
                             logicalXOR( inFlipH, obj->spriteHFlip[i] ) );
                 mouthShapeFrame ++;
                 
@@ -2765,7 +2785,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                     }
                 }
             else {
-                drawSprite( getSprite( spriteID ), pos, 1.0, rot, 
+                drawSprite( getSprite( spriteID ), pos, zoomScale, rot, 
                             logicalXOR( inFlipH, obj->spriteHFlip[i] ) );
                 }
             
@@ -2828,7 +2848,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
         
             doublePair cPos = add( animHeadPos, offset );
 
-            cPos = add( cPos, inPos );
+            cPos = add( mult( cPos, zoomScale ), inPos );
 
             char used;
             drawObjectAnim( drawWithEmot->eyeEmot, 
@@ -2852,7 +2872,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             emptyClothing,
                             NULL,
                             0, NULL,
-                            NULL );
+                            NULL,
+                            zoomScale );
             }
 
 
@@ -2877,7 +2898,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             &used,
                             endAnimType,
                             endAnimType,
-                            add( animHeadPos, inPos ),
+                            add( mult( animHeadPos, zoomScale ), inPos ),
                             animHeadRotDelta,
                             true,
                             inFlipH,
@@ -2888,7 +2909,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             emptyClothing,
                             NULL,
                             0, NULL,
-                            NULL );
+                            NULL,
+                            zoomScale );
             }
 
 
@@ -2912,7 +2934,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             &used,
                             endAnimType,
                             endAnimType,
-                            add( animHeadPos, inPos ),
+                            add( mult( animHeadPos, zoomScale ), inPos ),
                             animHeadRotDelta,
                             true,
                             inFlipH,
@@ -2923,7 +2945,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             emptyClothing,
                             NULL,
                             0, NULL,
-                            NULL );
+                            NULL,
+                            zoomScale );
             }
         
 
@@ -2946,7 +2969,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             &used,
                             endAnimType,
                             endAnimType,
-                            add( animHeadPos, inPos ),
+                            add( mult( animHeadPos, zoomScale ), inPos ),
                             animHeadRotDelta,
                             true,
                             inFlipH,
@@ -2957,7 +2980,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             emptyClothing,
                             NULL,
                             0, NULL,
-                            NULL );
+                            NULL,
+                            zoomScale );
             }
 
 
@@ -2997,7 +3021,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             emptyClothing,
                             NULL,
                             numCont, cont,
-                            NULL );
+                            NULL,
+                            zoomScale );
 
             if( cont != NULL ) {
                 delete [] cont;
@@ -3035,7 +3060,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                             emptyClothing,
                             NULL,
                             numCont, cont,
-                            NULL );
+                            NULL,
+                            zoomScale );
 
             if( cont != NULL ) {
                 delete [] cont;
@@ -3062,7 +3088,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                         &used,
                         endAnimType,
                         endAnimType,
-                        add( animHeadPos, inPos ),
+                        add( mult( animHeadPos, zoomScale ), inPos ),
                         animHeadRotDelta,
                         true,
                         inFlipH,
@@ -3073,7 +3099,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                         emptyClothing,
                         NULL,
                         0, NULL,
-                        NULL );
+                        NULL,
+                        zoomScale );
         }
 
 
@@ -3098,7 +3125,7 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
         
         doublePair cPos = add( animHeadPos, offset );
 
-        cPos = add( cPos, inPos );
+        cPos = add( mult( cPos, zoomScale ), inPos );
         
         int numCont = 0;
         int *cont = NULL;
@@ -3130,7 +3157,8 @@ HoldingPos drawObjectAnim( int inObjectID, int inDrawBehindSlots,
                         emptyClothing,
                         NULL,
                         numCont, cont,
-                        NULL );
+                        NULL,
+                        zoomScale );
         
         if( cont != NULL ) {
             delete [] cont;
@@ -3220,7 +3248,8 @@ void drawObjectAnim( int inObjectID, AnimType inType, double inFrameTime,
                      ClothingSet inClothing,
                      SimpleVector<int> *inClothingContained,
                      int inNumContained, int *inContainedIDs,
-                     SimpleVector<int> *inSubContained ) {
+                     SimpleVector<int> *inSubContained,
+                     double zoomScale ) {
     
     if( inType == ground2 ) {
         inType = ground;
@@ -3236,7 +3265,8 @@ void drawObjectAnim( int inObjectID, AnimType inType, double inFrameTime,
                     inFlipH, inAge, inHideClosestArm, inHideAllLimbs, 
                     inHeldNotInPlaceYet, inClothing,
                     inNumContained, inContainedIDs,
-                    inSubContained );
+                    inSubContained,
+                    zoomScale );
         }
     else {
         if( inFadeTargetType == ground2 ) {
@@ -3271,7 +3301,8 @@ void drawObjectAnim( int inObjectID, AnimType inType, double inFrameTime,
                         inClothing,
                         inClothingContained,
                         inNumContained, inContainedIDs,
-                        inSubContained );
+                        inSubContained,
+                        zoomScale );
         }
     }
 
@@ -3298,7 +3329,8 @@ void drawObjectAnim( int inObjectID, AnimationRecord *inAnim,
                      ClothingSet inClothing,
                      SimpleVector<int> *inClothingContained,
                      int inNumContained, int *inContainedIDs,
-                     SimpleVector<int> *inSubContained ) {
+                     SimpleVector<int> *inSubContained,
+                     double zoomScale ) {
     
     ClothingSet emptyClothing = getEmptyClothingSet();
 
@@ -3329,7 +3361,8 @@ void drawObjectAnim( int inObjectID, AnimationRecord *inAnim,
                     inClothing,
                     inClothingContained,
                     slotRots,
-                    slotOffsets );
+                    slotOffsets,
+                    zoomScale );
 
     
     // next, draw jiggling (never rotating) objects in slots
@@ -3606,7 +3639,7 @@ void drawObjectAnim( int inObjectID, AnimationRecord *inAnim,
                     inAge, inHideClosestArm, inHideAllLimbs, 
                     inHeldNotInPlaceYet,
                     inClothing,
-                    inClothingContained );
+                    inClothingContained, 0, 0, zoomScale );
     }
 
 

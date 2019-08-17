@@ -425,6 +425,7 @@ char gamePlayingBack = false;
 
 Font *mainFont;
 Font *middleFont;
+Font *littleFont;
 Font *mainFontFixed;
 // closer spacing
 Font *mainFontReview;
@@ -564,6 +565,9 @@ void initDrawString( int inWidth, int inHeight ) {
     middleFont = new Font( getFontTGAFileName(), 6, 16, false, 24 );
     middleFont->setMinimumPositionPrecision( 1 );
 
+    littleFont = new Font( getFontTGAFileName(), 6, 16, false, 16 );
+    littleFont->setMinimumPositionPrecision( 1 );
+
     setViewCenterPosition( lastScreenViewCenter.x, lastScreenViewCenter.y );
 
     viewHeightFraction = inHeight / (double)inWidth;
@@ -583,6 +587,7 @@ void initDrawString( int inWidth, int inHeight ) {
 void freeDrawString() {
     delete mainFont;
     delete middleFont;
+    delete littleFont;
     }
 
 

@@ -23,6 +23,7 @@
 #include "emotion.h"
 
 #include "TextField.h"
+#include "ObjectButton.h"
 
 
 #define NUM_HUNGER_BOX_SPRITES 20
@@ -818,6 +819,9 @@ class LivingLifePage : public GamePage, public ActionListener {
         
 
         float mLastMouseOverFade;
+
+        ObjectButton mEmoteShowButton;
+        SimpleVector<ObjectButton*> mEmoteButtons;
 
         SpriteHandle mChalkBlotSprite;
         SpriteHandle mPathMarkSprite;

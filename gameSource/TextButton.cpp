@@ -1,7 +1,9 @@
 #include "TextButton.h"
 
+#include "minorGems/game/game.h"
 #include "minorGems/util/stringUtils.h"
 
+extern float gui_fov_scale_hud;
 
 
 TextButton::TextButton( Font *inDisplayFont, 
@@ -58,9 +60,14 @@ void TextButton::setPadding( double inHorizontalPadding,
         
 void TextButton::drawContents() {
     // leave draw color set by Button
-    
+
     doublePair textPos = { 0, 0 };
+
+    float prevScale = gui_fov_scale_hud;
+    gui_fov_scale_hud = 1.0f;
     
     mFont->drawString( mLabelText, textPos, alignCenter );
+
+    gui_fov_scale_hud = prevScale;
     }
 
