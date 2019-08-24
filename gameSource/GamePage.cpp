@@ -207,7 +207,8 @@ void GamePage::base_draw( doublePair inViewCenter,
     draw( inViewCenter, inViewSize );
 
     if( !mSkipDrawingSubComponents ) {
-        PageComponent::base_draw( inViewCenter, inViewSize );
+        doublePair zero = { 0, 0 };
+        PageComponent::base_draw( zero, inViewSize );
         }
     
     doublePair oldViewCenter = getViewCenterPosition();

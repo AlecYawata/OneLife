@@ -68,7 +68,7 @@ void PageComponent::base_draw( doublePair inViewCenter,
     if( mIgnoreViewCenter ) {
         setLetterbox( 1280, 720 );
         setViewSize( 1280 );
-        setViewCenterPosition( -mX, -mY );
+//        setViewCenterPosition( -mX, -mY );
         }
     for( int i=0; i<mComponents.size(); i++ ) {
         PageComponent *c = *( mComponents.getElement( i ) );
