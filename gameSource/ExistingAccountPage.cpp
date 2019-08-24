@@ -646,10 +646,10 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
     setDrawColor( 1, 1, 1, 1 );
     
 
-    doublePair pos = { -270, -300 };
+    doublePair pos = { -270, -150 };
     
     //drawSprite( instructionsSprite, pos );
-    middleFont->drawString( translate( "titleInstruction" ), pos, alignLeft );
+    middleFont->drawString( translate( "titleInstruction" ), pos, alignLeft, 10 );
 
     if( ! mEmailField.isVisible() ) {
         char *email = mEmailField.getText();

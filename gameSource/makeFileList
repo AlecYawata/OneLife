@@ -122,6 +122,10 @@ graphics/yumSlip3.tga \
 graphics/yumSlip4.tga \
 graphics/photoBorder.tga \
 graphics/objectButtonBackground.tga \
+graphics/curseButton.tga \
+graphics/leftButton.tga \
+graphics/rightButton.tga \
+graphics/backButton.tga \
 
 
 

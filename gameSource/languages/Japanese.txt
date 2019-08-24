@@ -36,7 +36,7 @@ categoriesRebuild "アイテムグループデータ##(キャッシュ作成中)
 
 
 loadingInstruction "このゲームはJasonRohrer原作「OneHourOneLife」の非公式日本語版MODです"
-titleInstruction "アカウントキーが必要です##プレイするにはJasonRohrerから購入した、##ゲームは日本語専用のサーバーに接続されますが、##原作者はJasonRohrerです。##このゲームはOneHourOneLifeの非公式MODであり、"
+titleInstruction "このゲームはOneHourOneLifeの非公式MODであり、##原作者はJasonRohrerです。##ゲームは日本語専用のサーバーに接続されますが、##プレイするにはJasonRohrerから購入した、##アカウントキーが必要です"
 
 
 email "メールアドレス:"
@@ -646,8 +646,8 @@ pauseHelpMessage7 "F1: 呪う"
 pauseHelpMessage8 "F2: 所有権付与"
 pauseHelpMessage9 "F3: 自殺する（赤子のみ）"
 pauseHelpMessage10 "F4: 表情を変える"
-pauseHelpMessage11 "F5: クラフトレシピを探す"
-pauseHelpMessage12 "F6: レシピを先に進める"
+pauseHelpMessage11 "F5: クラフトレシピを見る"
+pauseHelpMessage12 ""
 
 
 quitMessage "[ESC]キーを押すとゲームを終了します"

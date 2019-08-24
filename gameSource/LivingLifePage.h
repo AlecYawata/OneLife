@@ -38,6 +38,8 @@
 
 #define NUM_YUM_SLIPS 4
 
+struct HintObject;
+struct HintHistory;
 
 typedef struct LiveObject {
         int id;
@@ -695,12 +697,18 @@ class LivingLifePage : public GamePage, public ActionListener {
         
         int mCurrentHintObjectID;
         int mCurrentHintIndex;
+        bool mCurrentHintReverse;
         
         int mNextHintObjectID;
         int mNextHintIndex;
+        bool mNextHintReverse;
+        SimpleVector<HintHistory> mHintHistories;
+        void pushHintHistory();
+        void popHintHistory();
 
         SimpleVector<TransRecord *> mLastHintSortedList;
         int mLastHintSortedSourceID;
+        int mLastHintReverse;
         char *mLastHintFilterString;
         
         // string that's waiting to be shown on hint-sheet 4
@@ -711,8 +719,9 @@ class LivingLifePage : public GamePage, public ActionListener {
         int *mHintBookmarks;
         
 
-        int getNumHints( int inObjectID );
-        char *getHintMessage( int inObjectID, int inIndex );
+        int getNumHints( int inObjectID, bool reverse );
+        HintObject getHintObject( int inObjectID, int inIndex, bool reverse );
+        char *getHintMessage( int inObjectID, int inIndex, bool reverse );
 
         char *mHintFilterString;
         
@@ -821,7 +830,16 @@ class LivingLifePage : public GamePage, public ActionListener {
         float mLastMouseOverFade;
 
         ObjectButton mEmoteShowButton;
+        ObjectButton mCurseButton;
+        ObjectButton mOwnerButton;
+        ObjectButton mDieButton;
+        ObjectButton mReciptButton;
         SimpleVector<ObjectButton*> mEmoteButtons;
+        SimpleVector<ObjectButton*> mReciptObjectButtons;
+        ObjectButton mReciptReverseButton;
+        ObjectButton mReciptPageLeftButton;
+        ObjectButton mReciptPageRightButton;
+        ObjectButton mReciptBackButton;
 
         SpriteHandle mChalkBlotSprite;
         SpriteHandle mPathMarkSprite;

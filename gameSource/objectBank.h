@@ -313,6 +313,9 @@ typedef struct ObjectRecord {
         // -1 if not set
         // used to avoid recomputing height repeatedly at client/server runtime
         int cachedHeight;
+        int cachedUnder;
+        int cachedLeft;
+        int cachedRight;
         
         char apocalypseTrigger;
 
@@ -669,6 +672,9 @@ int getMaxDiameter( ObjectRecord *inObject );
 
 // gets estimate of object height from cell center
 int getObjectHeight( int inObjectID );
+int getObjectUnder( int inObjectID );
+int getObjectLeft( int inObjectID );
+int getObjectRight( int inObjectID );
 
 
 

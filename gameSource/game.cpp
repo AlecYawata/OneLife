@@ -431,6 +431,7 @@ Font *mainFontFixed;
 Font *mainFontReview;
 Font *numbersFontFixed;
 Font *handwritingFont;
+Font *littleGameFont;
 Font *pencilFont;
 Font *pencilErasedFont;
 
@@ -681,6 +682,11 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     handwritingFont->setMinimumPositionPrecision( 1 );
 
+    littleGameFont = 
+        new Font( "font.ttf", 3, 6, false, 12 * gui_fov_scale_hud );
+
+    littleGameFont->setMinimumPositionPrecision( 1 );
+
     pencilFont = 
         new Font( "font.ttf", 3, 6, false, 18 * gui_fov_scale_hud );
 
@@ -847,6 +853,7 @@ void freeFrameDrawer() {
     delete numbersFontFixed;
     
     delete handwritingFont;
+    delete littleGameFont;
     delete pencilFont;
     delete pencilErasedFont;
     

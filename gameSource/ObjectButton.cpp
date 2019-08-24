@@ -39,12 +39,7 @@ ObjectButton::ObjectButton( int objectId, double inX, double inY, double sizeX, 
         Image *image = readTGAFile( iBackgroundnTGAFileName );
 
         if( image != NULL ) {
-            // fill Button's values here
-            mWide = image->getWidth() * 2 * inDrawScale;
-            mHigh = image->getHeight() * 2 * inDrawScale;
-            
             mBackgroundSprite = fillSprite( image );
-            
             delete image;
             }
         else {
@@ -76,6 +71,10 @@ ObjectButton::~ObjectButton() {
         }
     }
 
+void ObjectButton::setObjectId( int objectId ) {
+    mObjectId = objectId;
+    }
+
 void ObjectButton::setEmoteId( int emoteId ) {
     mEmoteId = emoteId;
     }
@@ -91,10 +90,37 @@ void ObjectButton::setCaption( char* caption ) {
     mCaption = stringDuplicate( caption );    
     }
 
+void ObjectButton::setDrawScale( double drawScale ) {
+    mDrawScale = drawScale;
+    }
+
+void ObjectButton::setOffset( double offsetX, double offsetY ) {
+    mOffsetX = offsetX;
+    mOffsetY = offsetY;
+    }
+
 void ObjectButton::step() {
     mAnimFrame += 1 * frameRateFactor / 60.0;
     }
 
+void ObjectButton::setAutoFitObjectId( int objectId, int paddingX, int paddingY ) {
+    if( mObjectId != objectId ) {
+        ObjectRecord* object = getObject( objectId );
+        double sourceTop = getObjectHeight( objectId );
+        double sourceUnder = getObjectUnder( objectId );
+        double sourceHeight = sourceTop - sourceUnder;
+        double sourceLeft = getObjectLeft( objectId );
+        double sourceRight = getObjectRight( objectId );
+        double sourceWidth = sourceRight - sourceLeft;
+        if( sourceHeight < mSizeY / 3 ) {
+            sourceHeight = mSizeY / 3;
+            }
+        double sourceScale = (mSizeY - paddingY * 2) / ((sourceHeight > sourceWidth) ? sourceHeight : sourceWidth);
+        setDrawScale( sourceScale );
+        setOffset( -(sourceLeft + ( sourceRight - sourceLeft ) / 2) * sourceScale, -0.5*(mSizeY - paddingY * 2) - sourceUnder * sourceScale );
+        }
+        mObjectId = objectId;
+    }
 
 void ObjectButton::draw() {
     if( mBackgroundSprite != NULL ) {

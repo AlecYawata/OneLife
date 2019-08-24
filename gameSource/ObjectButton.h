@@ -19,11 +19,14 @@ class ObjectButton : public Button {
                       const char *iBackgroundnTGAFileName = NULL, double inDrawScale = 1.0 );
 
         virtual ~ObjectButton();
-        
+
+        void setObjectId( int objectId );        
         void setEmoteId( int emoteId );
         void setCaption( char* caption );
         void setLiveObject( LiveObject* liveObject );
-
+        void setDrawScale( double drawScale );
+        void setOffset( double offsetX, double offsetY );
+        void setAutoFitObjectId( int objectId, int mPaddingX = 0, int mPaddingY = 0 );
 
     protected:
         int mObjectId;
@@ -34,6 +37,8 @@ class ObjectButton : public Button {
         double mSizeY;
         double mOffsetX;
         double mOffsetY;
+        double mPaddingX;
+        double mPaddingY;
         SpriteHandle mBackgroundSprite;
         LiveObject* mLiveObject;
 

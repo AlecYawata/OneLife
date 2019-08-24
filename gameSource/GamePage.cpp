@@ -202,13 +202,17 @@ void GamePage::base_draw( doublePair inViewCenter,
         return;
         }
 
-    
     drawUnderComponents( inViewCenter, inViewSize );
+
+    draw( inViewCenter, inViewSize );
 
     if( !mSkipDrawingSubComponents ) {
         PageComponent::base_draw( inViewCenter, inViewSize );
         }
     
+    doublePair oldViewCenter = getViewCenterPosition();
+    setViewCenterPosition( 0, 0 );
+
     char statusDrawn = false;
     
     if( mStatusMessageKey != NULL ) {
@@ -316,8 +320,7 @@ void GamePage::base_draw( doublePair inViewCenter,
             sResponseWarningPosition = spritePos;
             }
         }
-    
-    draw( inViewCenter, inViewSize );
+    setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
     }
 
 

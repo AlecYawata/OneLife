@@ -71,6 +71,7 @@ extern Font *mainFont;
 extern Font *numbersFontFixed;
 extern Font *mainFontReview;
 extern Font *handwritingFont;
+extern Font *littleGameFont;
 extern Font *pencilFont;
 extern Font *pencilErasedFont;
 
@@ -210,6 +211,10 @@ static SimpleVector<GridPos> ownerRequestPos;
 
 static bool showEmotSheet = false;
 static double emotSheetOffsetRate = 0;
+static bool showReciptSheet = false;
+static double reciptSheetOffsetRate = 0;
+static int reciptNameObjectId = 0;
+static double reciptNameFadeRate = 0;
 
 
 static char showPing = false;
@@ -260,7 +265,7 @@ static int emotIds[] = {
     15,
     10,
 };
-static char* emotCaptions[] = {
+static char emotCaptions[][4] = {
     "1",
     "2",
     "3",
@@ -275,6 +280,28 @@ static char* emotCaptions[] = {
     "R",
     "T",
     "Y",
+};
+
+struct HintObject {
+    bool exist;
+    bool eventually;
+    int actorId;
+    int targetId;
+    int resultId;
+    enum Id {
+        nothing = -1,
+        bareHand = -2,
+        eat = -3,
+        bareGround = -4,
+        decay = -5,
+    };
+};
+#define RECIPT_PAGE_NUM (5)
+
+struct HintHistory {
+    int mObjectId;
+    int mIndex;
+    bool mReverse;
 };
 
 // LINEAGEFERTILITYMOD NOTE:  Change 1/4 - Take these lines during the merge process
@@ -1000,7 +1027,7 @@ static char *getDisplayObjectDescription( int inID ) {
 typedef enum messageType {
     SHUTDOWN,
     SERVER_FULL,
-	SEQUENCE_NUMBER,
+    SEQUENCE_NUMBER,
     ACCEPTED,
     NO_LIFE_TOKENS,
     REJECTED,
@@ -2269,7 +2296,15 @@ LivingLifePage::LivingLifePage()
           mShowHighlights( true ),
           mUsingSteam( false ),
           mZKeyDown( false ),
-          mEmoteShowButton( 2754, - 640 + 25, 360 - 110 - 25, 40, 40, -1, -80, 0, 0, NULL, 1.5),
+          mEmoteShowButton( 2754, - 640 + 25, 360 - 110 - 50 * 3 - 25, 40, 40, -1, -80, 0, 0, NULL, 1.5),
+          mCurseButton( 30, - 640 + 25, 360 - 110 - 50 * 0 - 25, 40, 40, 0, 1000, 0, 0, "curseButton.tga", 1.0),
+          mOwnerButton( 2962, - 640 + 25, 360 - 110 - 50 * 1 - 25, 40, 40, 0, 5, 0, 0, NULL, 0.25),
+          mDieButton( 3051, - 640 + 25, 360 - 110 - 50 * 2 - 25, 40, 40, 0, 10, 0, 0, NULL, 0.45),
+          mReciptButton( 1615, - 640 + 25, 360 - 110 - 50 * 4 - 25, 40, 40, 0, 20, 0, 0, NULL, 0.8),
+          mReciptReverseButton( 30, 1000, 0, 60, 60, 0, 20, 0, 0, NULL, 0.8),
+          mReciptPageLeftButton( 30, 1000, 0, 30, 30, 0, 1000, 0, 0, "leftButton.tga", 0.8),
+          mReciptPageRightButton( 30, 1000, 0, 30, 30, 0, 1000, 0, 0, "rightButton.tga", 0.8),
+          mReciptBackButton( 30, 1000, 0, 30, 30, 0, 1000, 0, 0, "backButton.tga", 1.0),
           mObjectPicker( &objectPickable, +510, 90 ) {
 
 
@@ -2279,10 +2314,38 @@ LivingLifePage::LivingLifePage()
 
     mIgnoreViewCenter = false;
 
-    setButtonStyle( &mEmoteShowButton );
     addComponent( &mEmoteShowButton );
+    addComponent( &mCurseButton );
+    addComponent( &mOwnerButton );
+    addComponent( &mDieButton );
+    addComponent( &mReciptButton );
+    addComponent( &mReciptReverseButton );
+    addComponent( &mReciptPageLeftButton );
+    addComponent( &mReciptPageRightButton );
+    addComponent( &mReciptBackButton );
     mEmoteShowButton.addActionListener( this );
+    mCurseButton.addActionListener( this );
+    mOwnerButton.addActionListener( this );
+    mDieButton.addActionListener( this );
+    mReciptButton.addActionListener( this );
+    mReciptReverseButton.addActionListener( this );
+    mReciptPageLeftButton.addActionListener( this );
+    mReciptPageRightButton.addActionListener( this );
+    mReciptBackButton.addActionListener( this );
     mEmoteShowButton.setVisible( false );
+    mCurseButton.setVisible( false );
+    mOwnerButton.setVisible( false );
+    mDieButton.setVisible( false );
+    mReciptButton.setVisible( false );
+    mReciptReverseButton.setVisible( false );
+    mReciptPageLeftButton.setVisible( false );
+    mReciptPageRightButton.setVisible( false );
+    mReciptBackButton.setVisible( false );
+    mCurseButton.setCaption( "F1" );
+    mOwnerButton.setCaption( "F2" );
+    mDieButton.setCaption( "F3" );
+    mEmoteShowButton.setCaption( "F4" );
+    mReciptButton.setCaption( "F5" );
 
     for( int i=0; i<sizeof(emotIds)/sizeof(*emotIds); i++ ) {
         ObjectButton* button = new ObjectButton(19, -640 + 25 + 50 * (i%7), 360 + 100 - 25 + 50 * (i/7), 40, 40, 0, 0, 0, false, NULL, 0.6);
@@ -2291,6 +2354,13 @@ LivingLifePage::LivingLifePage()
         addComponent( button );
         button->addActionListener( this );
         mEmoteButtons.push_back( button );
+        }
+    for( int i=0; i<RECIPT_PAGE_NUM*2; i++ ) {
+        ObjectButton* button = new ObjectButton(30, 1000, 0, 50, 50, 0, 0, 0, false, NULL, 0.5);
+        addComponent( button );
+        button->addActionListener( this );
+        button->setVisible( false );
+        mReciptObjectButtons.push_back( button );
         }
 
     mForceGroundClick = false;
@@ -2448,12 +2518,22 @@ LivingLifePage::LivingLifePage()
     mForceHintRefresh = false;
     mCurrentHintObjectID = 0;
     mCurrentHintIndex = 0;
+    mCurrentHintReverse = false;
     
     mNextHintObjectID = 0;
     mNextHintIndex = 0;
-    
+    mNextHintReverse = false;
+
+    emotSheetOffsetRate = 0.0;
+    showEmotSheet = false;
+    reciptSheetOffsetRate = 0.0;
+    showReciptSheet = false;
+    reciptNameFadeRate = 0.0;
+    reciptNameObjectId = 0;
+
     mLastHintSortedSourceID = 0;
-    
+    mLastHintReverse = false;
+
     int maxObjectID = getMaxObjectID();
     
     mHintBookmarks = new int[ maxObjectID + 1 ];
@@ -2494,26 +2574,26 @@ LivingLifePage::LivingLifePage()
     mLiveTutorialTriggerNumber = -1;
 
     // FOVMOD NOTE:  Change 3/26 - Take these lines during the merge process
-	calcOffsetHUD();
+    calcOffsetHUD();
 
-	Image *tempImage = readTGAFile( "guiPanel_ja.tga" );
-	Image *tempImage2;
+    Image *tempImage = readTGAFile( "guiPanel_ja.tga" );
+    Image *tempImage2;
 
-	tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 - 640, 0, 512, tempImage->getHeight() );
-	guiPanelLeftSprite = fillSprite( tempImage2 );
-	delete tempImage2;
+    tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 - 640, 0, 512, tempImage->getHeight() );
+    guiPanelLeftSprite = fillSprite( tempImage2 );
+    delete tempImage2;
 
-	tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 - 128, 0, 256, tempImage->getHeight() );
-	guiPanelTileSprite = fillSprite( tempImage2 );
-	setSpriteWrapping( guiPanelTileSprite, true, false );
-	delete tempImage2;
+    tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 - 128, 0, 256, tempImage->getHeight() );
+    guiPanelTileSprite = fillSprite( tempImage2 );
+    setSpriteWrapping( guiPanelTileSprite, true, false );
+    delete tempImage2;
 
-	tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 + 640 - 512, 0, 512, tempImage->getHeight() );
-	guiPanelRightSprite = fillSprite( tempImage2 );
-	delete tempImage2;
+    tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 + 640 - 512, 0, 512, tempImage->getHeight() );
+    guiPanelRightSprite = fillSprite( tempImage2 );
+    delete tempImage2;
 
-	delete tempImage;
-	//
+    delete tempImage;
+    //
 
     mMap = new int[ mMapD * mMapD ];
     mMapBiomes = new int[ mMapD * mMapD ];
@@ -2785,10 +2865,10 @@ LivingLifePage::~LivingLifePage() {
     freeSprite( mGuiPanelSprite );
     freeSprite( mGuiBloodSprite );
 
-	// FOVMOD NOTE:  Change 4/27 - Take these lines during the merge process
-	freeSprite( guiPanelLeftSprite );
-	freeSprite( guiPanelTileSprite );
-	freeSprite( guiPanelRightSprite );
+    // FOVMOD NOTE:  Change 4/27 - Take these lines during the merge process
+    freeSprite( guiPanelLeftSprite );
+    freeSprite( guiPanelTileSprite );
+    freeSprite( guiPanelRightSprite );
     
     freeSprite( mFloorSplitSprite );
     
@@ -3158,7 +3238,7 @@ void LivingLifePage::drawChalkBackgroundString( doublePair inPos,
 //        for( doublePair blotPos = firstBlot; blotPos.x < inPos.x + ( length + 20 * gui_fov_scale_hud ); blotPos.x += 20 * gui_fov_scale_hud ) {
             doublePair blotPos = {};
             blotPos.x = firstBlot.x + (length) * (j / (numBlots - 1.0));
-			blotPos.y = firstBlot.y;
+            blotPos.y = firstBlot.y;
         
             double rot = blotRandSource.getRandomDouble();
             drawSprite( mChalkBlotSprite, blotPos, gui_fov_scale_hud, rot );
@@ -4736,8 +4816,8 @@ void LivingLifePage::drawHungerMaxFillLine( doublePair inAteWordsPos,
     
     
     // FOVMOD NOTE:  Change 7/27 - Take these lines during the merge process
-	doublePair barPos = { lastScreenViewCenter.x - ( recalcOffsetX( 590 ) * gui_fov_scale ), 
-						  lastScreenViewCenter.y - ( recalcOffsetY( 334 ) * gui_fov_scale )};
+    doublePair barPos = { lastScreenViewCenter.x - ( recalcOffsetX( 590 ) * gui_fov_scale ), 
+                          lastScreenViewCenter.y - ( recalcOffsetY( 334 ) * gui_fov_scale )};
 
     barPos.x -= 12 * gui_fov_scale_hud;
     barPos.y -= 10 * gui_fov_scale_hud;
@@ -4974,12 +5054,31 @@ void LivingLifePage::draw( doublePair inViewCenter,
     if( stillWaitingBirth ) {
         
         mEmoteShowButton.setVisible( false );
+        mCurseButton.setVisible( false );
+        mOwnerButton.setVisible( false );
+        mDieButton.setVisible( false );
+        mReciptButton.setVisible( false );
+        mReciptReverseButton.setVisible( false );
+        for( int i=0; i<mReciptObjectButtons.size(); i++ ) {
+            ObjectButton* button = mReciptObjectButtons.getElementDirect( i );
+            button->setVisible( false );
+            }
+        mReciptReverseButton.setVisible( false );
+        mReciptPageLeftButton.setVisible( false );
+        mReciptPageRightButton.setVisible( false );
+        mReciptBackButton.setVisible( false );
+        emotSheetOffsetRate = 0.0;
+        showEmotSheet = false;
+        reciptSheetOffsetRate = 0.0;
+        showReciptSheet = false;
+        reciptNameFadeRate = 0.0;
+        reciptNameObjectId = 0;
 
         if( getSpriteBankLoadFailure() != NULL ||
             getSoundBankLoadFailure() != NULL ) {    
             setSignal( "loadFailure" );
             }
-        
+
         // draw this to cover up utility text field, but not
         // waiting icon at top
         setDrawColor( 0, 0, 0, 1 );
@@ -5101,7 +5200,57 @@ void LivingLifePage::draw( doublePair inViewCenter,
         waitedBirth = false;
     }
 
-    mEmoteShowButton.setVisible( true );
+    bool canUseEmot = (game_getCurrentTime() - lastEmotUseTime) > 2.0;
+    mEmoteShowButton.setVisible( canUseEmot );
+
+    bool canCurse = true;
+    bool canOwner = true;
+    LiveObject* ourLiveObject = getOurLiveObject();
+    if( ourLiveObject->curseTokenCount <= 0 ) {
+        canCurse = false;
+        }
+    if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+        canCurse = false;
+        canOwner = false;
+        }
+    if( ourLiveObject->holdingID < 0 ) {
+        int heldBabyID = - ourLiveObject->holdingID;
+        LiveObject *heldBaby = getLiveObject( heldBabyID );
+        if( heldBaby->name == NULL ) {
+            canCurse = false;
+            canOwner = false;
+            }
+        }
+    if( lastCursorLiveObjectID ){
+        LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
+        if( lastCursorLiveObject ) {
+            if( lastCursorLiveObject->name == NULL ) {
+                canOwner = false;
+                if( lastCursorGraveName == NULL ) {
+                    canCurse = false;
+                    }
+                }
+            }
+        }
+    else if( lastCursorGraveName == NULL ) {
+        canCurse = false;
+        canOwner = false;
+        }
+    else {
+        canOwner = false;
+        }
+
+    mCurseButton.setVisible( canCurse );
+    mOwnerButton.setVisible( canOwner );
+
+    bool canDie = true;
+    if( computeCurrentAge( getOurLiveObject() ) >= 2 ) {
+        canDie = false;
+        }
+    mDieButton.setVisible( canDie );
+
+    bool canRecipt = true;
+    mReciptButton.setVisible( canRecipt );
 
     //setDrawColor( 1, 1, 1, 1 );
     //drawSquare( lastScreenViewCenter, viewWidth );
@@ -5855,8 +6004,6 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
 
     // draw long path for our character
-    LiveObject *ourLiveObject = getOurLiveObject();
-    
     if( ourLiveObject != NULL ) {
         
         if( ourLiveObject->currentPos.x != ourLiveObject->xd 
@@ -6682,7 +6829,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
         speechPos.y += headPos.y;
         
         // FOVMOD NOTE:  Change 11/27 - Take these lines during the merge process
-		int width = 250 * gui_fov_scale_hud;
+        int width = 250 * gui_fov_scale_hud;
         int widthLimit = 250 * gui_fov_scale_hud;
         
         double fullWidth = 
@@ -8110,15 +8257,15 @@ void LivingLifePage::draw( doublePair inViewCenter,
             setDrawColor( 1, 1, 1, 1 );
             // FOVMOD NOTE:  Change 15/27 - Take these lines during the merge process
             // Hint sheets have to be manually cut off in centered mode.
-			if( gui_hud_mode != 0 && gui_fov_target_scale_hud > 1.0f ) {
-				doublePair sheetPos[4] = {
+            if( gui_hud_mode != 0 && gui_fov_target_scale_hud > 1.0f ) {
+                doublePair sheetPos[4] = {
                     { hintPos.x - getSpriteWidth( mHintSheetSprites[0] ) / 2.0f * gui_fov_scale_hud, hintPos.y + getSpriteHeight( mHintSheetSprites[0] ) / 2.0f * gui_fov_scale_hud },
                     { lastScreenViewCenter.x + 640 * gui_fov_scale_hud, hintPos.y + getSpriteHeight( mHintSheetSprites[0] ) / 2.0f * gui_fov_scale_hud },
                     { lastScreenViewCenter.x + 640 * gui_fov_scale_hud, hintPos.y - getSpriteHeight( mHintSheetSprites[0] ) / 2.0f * gui_fov_scale_hud },
                     { hintPos.x - getSpriteWidth( mHintSheetSprites[0] ) / 2.0f * gui_fov_scale_hud, hintPos.y - getSpriteHeight( mHintSheetSprites[0] ) / 2.0f * gui_fov_scale_hud },
                     };
                 double sheetLength = ( sheetPos[1].x - sheetPos[0].x ) / ( getSpriteWidth( mHintSheetSprites[0] ) * gui_fov_scale_hud );
-				doublePair sheetCoords[4] = {
+                doublePair sheetCoords[4] = {
                     { 0.0f, 0.0f },
                     { sheetLength, 0.0f },
                     { sheetLength, 1.0f },
@@ -8269,8 +8416,203 @@ void LivingLifePage::draw( doublePair inViewCenter,
                                      */
         }
 
+    double pageWidth = 350;
+    if( reciptSheetOffsetRate > 0.0 ) {
+        doublePair reciptHintPos = { lastScreenViewCenter.x + (640 + 256 - pageWidth * reciptSheetOffsetRate) * gui_fov_scale_hud, lastScreenViewCenter.y };
+        setDrawColor( 1, 1, 1, 1 );
+        drawSprite( mHintSheetSprites[0], reciptHintPos, gui_fov_scale_hud * 3.0, 0.75, false );
+        setDrawColor( 0, 0, 0, 1.0f );
+        reciptHintPos.x -= pageWidth * gui_fov_scale_hud;
+        reciptHintPos.y -= 20 * gui_fov_scale_hud;
 
+        if( mCurrentHintObjectID != 0 ) {
+            ObjectRecord* object = getObject( mCurrentHintObjectID );
+            doublePair pos = { 640 - 120 + pageWidth - pageWidth * reciptSheetOffsetRate, 320 };
+            mReciptReverseButton.setPosition( pos.x, pos.y );
+            mReciptReverseButton.setVisible( true );
+            mReciptReverseButton.setAutoFitObjectId( mCurrentHintObjectID, 5, 5);
+            pos.y -= 40;
+            doublePair drawPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+            
+            char* useOrCreateString = autoSprintf( "%s%s", object->localizedName, mCurrentHintReverse ? "を作る" : "を使う" );
+            char* twoLinesString = autoSplitJoinByCharCount( useOrCreateString, 10, "##" );
+            handwritingFont->drawString( twoLinesString, drawPos, alignCenter );
+            delete[] twoLinesString;
+            delete[] useOrCreateString;
 
+            if( mReciptReverseButton.isMouseOver() ) {
+                reciptNameFadeRate = 1.0;
+                reciptNameObjectId = mCurrentHintObjectID;
+                }
+            }
+        else {
+            mReciptReverseButton.setVisible( false );
+            }
+
+        int i=0;
+        for( ; i + mCurrentHintIndex < mLastHintSortedList.size() && i < RECIPT_PAGE_NUM; i++ ) {
+            HintObject hintObject = getHintObject( mCurrentHintObjectID, i + mCurrentHintIndex, mCurrentHintReverse );
+            if( hintObject.exist ) {
+                ObjectButton* objectButton = mReciptObjectButtons.getElementDirect( i * 2 );
+                int objectId = hintObject.actorId == mCurrentHintObjectID ? hintObject.targetId : hintObject.actorId;
+                doublePair pos = { 640 - 170 + pageWidth - pageWidth * reciptSheetOffsetRate, 200 - 85 * i };
+                if( objectId > 0 ) {
+                    ObjectRecord* object = getObject( objectId );
+                    objectButton->setVisible( true );
+                    objectButton->setPosition( pos.x, pos.y );
+                    objectButton->setAutoFitObjectId( objectId, 2, 2);
+
+                    pos.x -= 40;
+                    doublePair symbolPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+                    handwritingFont->drawString( mCurrentHintReverse ? "" : "+", symbolPos, alignCenter );
+
+                    pos.x += 40;
+                    pos.y -= 35;
+                    doublePair drawPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+
+                    char* twoLinesString = autoTrimAndMultiline( object->localizedName, 10, 5, "…" );
+                    littleGameFont->drawString( twoLinesString, drawPos, alignCenter );
+                    delete[] twoLinesString;
+
+                    if( objectButton->isMouseOver() ) {
+                        reciptNameFadeRate = 1.0;
+                        reciptNameObjectId = objectId;
+                        }
+                    }
+                else {
+                    objectButton->setVisible( false );
+                    doublePair drawPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+                    if( objectId == HintObject::eat ) {
+                        littleGameFont->drawString( "食べる", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::bareHand ) {
+                        littleGameFont->drawString( "素手で取る", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::bareGround ) {
+                        littleGameFont->drawString( "地面に置く", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::nothing ) {
+                        littleGameFont->drawString( "無し", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::decay ) {
+                        littleGameFont->drawString( "時間経過", drawPos, alignCenter );
+                        }
+                    }
+                }
+            if( hintObject.exist ) {
+                ObjectButton* objectButton = mReciptObjectButtons.getElementDirect( i * 2 + 1 );
+                int objectId = hintObject.resultId == mCurrentHintObjectID ? hintObject.targetId : hintObject.resultId;
+                doublePair pos = { 640 - 70 + pageWidth - pageWidth * reciptSheetOffsetRate, 200 - 85 * i };
+                if( objectId > 0 ) {
+                    ObjectRecord* object = getObject( objectId );
+                    objectButton->setVisible( true );
+                    objectButton->setPosition( pos.x, pos.y );
+                    objectButton->setAutoFitObjectId( objectId, 2, 2);
+
+                    pos.x -= 50;
+                    doublePair symbolPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+                    handwritingFont->drawString( mCurrentHintReverse ? "+" : "→", symbolPos, alignCenter );
+
+                    pos.x += 50;
+                    pos.y -= 35;
+                    doublePair drawPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+
+                    char* twoLinesString = autoTrimAndMultiline( object->localizedName, 10, 5, "…" );
+                    littleGameFont->drawString( twoLinesString, drawPos, alignCenter );
+                    delete[] twoLinesString;
+
+                    if( objectButton->isMouseOver() ) {
+                        reciptNameFadeRate = 1.0;
+                        reciptNameObjectId = objectId;
+                        }
+                    }
+                else {
+                    objectButton->setVisible( false );
+                    doublePair drawPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+                    if( objectId == HintObject::eat ) {
+                        littleGameFont->drawString( "食べる", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::bareHand ) {
+                        littleGameFont->drawString( "素手で取る", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::bareGround ) {
+                        littleGameFont->drawString( "地面に置く", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::nothing ) {
+                        littleGameFont->drawString( "無し", drawPos, alignCenter );
+                        }
+                    if( objectId == HintObject::decay ) {
+                        littleGameFont->drawString( "時間経過", drawPos, alignCenter );
+                        }
+                    }
+                }
+            else {
+                ObjectButton* leftObject = mReciptObjectButtons.getElementDirect( i * 2 );
+                ObjectButton* rightObject = mReciptObjectButtons.getElementDirect( i * 2 + 1 );
+                rightObject->setVisible( false );
+                leftObject->setVisible( false );
+                }
+            }
+        for( ; i<mReciptObjectButtons.size()/2; i++) {
+            ObjectButton* rightObject = mReciptObjectButtons.getElementDirect( i * 2 );
+            ObjectButton* leftObject = mReciptObjectButtons.getElementDirect( i * 2 + 1 );
+            rightObject->setVisible( false );
+            leftObject->setVisible( false );
+            }
+        }
+    if( mCurrentHintIndex > 0 ) {
+        doublePair pos = { 640 - 110 - 100 + pageWidth - pageWidth * reciptSheetOffsetRate, -280 };
+        mReciptPageLeftButton.setPosition( pos.x, pos.y );
+        mReciptPageLeftButton.setVisible( true );
+        }
+    else {
+        mReciptPageLeftButton.setVisible( false );
+        }
+    if( mCurrentHintIndex < mLastHintSortedList.size() - RECIPT_PAGE_NUM ) {
+        doublePair pos = { 640 - 110 + 90 + pageWidth - pageWidth * reciptSheetOffsetRate, -280 };
+        mReciptPageRightButton.setPosition( pos.x, pos.y );
+        mReciptPageRightButton.setVisible( true );
+        }
+    else {
+        mReciptPageRightButton.setVisible( false );
+        }
+
+    if( mCurrentHintObjectID ) {
+        doublePair pos = { 640 - 110 -5 + pageWidth - pageWidth * reciptSheetOffsetRate, -280 };
+        doublePair drawPos = add( lastScreenViewCenter, mult( pos, gui_fov_scale) );
+        char* pagingString = autoSprintf("%d ~ %d / %d",
+                                         mCurrentHintIndex + 1,
+                                         (mLastHintSortedList.size() < mCurrentHintIndex + RECIPT_PAGE_NUM)
+                                            ? mLastHintSortedList.size()
+                                            : mCurrentHintIndex + RECIPT_PAGE_NUM,
+                                         mLastHintSortedList.size() );
+        handwritingFont->drawString( pagingString, drawPos, alignCenter );
+        delete[] pagingString;
+        }
+
+    if( reciptNameObjectId > 0 && reciptNameFadeRate > 0 ) {
+        ObjectRecord* object = getObject( reciptNameObjectId );
+        if( object != NULL ) {
+            doublePair pos = { 640 - 120 + pageWidth - pageWidth * reciptSheetOffsetRate, -210 };
+            pos = add( lastScreenViewCenter, mult( pos, gui_fov_scale ) );
+            setDrawColor( 0, 0, 0, reciptNameFadeRate );
+            char* twoLinesString = autoSplitJoinByCharCount( object->localizedName, 10, "##" );
+            handwritingFont->drawString( twoLinesString, pos, alignCenter );
+            }
+        }
+    reciptNameFadeRate -= 0.03 * frameRateFactor;
+    if( reciptNameFadeRate < 0 ) {
+        reciptNameFadeRate = 0;
+        }
+
+    if( mHintHistories.size() > 0 ) {
+        doublePair pos = { 640 - 110 - 100 + pageWidth - pageWidth * reciptSheetOffsetRate, 330 };
+        mReciptBackButton.setPosition( pos.x, pos.y );
+        mReciptBackButton.setVisible( true );
+        }
+    else {
+        mReciptBackButton.setVisible( false );
+        }
 
 
     
@@ -8390,9 +8732,9 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
 
     // LINEAGEFERTILITYMOD NOTE:  Change 2/4 - Take these lines during the merge process
-	lineageFertilityPanel(ourLiveObject, showFertilityPanel);
-	// AGEMOD NOTE:  Change 2/3 - Take these lines during the merge process
-//	agePanel(ourLiveObject, showAgePanel);
+    lineageFertilityPanel(ourLiveObject, showFertilityPanel);
+    // AGEMOD NOTE:  Change 2/3 - Take these lines during the merge process
+//  agePanel(ourLiveObject, showAgePanel);
 
 
 
@@ -8404,43 +8746,43 @@ void LivingLifePage::draw( doublePair inViewCenter,
     setDrawColor( 1, 1, 1, 1 );
     doublePair panelPos = lastScreenViewCenter;
     // FOVMOD NOTE:  Change 16/27 - Take these lines during the merge process
-	panelPos.y -= recalcOffsetY( 242 + 32 + 16 + 6 ) * gui_fov_scale;
-	// First left part.
-	if( gui_hud_mode == 0 ) {
-		panelPos.x = lastScreenViewCenter.x - recalcOffsetX( 384 ) * gui_fov_scale;
-		drawSprite( guiPanelLeftSprite, panelPos, gui_fov_scale_hud );
+    panelPos.y -= recalcOffsetY( 242 + 32 + 16 + 6 ) * gui_fov_scale;
+    // First left part.
+    if( gui_hud_mode == 0 ) {
+        panelPos.x = lastScreenViewCenter.x - recalcOffsetX( 384 ) * gui_fov_scale;
+        drawSprite( guiPanelLeftSprite, panelPos, gui_fov_scale_hud );
         }
     else if ( gui_hud_mode == 1 && gui_fov_target_scale_hud > 1.0f ) {
-		drawHUDBarPart(	lastScreenViewCenter.x - 640 * gui_fov_scale,
-						lastScreenViewCenter.y - recalcOffsetY( 360 ) * gui_fov_scale,
-						( 1280.0 * gui_fov_scale / 2.0 ) - 640 * gui_fov_scale_hud,
-						getSpriteHeight( guiPanelTileSprite ) * gui_fov_scale_hud );
+        drawHUDBarPart( lastScreenViewCenter.x - 640 * gui_fov_scale,
+                        lastScreenViewCenter.y - recalcOffsetY( 360 ) * gui_fov_scale,
+                        ( 1280.0 * gui_fov_scale / 2.0 ) - 640 * gui_fov_scale_hud,
+                        getSpriteHeight( guiPanelTileSprite ) * gui_fov_scale_hud );
         }
 
-	// Now the middle.
-	if( gui_hud_mode == 0 )	{
-		drawHUDBarPart(	lastScreenViewCenter.x - recalcOffsetX( 128 ) * gui_fov_scale,
-						lastScreenViewCenter.y - recalcOffsetY( 360 ) * gui_fov_scale,
-						recalcOffsetX( 128 ) * 2 * gui_fov_scale,
-						getSpriteHeight( guiPanelTileSprite ) * gui_fov_scale_hud );
+    // Now the middle.
+    if( gui_hud_mode == 0 ) {
+        drawHUDBarPart( lastScreenViewCenter.x - recalcOffsetX( 128 ) * gui_fov_scale,
+                        lastScreenViewCenter.y - recalcOffsetY( 360 ) * gui_fov_scale,
+                        recalcOffsetX( 128 ) * 2 * gui_fov_scale,
+                        getSpriteHeight( guiPanelTileSprite ) * gui_fov_scale_hud );
         }
-	else {
-		drawSprite( mGuiPanelSprite, panelPos, gui_fov_scale_hud );
-        }
-
-	// And finally draw the right end.
-	if( gui_hud_mode == 0 )	{
-		panelPos.x = lastScreenViewCenter.x + recalcOffsetX( 384 ) * gui_fov_scale;
-		drawSprite( guiPanelRightSprite, panelPos, gui_fov_scale_hud );
-        }
-	else if ( gui_hud_mode == 1 && gui_fov_target_scale_hud > 1.0f )	{
-		drawHUDBarPart(	lastScreenViewCenter.x + 640 * gui_fov_scale_hud,
-						lastScreenViewCenter.y - recalcOffsetY( 360 ) * gui_fov_scale,
-						( 1280.0 * gui_fov_scale / 2.0 ) - 640 * gui_fov_scale_hud,
-						getSpriteHeight( guiPanelTileSprite ) * gui_fov_scale_hud );
+    else {
+        drawSprite( mGuiPanelSprite, panelPos, gui_fov_scale_hud );
         }
 
-	panelPos.x = lastScreenViewCenter.x;
+    // And finally draw the right end.
+    if( gui_hud_mode == 0 ) {
+        panelPos.x = lastScreenViewCenter.x + recalcOffsetX( 384 ) * gui_fov_scale;
+        drawSprite( guiPanelRightSprite, panelPos, gui_fov_scale_hud );
+        }
+    else if ( gui_hud_mode == 1 && gui_fov_target_scale_hud > 1.0f )    {
+        drawHUDBarPart( lastScreenViewCenter.x + 640 * gui_fov_scale_hud,
+                        lastScreenViewCenter.y - recalcOffsetY( 360 ) * gui_fov_scale,
+                        ( 1280.0 * gui_fov_scale / 2.0 ) - 640 * gui_fov_scale_hud,
+                        getSpriteHeight( guiPanelTileSprite ) * gui_fov_scale_hud );
+        }
+
+    panelPos.x = lastScreenViewCenter.x;
     if( ourLiveObject != NULL &&
         ourLiveObject->dying  &&
         ! ourLiveObject->sick ) {
@@ -8469,8 +8811,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
         // show as a sigil to right of temp meter
         // FOVMOD NOTE:  Change 17/27 - Take these lines during the merge process
-		doublePair curseTokenPos = { lastScreenViewCenter.x + ( recalcOffsetX( 621 ) * gui_fov_scale ), 
-									 lastScreenViewCenter.y - ( recalcOffsetY( 316 ) * gui_fov_scale )};
+        doublePair curseTokenPos = { lastScreenViewCenter.x + ( recalcOffsetX( 621 ) * gui_fov_scale ), 
+                                     lastScreenViewCenter.y - ( recalcOffsetY( 316 ) * gui_fov_scale )};
         curseTokenFont->drawString( "C", curseTokenPos, alignCenter );
         curseTokenFont->drawString( "+", curseTokenPos, alignCenter );
         curseTokenPos.x += ( 6 * gui_fov_scale_hud );
@@ -8500,7 +8842,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
             doublePair pos = { lastScreenViewCenter.x - ( recalcOffsetX( 590 ) * gui_fov_scale ), 
                                lastScreenViewCenter.y - ( recalcOffsetY( 334 ) * gui_fov_scale )};
             pos.x += i * ( 30 * gui_fov_scale_hud );
-			
+            
             drawSprite( 
                     mHungerBoxSprites[ i % NUM_HUNGER_BOX_SPRITES ], 
                     pos, gui_fov_scale_hud );
@@ -8519,9 +8861,9 @@ void LivingLifePage::draw( doublePair inViewCenter,
         for( int i=ourLiveObject->foodCapacity; 
              i < ourLiveObject->maxFoodCapacity; i++ ) {
             // FOVMOD NOTE:  Change 19/27 - Take these lines during the merge process
-			doublePair pos = { lastScreenViewCenter.x - ( recalcOffsetX( 590 ) * gui_fov_scale ), 
-							   lastScreenViewCenter.y - ( recalcOffsetY( 334 ) * gui_fov_scale )};
-			pos.x += i * ( 30 * gui_fov_scale_hud );
+            doublePair pos = { lastScreenViewCenter.x - ( recalcOffsetX( 590 ) * gui_fov_scale ), 
+                               lastScreenViewCenter.y - ( recalcOffsetY( 334 ) * gui_fov_scale )};
+            pos.x += i * ( 30 * gui_fov_scale_hud );
             
             drawSprite( 
                 mHungerBoxErasedSprites[ i % NUM_HUNGER_BOX_SPRITES ], 
@@ -8803,12 +9145,6 @@ void LivingLifePage::draw( doublePair inViewCenter,
                 }
             else if( idToDescribe < 0 ) {
                 LiveObject *otherObj = getLiveObject( -idToDescribe );
-
-                lastCursorLiveObjectID = -idToDescribe;
-                if( lastCursorGraveName != NULL) {
-                    delete [] lastCursorGraveName;
-                    lastCursorGraveName = NULL;
-                    }
                 
                 if( otherObj != NULL ) {
                     des = otherObj->relationName;
@@ -9034,14 +9370,6 @@ void LivingLifePage::draw( doublePair inViewCenter,
                             delete [] deathPhrase;
                             
                             desToDelete = des;
-
-                            if( gI->name != NULL ) {
-                                lastCursorLiveObjectID = 0;
-                                if( lastCursorGraveName != NULL) {
-                                    delete [] lastCursorGraveName;
-                                    }
-                                lastCursorGraveName = stringDuplicate( gI->name );
-                                }
 
                             found = true;
                             break;
@@ -9293,7 +9621,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
         }
 
     doublePair guiViewCenter = {0, 0};
-    PageComponent::base_draw( guiViewCenter, inViewSize );
+//    PageComponent::base_draw( guiViewCenter, inViewSize );
     
     if( vogMode ) {
         // draw again, so we can see picker
@@ -9562,6 +9890,12 @@ static char getTransHintable( TransRecord *inTrans ) {
 
         return true;
         }
+    else if( inTrans->actor == -1 ) {
+        if( isCategory( inTrans->target ) ) {
+            return false;
+            }
+        return true;
+        }
     else {
         return false;
         }
@@ -9654,56 +9988,48 @@ static int getTransMostImportantResult( TransRecord *inTrans ) {
     }
 
 
-
-int LivingLifePage::getNumHints( int inObjectID ) {
-    
-
-    char sameFilter = false;
-    
-    if( mLastHintFilterString == NULL &&
-        mHintFilterString == NULL ) {
-        sameFilter = true;
+void LivingLifePage::pushHintHistory() {
+    if( mHintHistories.size() > 0 ) {
+        HintHistory lastHint = mHintHistories.getElementDirect( mHintHistories.size() - 1 );
+        if( mCurrentHintObjectID == lastHint.mObjectId && mCurrentHintIndex == lastHint.mIndex ) {
+            return;
+            }
         }
-    else if( mLastHintFilterString != NULL &&
-             mHintFilterString != NULL &&
-             strcmp( mLastHintFilterString, mHintFilterString ) == 0 ) {
-        sameFilter = true;
+    mHintHistories.push_back( { mCurrentHintObjectID, mCurrentHintIndex, mCurrentHintReverse, } );
+    }
+
+void LivingLifePage::popHintHistory() {
+    if( mHintHistories.size() > 0 ) {
+        HintHistory lastHint = mHintHistories.getElementDirect( mHintHistories.size() - 1 );
+        mNextHintObjectID = lastHint.mObjectId;
+        mNextHintIndex = lastHint.mIndex;
+        mNextHintReverse = lastHint.mReverse;
+        mHintHistories.deleteLastElement();
         }
-    
+    }
 
+int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
 
-    if( mLastHintSortedSourceID == inObjectID && sameFilter ) {
+    if( mLastHintSortedSourceID == inObjectID && mLastHintReverse == reverse ) {
         return mLastHintSortedList.size();
         }
     
-
     // else need to regenerated sorted list
 
     mLastHintSortedSourceID = inObjectID;
+    mLastHintReverse = reverse;
     mLastHintSortedList.deleteAll();
-
-    if( mLastHintFilterString != NULL ) {
-        delete [] mLastHintFilterString;
-        mLastHintFilterString = NULL;
-        }
-
-    if( mHintFilterString != NULL ) {
-        mLastHintFilterString = stringDuplicate( mHintFilterString );
-        }
-    
-    if( ! sameFilter ) {
-        // new filter, clear all bookmarks
-        int maxObjectID = getMaxObjectID();
-        for( int i=0; i<=maxObjectID; i++ ) {
-            mHintBookmarks[i] = 0;
-            }
-        }
-    
 
     // heap sort
     MinPriorityQueue<TransRecord*> queue;
     
-    SimpleVector<TransRecord*> *trans = getAllUses( inObjectID );
+    SimpleVector<TransRecord*> *trans;
+    if( reverse ) {
+        trans = getAllProduces( inObjectID );
+        }
+    else {
+        trans = getAllUses( inObjectID );
+        }
     
     
     SimpleVector<TransRecord *> unfilteredTrans;
@@ -9722,346 +10048,9 @@ int LivingLifePage::getNumHints( int inObjectID ) {
 
     int numFilterHits = 0;
 
-
-    if( mLastHintFilterString != NULL && filteredTrans.size() > 0 ) {        
-        unsigned int filterLength = strlen( mLastHintFilterString );
-        
-        int numHits = 0;
-        int numRemain = 0;
-        ObjectRecord **hits = searchObjects( mLastHintFilterString,
-                                             0,
-                                             200,
-                                             &numHits, &numRemain );
-        
-        SimpleVector<int> hitMatchIDs;
-
-        numFilterHits = numHits;
-
-        SimpleVector<int> exactHitMatchIDs;
-        
-
-        for( int i=0; i<numHits; i++ ) {
-            if( hits[i]->id == inObjectID ) {
-                // don't count the object itself as a hit
-                continue;
-                }
-            char *des = stringToUpperCase( hits[i]->localizedName );
-            
-            stripDescriptionComment( des );
-        
-            if( strcmp( des, mLastHintFilterString ) == 0 ) {
-                exactHitMatchIDs.push_back( hits[i]->id );
-                }
-
-            char *searchPos = strstr( des, mLastHintFilterString );
-            
-            // only count if occurrence of filter string matches whole words
-            // not partial words
-            if( searchPos != NULL && strlen( searchPos ) >= filterLength ) {
-                
-                unsigned int remainLen = strlen( searchPos );
-
-                char frontOK = false;
-                char backOK = false;
-                
-                // space or start of string in front of search phrase
-                if( searchPos == des ||
-                    searchPos[-1] == ' ' ) {
-                    frontOK = true;
-                    }
-                
-                // space or end of string after search phrase
-                if( remainLen == filterLength ||
-                    searchPos[filterLength] == ' ' ) {
-                    backOK = true;
-                    }
-
-                if( frontOK && backOK ) {
-                    hitMatchIDs.push_back( hits[i]->id );
-                    }
-                }
-            
-            delete [] des;
-            }
-        
-        
-        // now find shallowest matching objects
-
-        numHits = hitMatchIDs.size();
-        
-        int startDepth = getObjectDepth( inObjectID );
-        
-        ObjectRecord *startObject = getObject( inObjectID );
-        if( startObject->isUseDummy ) {
-            startDepth = getObjectDepth( startObject->useDummyParent );
-            }
-        
-
-        int shallowestDepth = UNREACHABLE;
-       
-        for( int i=0; i<numHits; i++ ) {
-            
-            int depth = getObjectDepth( hitMatchIDs.getElementDirect( i ) );
-            
-            if( depth >= startDepth && depth < shallowestDepth ) {
-                shallowestDepth = depth;
-                }
-            }
-
-        SimpleVector<int> hitIDs;
-
-        for( int i=0; i<numHits; i++ ) {
-            int id = hitMatchIDs.getElementDirect( i );
-            
-            int depth = getObjectDepth( id );
-            
-            if( depth == shallowestDepth ) {
-                hitIDs.push_back( id );
-                }
-            }
-        
-
-        if( hits != NULL ) {    
-            delete [] hits;
-            }
-        
-        // there are exact matches
-        // use those instead
-        if( exactHitMatchIDs.size() > 0 ) {
-            hitIDs.deleteAll();
-            hitIDs.push_back_other( &exactHitMatchIDs );
-            }
-        
-
-
-        numHits = hitIDs.size();
-
-        // list of IDs that are used to make hit objects
-        SimpleVector<int> precursorIDs;
-        
-        if( numHits > 0 ) {
-            
-            if( numHits < 10 ) {
-                
-                for( int i=0; i<numHits; i++ ) {
-                    precursorIDs.push_back( hitIDs.getElementDirect( i ) );
-                    }
-                // go limited number of steps back
-                
-                SimpleVector<int> lastStep = precursorIDs;
-
-                for( int s=0; s<10; s++ ) {
-                    SimpleVector<int> oldLastStep = lastStep;
-                    
-                    lastStep.deleteAll();
-                    
-                    for( int i=0; i<oldLastStep.size(); i++ ) {
-                        int oldStepID = oldLastStep.getElementDirect( i );
-                        if( oldStepID == inObjectID ) {
-                            // don't follow precursor chains back through
-                            // our object
-                            // don't care about things BEFORE out object
-                            // that lead to filter target
-                            continue;
-                            }
-                        
-                        int oldStepDepth = getObjectDepth( oldStepID );
-
-
-                        int numResults = 0;
-                        int numRemain = 0;
-                        TransRecord **prodTrans =
-                            searchProduces( oldStepID, 
-                                            0,
-                                            200,
-                                            &numResults, &numRemain );
-                        
-                        if( prodTrans != NULL ) {
-                            
-                            int shallowestTransDepth = UNREACHABLE;
-                            int shallowestTransIndex = -1;
-
-                            for( int t=0; t<numResults; t++ ) {
-                                
-                                int actor = prodTrans[t]->actor;
-                                int target = prodTrans[t]->target;
-                                
-                                int transDepth = UNREACHABLE;
-                                
-                                if( actor > 0 ) {
-                                    transDepth = getObjectDepth( actor );
-                                    if( transDepth == UNREACHABLE ) {
-                                        // is this a category?
-                                        CategoryRecord *cat = 
-                                            getCategory( actor );
-                                        
-                                        if( cat != NULL &&
-                                            cat->objectIDSet.size() > 0 &&
-                                            ! cat->isPattern ) {
-                                            continue;
-                                            }
-                                        }
-                                    }
-                                if( target > 0 ) {
-                                    int targetDepth = getObjectDepth( target );
-                                    if( targetDepth == UNREACHABLE ) {
-                                        // must be category
-                                        // is this a category?
-                                        CategoryRecord *cat = 
-                                            getCategory( target );
-                                        
-                                        if( cat != NULL && 
-                                            cat->objectIDSet.size() > 0 &&
-                                            ! cat->isPattern ) {
-                                            continue;
-                                            }
-                                        }
-                                    if( targetDepth > transDepth ||
-                                        transDepth == UNREACHABLE ) {
-                                        transDepth = targetDepth;
-                                        }
-                                    }
-                                
-                                if( transDepth < shallowestTransDepth ) {
-                                    shallowestTransDepth = transDepth;
-                                    shallowestTransIndex = t;
-                                    }
-                                }
-                            
-                            
-                            if( shallowestTransIndex != -1 &&
-                                shallowestTransDepth < oldStepDepth ) {
-                                int actor = 
-                                    prodTrans[shallowestTransIndex]->actor;
-                                int target = 
-                                    prodTrans[shallowestTransIndex]->target;
-                                
-                                if( actor > 0 &&
-                                    precursorIDs.
-                                    getElementIndex( actor ) == -1 ) {
-
-                                    precursorIDs.push_back( actor );
-                                    lastStep.push_back( actor );
-                                    }
-
-                                if( target > 0 && 
-                                    precursorIDs.
-                                    getElementIndex( target ) == -1 ) {
-
-                                    precursorIDs.push_back( target );
-                                    lastStep.push_back( target );
-                                    }
-                                }
-                            
-                            delete [] prodTrans;
-                            }
-                        }
-                    }
-                }
-            
-            int numPrecursors = precursorIDs.size();
-
-            for( int i = 0; i<filteredTrans.size(); i++ ) {
-                char matchesFilter = false;
-                TransRecord *t = filteredTrans.getElementDirect( i );
-                
-                // don't show trans that result in a hit or a precursor of a
-                // hit if the trans doesn't display that hit or precursor
-                // as a result when shown to user (will be confusing if
-                // it only produces the precursor as a "side-effect"
-                // example:  bone needle produced from stitching shoes
-                //           and bone needle is a precursor of bellows
-                //           but it's very odd to show the shoe-producing
-                //           transition when filtering by bellows and
-                //           holding two rabbit furs.
-                int resultOfTrans = getTransMostImportantResult( t );
-                
-                for( int h=0; h<numHits; h++ ) {
-                    int id = hitIDs.getElementDirect( h );    
-                    
-                    if( t->actor != id && t->target != id 
-                        &&
-                        ( resultOfTrans == id ) ) {
-                        matchesFilter = true;
-                        break;
-                        }    
-                    }
-                if( matchesFilter == false ) {
-                    for( int p=0; p<numPrecursors; p++ ) {
-                        int id = precursorIDs.getElementDirect( p );
-                        
-                        if( t->actor != id && t->target != id 
-                            &&
-                            ( resultOfTrans == id ) ) {
-                            // precursors only count if they actually
-                            // make id, not just if they use it
-
-                            // but make sure it doesn't use
-                            // one of our main hits as an ingredient
-                            char hitIsIngredient = false;
-                            
-                            int actor = t->actor;
-                            int target = t->target;
-                            
-                            if( actor > 0 ) {
-                                ObjectRecord *actorO = 
-                                    getObject( actor );
-                                if( actorO->isUseDummy ) {
-                                    actor = actorO->useDummyParent;
-                                    }
-                                }
-                            if( target > 0 ) {
-                                ObjectRecord *targetO = 
-                                    getObject( target );
-                                if( targetO->isUseDummy ) {
-                                    target = targetO->useDummyParent;
-                                    }
-                                }
-                            
-                            for( int h=0; h<numHits; h++ ) {
-                                int hitID = hitIDs.getElementDirect( h ); 
-                                
-                                if( actor == hitID || 
-                                    target == hitID ) {
-                                    hitIsIngredient = true;
-                                    break;
-                                    }
-                                }
-                            if( ! hitIsIngredient ) {
-                                matchesFilter = true;
-                                break;
-                                }
-                            }
-                        }
-                    }
-                
-                if( ! matchesFilter ) {
-                    filteredTrans.deleteElement( i );
-                    i--;
-                    }
-                }
-            }
-
-        }
-
-    
     int numTrans = filteredTrans.size();
 
     int numRelevant = numTrans;
-
-      // for now, just leave it empty
-    if( false &&
-        numTrans == 0 && unfilteredTrans.size() > 0 ) {
-        
-        // after filtering, no transititions are left
-        // show all trans instead
-        for( int i = 0; i<unfilteredTrans.size(); i++ ) {
-            filteredTrans.push_back( unfilteredTrans.getElementDirect( i ) );
-            }
-        numTrans = filteredTrans.size();
-        }
-    
-    
 
     int lastSheet = NUM_HINT_SHEETS - 1;
     
@@ -10070,58 +10059,15 @@ int LivingLifePage::getNumHints( int inObjectID ) {
         mPendingFilterString = NULL;
         }
 
-    if( mLastHintFilterString != NULL ) {
-
-        if( mPendingFilterString != NULL ) {
-            delete [] mPendingFilterString;
-            mPendingFilterString = NULL;
-            }
-        
-        if( numRelevant == 0 || numFilterHits == 0 ) {
-            const char *key = "notRelevant";
-            char *reasonString = NULL;
-            if( numFilterHits == 0 && unfilteredTrans.size() > 0 ) {
-                // no match because object named in filter does not
-                // exist
-                key = "noMatch";
-                reasonString = stringDuplicate( translate( key ) );
-                }
-            else {
-                const char *formatString = translate( key );
-                
-                
-                char *objString = getDisplayObjectDescription( inObjectID );
-                reasonString = autoSprintf( formatString, objString );
-                
-                delete [] objString;
-                }
-            
-            
-
-            mPendingFilterString = autoSprintf( "%s %s %s",
-                                                translate( "making" ),
-                                                mLastHintFilterString,
-                                                reasonString );
-            delete [] reasonString;
-            }
-        else {    
-            mPendingFilterString = autoSprintf( "%s %s",
-                                                translate( "making" ),
-                                                mLastHintFilterString );
-            }
-        
-        }
-    else {
-        mHintTargetOffset[ lastSheet ] = mHintHideOffset[ lastSheet ];
-        }
-
-
-
+    mHintTargetOffset[ lastSheet ] = mHintHideOffset[ lastSheet ];
 
     // skip any that repeat exactly the same string
     // (example:  goose pond in different states)
-    SimpleVector<char *> otherActorStrings;
-    SimpleVector<char *> otherTargetStrings;
+    struct TransPair {
+        int actor;
+        int target;
+    };
+    SimpleVector<TransPair> existPairList;
     
 
     for( int i=0; i<numTrans; i++ ) {
@@ -10135,68 +10081,24 @@ int LivingLifePage::getNumHints( int inObjectID ) {
         else if( tr->target > 0 && tr->target != inObjectID ) {
             depth = getObjectDepth( tr->target );
             }
-            
-            
-        char stringAlreadyPresent = false;
-            
-        if( tr->actor > 0 && tr->actor != inObjectID ) {
-            ObjectRecord *otherObj = getObject( tr->actor );
-                
-            char *trimmedDesc = stringDuplicate( otherObj->localizedName );
-            stripDescriptionComment( trimmedDesc );
 
-            for( int s=0; s<otherActorStrings.size(); s++ ) {
-                    
-                if( strcmp( trimmedDesc, 
-                            otherActorStrings.getElementDirect( s ) )
-                    == 0 ) {
-                        
-                    stringAlreadyPresent = true;
-                    break;
-                    }    
-                }
-
-            if( !stringAlreadyPresent ) {
-                otherActorStrings.push_back( trimmedDesc );
-                }
-            else {
-                delete [] trimmedDesc;
-                }
-            }
-            
-        if( tr->target > 0 && tr->target != inObjectID ) {
-            ObjectRecord *otherObj = getObject( tr->target );
-                
-            char *trimmedDesc = stringDuplicate( otherObj->localizedName );
-            stripDescriptionComment( trimmedDesc );
-
-            for( int s=0; s<otherTargetStrings.size(); s++ ) {
-                    
-                if( strcmp( trimmedDesc, 
-                            otherTargetStrings.getElementDirect( s ) )
-                    == 0 ) {
-                        
-                    stringAlreadyPresent = true;
-                    break;
-                    }    
-                }
-
-            if( !stringAlreadyPresent ) {
-                otherTargetStrings.push_back( trimmedDesc );
-                }
-            else {
-                delete [] trimmedDesc;
-                }
+        if( reverse && (tr->actor == inObjectID || tr->target == inObjectID ) ) {
+            continue;
             }
 
-            
-        if( !stringAlreadyPresent ) {
+        bool exist = false;
+        for ( int t=0; t<existPairList.size(); t++ ) {
+            TransPair trans = existPairList.getElementDirect( t );
+            if( trans.actor == findMainObjectID( tr->actor ) && trans.target == findMainObjectID( tr->target ) ) {
+                exist = true;
+                break;
+                }
+            }
+        if( !exist ) {
+            existPairList.push_back( { findMainObjectID( tr->actor ), findMainObjectID( tr->target) });
             queue.insert( tr, depth );
             }
         }
-    
-    otherActorStrings.deallocateStringElements();
-    otherTargetStrings.deallocateStringElements();
 
     int numInQueue = queue.size();
     
@@ -10233,11 +10135,103 @@ static double getLongestLine( char *inMessage ) {
 
 
 
+HintObject LivingLifePage::getHintObject( int inObjectID, int inIndex, bool reverse ) {
 
-char *LivingLifePage::getHintMessage( int inObjectID, int inIndex ) {
+    HintObject retHint;
+    retHint.exist = true;
+    retHint.eventually = false;
 
     if( inObjectID != mLastHintSortedSourceID ) {
-        getNumHints( inObjectID );
+        getNumHints( inObjectID, reverse );
+        }
+
+    TransRecord *found = NULL;
+
+    if( inIndex < mLastHintSortedList.size() ) {
+        found = mLastHintSortedList.getElementDirect( inIndex );
+        }
+    
+
+    
+    if( found != NULL ) {
+        int actor = findMainObjectID( found->actor );
+        int target = findMainObjectID( found->target );
+        int newActor = findMainObjectID( found->newActor );
+
+        int result = getTransMostImportantResult( found );
+        
+        
+        if( actor > 0 ) {
+            retHint.actorId = actor;
+            }
+        else if( actor == 0 ) {
+            retHint.actorId = HintObject::bareHand;
+            }
+        else if( actor == -1 ) {
+            retHint.actorId = HintObject::decay;
+            }
+        else {
+            retHint.actorId = HintObject::nothing;
+            }
+
+        if( target > 0 ) {
+            retHint.targetId = target;
+            }
+        else if( target == -1 && actor > 0 ) {
+            ObjectRecord *actorObj = getObject( actor );
+            
+            if( actorObj->foodValue ) {
+                retHint.targetId = HintObject::eat;
+                if( result == 0 && 
+                    actor == newActor &&
+                    actorObj->numUses > 1 ) {
+                    // see if there's a last-use transition and give hint
+                    // about what it produces, in the end
+
+                    int lastDummy = 
+                        actorObj->useDummyIDs[ 0 ];
+                    
+                    TransRecord *lastUseTrans = getTrans( lastDummy, -1 );
+                    
+                    if( lastUseTrans != NULL ) {
+                        if( lastUseTrans->newActor > 0 ) {
+                            result = findMainObjectID( lastUseTrans->newActor );
+                            retHint.eventually = true;
+                            }
+                        else if( lastUseTrans->newTarget > 0 ) {
+                            result = 
+                                findMainObjectID( lastUseTrans->newTarget );
+                            retHint.eventually = true;
+                            }
+                        }    
+                    }
+                }
+            else {
+                retHint.targetId = HintObject::bareGround;
+                }
+            }
+        else {
+            retHint.targetId = HintObject::nothing;
+            }
+        
+        
+        if( result > 0 ) {
+            retHint.resultId = result;
+            }
+        else {
+            retHint.resultId = HintObject::nothing;
+            }
+        }
+    else {
+        retHint.exist = false;
+        }
+    return retHint;
+    }
+
+char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse ) {
+
+    if( inObjectID != mLastHintSortedSourceID ) {
+        getNumHints( inObjectID, reverse );
         }
 
     TransRecord *found = NULL;
@@ -11048,10 +11042,11 @@ void LivingLifePage::step() {
     
     
     if( ourObject != NULL && mNextHintObjectID != 0 &&
-        getNumHints( mNextHintObjectID ) > 0 ) {
+        getNumHints( mNextHintObjectID, mNextHintReverse ) > 0 ) {
         
         if( mCurrentHintObjectID != mNextHintObjectID ||
             mCurrentHintIndex != mNextHintIndex ||
+            mCurrentHintReverse != mNextHintReverse ||
             mForceHintRefresh ) {
             
             mForceHintRefresh = false;
@@ -11083,18 +11078,20 @@ void LivingLifePage::step() {
             
             mCurrentHintObjectID = mNextHintObjectID;
             mCurrentHintIndex = mNextHintIndex;
+            mCurrentHintReverse = mNextHintReverse;
             
             mHintBookmarks[ mCurrentHintObjectID ] = mCurrentHintIndex;
 
             mNumTotalHints[ i ] = 
-                getNumHints( mCurrentHintObjectID );
+                getNumHints( mCurrentHintObjectID, mCurrentHintReverse );
 
             if( mHintMessage[ i ] != NULL ) {
                 delete [] mHintMessage[ i ];
                 }
             
             mHintMessage[ i ] = getHintMessage( mCurrentHintObjectID, 
-                                                mHintMessageIndex[i] );
+                                                mHintMessageIndex[i],
+                                                mCurrentHintReverse );
             
 
 
@@ -11102,7 +11099,7 @@ void LivingLifePage::step() {
             }
         }
     else if( ourObject != NULL && mNextHintObjectID != 0 &&
-             getNumHints( mNextHintObjectID ) == 0 ) {
+             getNumHints( mNextHintObjectID, mNextHintReverse ) == 0 ) {
         // holding something with no hints, hide last sheet
         int newLiveSheetIndex = 0;
         
@@ -11118,12 +11115,13 @@ void LivingLifePage::step() {
         mLiveHintSheetIndex = newLiveSheetIndex;
         
         mCurrentHintObjectID = mNextHintObjectID;
+        mCurrentHintReverse = mNextHintReverse;
         }
     
     
         
     int lastSheet = NUM_HINT_SHEETS - 1;
-    if( mPendingFilterString != NULL &&
+    if( false && mPendingFilterString != NULL &&
         ( mHintMessage[ lastSheet ] == NULL ||
           strcmp( mHintMessage[ lastSheet ], mPendingFilterString ) != 0 ) ) {
         
@@ -11151,7 +11149,7 @@ void LivingLifePage::step() {
             }
         
         }
-    else if( mPendingFilterString == NULL &&
+    else if( false && mPendingFilterString == NULL &&
              mHintMessage[ lastSheet ] != NULL ) {
         mHintTargetOffset[ lastSheet ] = mHintHideOffset[ lastSheet ];
         
@@ -11339,6 +11337,19 @@ void LivingLifePage::step() {
         emotSheetOffsetRate -= frameRateFactor * 0.05;
         if( emotSheetOffsetRate < 0.0) {
             emotSheetOffsetRate = 0;
+            }
+        }
+
+    if( showReciptSheet && reciptSheetOffsetRate < 1.0 ) {
+        reciptSheetOffsetRate += frameRateFactor * 0.05;
+        if( reciptSheetOffsetRate > 1.0) {
+            reciptSheetOffsetRate = 1;
+            }
+        }
+    else if( !showReciptSheet && reciptSheetOffsetRate > 0.0 ) {
+        reciptSheetOffsetRate -= frameRateFactor * 0.05;
+        if( reciptSheetOffsetRate < 0.0) {
+            reciptSheetOffsetRate = 0;
             }
         }
 
@@ -14299,18 +14310,6 @@ void LivingLifePage::step() {
                         
                         existing->lastHoldingID = oldHeld;
                         existing->holdingID = o.holdingID;
-                        
-                        if( o.id == ourID &&
-                            existing->holdingID > 0 &&
-                            existing->holdingID != oldHeld ) {
-                            // holding something new
-                            // hint about it
-                            
-                            mNextHintObjectID = existing->holdingID;
-                            mNextHintIndex = 
-                                mHintBookmarks[ mNextHintObjectID ];
-                            }
-                        
 
 
                         ObjectRecord *newClothing = 
@@ -18658,6 +18657,7 @@ void LivingLifePage::makeActive( char inFresh ) {
 
     mForceHintRefresh = false;
     mLastHintSortedSourceID = 0;
+    mLastHintReverse = false;
     mLastHintSortedList.deleteAll();
 
     for( int i=0; i<NUM_HINT_SHEETS; i++ ) {
@@ -18667,9 +18667,11 @@ void LivingLifePage::makeActive( char inFresh ) {
 
     mCurrentHintObjectID = 0;
     mCurrentHintIndex = 0;
+    mCurrentHintReverse = false;
     
     mNextHintObjectID = 0;
     mNextHintIndex = 0;
+    mNextHintReverse = false;
     
     
     if( mHintFilterString != NULL ) {
@@ -19665,15 +19667,15 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
 
     // FOVMOD NOTE:  Change 25/27 - Take these lines during the merge process
     int mouseButton = getLastMouseButton();
-	if( mouseButton == MouseButton::WHEELUP || mouseButton == MouseButton::WHEELDOWN ) {
-		float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
-		float newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentScale /= 1.5 : currentScale *= 1.5;
-		if ( isShiftKeyDown() ) {
-			newScale = ( mouseButton == MouseButton::WHEELUP ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
+    if( mouseButton == MouseButton::WHEELUP || mouseButton == MouseButton::WHEELDOWN ) {
+        float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
+        float newScale = ( mouseButton == MouseButton::WHEELUP ) ? currentScale /= 1.5 : currentScale *= 1.5;
+        if ( isShiftKeyDown() ) {
+            newScale = ( mouseButton == MouseButton::WHEELUP ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
             }
         changeFOV( newScale );
-		return;
-	}
+        return;
+    }
     
     mLastMouseOverID = 0;
     
@@ -19768,6 +19770,11 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
 
     checkForPointerHit( &p, inX, inY );
 
+    lastCursorLiveObjectID = p.hitOtherPerson ? p.hitOtherPersonID : 0;
+    if( lastCursorGraveName != NULL) {
+        delete [] lastCursorGraveName;
+        lastCursorGraveName = NULL;
+        }
 
 
     // new semantics
@@ -20110,17 +20117,20 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
                 // give hint about dest object which will be unchanged 
                 mNextHintObjectID = destID;
                 mNextHintIndex = mHintBookmarks[ destID ];
+                mHintHistories.deleteAll();
                 }
             else if( tr->newActor > 0 && 
                      ourLiveObject->holdingID != tr->newActor ) {
                 // give hint about how what we're holding will change
                 mNextHintObjectID = tr->newActor;
                 mNextHintIndex = mHintBookmarks[ tr->newTarget ];
+                mHintHistories.deleteAll();
                 }
             else if( tr->newTarget > 0 ) {
                 // give hint about changed target after we act on it
                 mNextHintObjectID = tr->newTarget;
                 mNextHintIndex = mHintBookmarks[ tr->newTarget ];
+                mHintHistories.deleteAll();
                 }
             }
         else {
@@ -20130,8 +20140,30 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
             if( getTrans( 0, destID ) == NULL ) {
                 mNextHintObjectID = destID;
                 mNextHintIndex = mHintBookmarks[ destID ];
+                mHintHistories.deleteAll();
                 }
             }
+
+        ObjectRecord* destObject = getObject( destID );
+        if( destObject && strstr( destObject->description, "origGrave" ) != NULL ) {
+            for( int g=0; g<mGraveInfo.size(); g++ ) {
+                GraveInfo *gI = mGraveInfo.getElement( g );
+                
+                if( gI->worldPos.x == mapX &&
+                    gI->worldPos.y == mapY ) {
+                    if( gI->name != NULL ) {
+                        if( lastCursorGraveName != NULL) {
+                            delete [] lastCursorGraveName;
+                            }
+                        lastCursorGraveName = stringDuplicate( gI->name );
+                        }
+                    }
+                }
+            }
+        mNextHintObjectID = destID;
+        mNextHintIndex = 0;
+        mNextHintReverse = false;
+        mHintHistories.deleteAll();
         }
 
     
@@ -20494,7 +20526,9 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
         // a move to an empty spot where we're not already standing
         // can interrupt current move
         
-        mustMove = true;
+        if( !p.hitOtherPerson ) {
+            mustMove = true;
+            }
         }
     else if( ( modClick && ourLiveObject->holdingID != 0 )
              || killMode
@@ -21241,7 +21275,7 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
             mSayField.keyDown( inASCII );
             }
         }
-	
+    
     switch( inASCII ) {
         case '!':
         case '?':
@@ -21460,35 +21494,29 @@ void LivingLifePage::keyDown( unsigned char inASCII ) {
             gui_hud_mode = SettingsManager::getIntSetting( "hudDrawMode", 0 );
             gui_hud_mode = abs( ( gui_hud_mode + 1 ) % 3 );
             SettingsManager::setSetting( "hudDrawMode", gui_hud_mode );
-			calcOffsetHUD();
+            calcOffsetHUD();
             }
             break;
         case 9: // tab
             if( mCurrentHintObjectID != 0 ) {
                 
-                int num = getNumHints( mCurrentHintObjectID );
+                int num = getNumHints( mCurrentHintObjectID, mCurrentHintReverse );
                 
-                int skip = 1;
-                
-                if( !mUsingSteam && isShiftKeyDown() ) {
-                    skip = -1;
-                    }
-                else if( mUsingSteam && mZKeyDown ) {
-                    skip = -1;
-                    }
-                if( isCommandKeyDown() ) {
-                    if( num > 5 ) {
-                        skip *= 5;
-                        }
-                    }
+                int skip = RECIPT_PAGE_NUM;
+                if( isShiftKeyDown() ) {
+                    skip = -skip;
+                }
 
                 if( num > 0 ) {
                     mNextHintIndex += skip;
                     if( mNextHintIndex >= num ) {
-                        mNextHintIndex -= num;
+                        mNextHintIndex = 0;
                         }
                     if( mNextHintIndex < 0 ) {
-                        mNextHintIndex += num;
+                        mNextHintIndex = num - (num % RECIPT_PAGE_NUM);
+                        if( mNextHintIndex == num) {
+                            mNextHintIndex -= RECIPT_PAGE_NUM;
+                            }
                         }
                     }
                 }
@@ -21735,7 +21763,7 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         // dead
         return;
         }
-		
+        
     /*
     bool canUseEmot = (game_getCurrentTime() - lastEmotUseTime) > 2.0;
     // FOVMOD NOTE:  Change 27/27 - Take these lines during the merge process
@@ -21876,6 +21904,8 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
             }
         }
     if( inKeyCode == MG_KEY_F5 ) {
+        showReciptSheet = !showReciptSheet;
+        /*
         if( lastCursorObjectID != 0 ) {
             ObjectRecord* lastCursorObject = getObject( lastCursorObjectID );
             mHintFilterString = stringDuplicate( lastCursorObject->localizedName );
@@ -21887,30 +21917,33 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
             mForceHintRefresh = true;
             mNextHintIndex = 0;
             }
+        */
         }
+    /*
     if( inKeyCode == MG_KEY_F6 ) {
         if( mCurrentHintIndex < mLastHintSortedList.size() ) {    
             mNextHintObjectID  = getTransMostImportantResult( mLastHintSortedList.getElementDirect( mCurrentHintIndex ) );
-            getNumHints( mNextHintObjectID );
+            getNumHints( mNextHintObjectID, mNextHintReverse );
             mForceHintRefresh = true;
             }
         }
+    */
 
     bool canUseEmot = (game_getCurrentTime() - lastEmotUseTime) > 2.0;
     if( inKeyCode == MG_KEY_F4 && canUseEmot ) {
         showEmotSheet = !showEmotSheet;
         }
 
-	if( inKeyCode == MG_KEY_LEFT || 
-		inKeyCode == MG_KEY_RIGHT ) {
-		float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
-		float newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentScale /= 1.5 : currentScale *= 1.5;
+    if( inKeyCode == MG_KEY_LEFT || 
+        inKeyCode == MG_KEY_RIGHT ) {
+        float currentScale = SettingsManager::getFloatSetting( "fovScale", 1.0f );
+        float newScale = ( inKeyCode == MG_KEY_LEFT ) ? currentScale /= 1.5 : currentScale *= 1.5;
         if ( isShiftKeyDown() ) {
             newScale = ( inKeyCode == MG_KEY_LEFT ) ? SettingsManager::getFloatSetting( "fovPreferredMin", 1.0f ) : SettingsManager::getFloatSetting( "fovPreferredMax", 1.5f );
             }
-	    changeFOV( newScale );
-		return;
-	    }
+        changeFOV( newScale );
+        return;
+        }
 
     if( vogMode && ! TextField::isAnyFocused() ) {
         GridPos posOffset = { 0, 0 };
@@ -22088,6 +22121,85 @@ void LivingLifePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mEmoteShowButton ) {
         showEmotSheet = !showEmotSheet;
         }
+    if( inTarget == &mCurseButton ) {
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            return;
+            }
+        if( ourLiveObject->holdingID < 0 ) {
+            int heldBabyID = - ourLiveObject->holdingID;
+            LiveObject *heldBaby = getLiveObject( heldBabyID );
+            if( heldBaby->name == NULL ) {
+                return;
+                }
+            }
+        char* curseName = "";
+        if( lastCursorLiveObjectID > 0 ) {
+            LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
+            if( lastCursorLiveObject && lastCursorLiveObject->name != NULL ) {
+                curseName = lastCursorLiveObject->name;
+                }
+            }
+        if( lastCursorGraveName != NULL ) {
+            curseName = lastCursorGraveName;
+            }
+        if( strcmp( curseName, "" ) == 0 ) {
+            return;
+            }
+        char* newText = autoSprintf( "%sをのろう", curseName );
+
+        if( strcmp( mSayField.getText(), newText) == 0 ) {
+            mSayField.setText( "" );
+            mSayField.unfocus();
+            delete [] newText;
+            }
+        else {
+            mSayField.focus();
+            mSayField.setText(newText);
+            delete [] newText;
+            }
+        }
+
+    if( inTarget == &mOwnerButton ) {
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( ourLiveObject->lineage.size() == 0 && ourLiveObject->name == NULL ) {
+            return;
+            }
+        if( ourLiveObject->holdingID < 0 ) {
+            int heldBabyID = - ourLiveObject->holdingID;
+            LiveObject *heldBaby = getLiveObject( heldBabyID );
+            if( heldBaby->name == NULL ) {
+                return;
+                }
+            }
+        char* targetName = "";
+        if( lastCursorLiveObjectID > 0 ) {
+            LiveObject* lastCursorLiveObject = getLiveObject( lastCursorLiveObjectID );
+            if( lastCursorLiveObject && lastCursorLiveObject->name != NULL ) {
+                targetName = lastCursorLiveObject->name;
+                }
+            }
+        if( strcmp( targetName, "" ) == 0 ) {
+            return;
+            }
+        mSayField.focus();
+        char* newText = autoSprintf( "%sのものです", targetName );
+        mSayField.setText(newText);
+        delete [] newText;
+        }
+
+    if( inTarget == &mDieButton ) {
+        if( computeCurrentAge( getOurLiveObject() ) < 2 ) {
+            if( strcmp( mSayField.getText(), "/しぬ" ) == 0 ) {
+                mSayField.setText( "" );
+                mSayField.unfocus();
+                }
+            else {
+                mSayField.focus();
+                mSayField.setText( "/しぬ" );
+                }
+            }
+        }
     if( showEmotSheet ) {
         for( int i=0; i<mEmoteButtons.size(); i++ ) {
             if( mEmoteButtons.getElementDirect( i ) == inTarget ) {
@@ -22099,6 +22211,58 @@ void LivingLifePage::actionPerformed( GUIComponent *inTarget ) {
                 showEmotSheet = false;
                 return;
                 }
+            }
+        }
+    if( inTarget == &mReciptButton ) {
+        showReciptSheet = !showReciptSheet;
+        }
+    if( inTarget == &mReciptReverseButton ) {
+        mNextHintReverse = !mNextHintReverse;
+        pushHintHistory();
+        }
+    if( inTarget == &mReciptPageLeftButton ) {
+        mNextHintIndex -= RECIPT_PAGE_NUM;
+        if( mNextHintIndex < 0 ) {
+            mNextHintIndex = 0;
+            }
+        pushHintHistory();
+        }
+    if( inTarget == &mReciptPageRightButton ) {
+        mNextHintIndex += RECIPT_PAGE_NUM;
+        if( mNextHintIndex > mLastHintSortedList.size() - RECIPT_PAGE_NUM ) {
+            mNextHintIndex = mLastHintSortedList.size() - RECIPT_PAGE_NUM;
+            }
+        pushHintHistory();
+        }
+    if( inTarget == &mReciptBackButton ) {
+        popHintHistory();
+        }
+    for( int i=0; i<mReciptObjectButtons.size(); i++ ) {
+        if( inTarget == mReciptObjectButtons.getElementDirect( i ) ) {
+            bool isRight = i % 2;
+            int hintIndex = i / 2 + mCurrentHintIndex;
+            HintObject hintObject = getHintObject( mCurrentHintObjectID, hintIndex, mCurrentHintReverse );
+            if( isRight ) {
+                if( mCurrentHintObjectID == hintObject.resultId ) {
+                    mNextHintObjectID = hintObject.targetId;
+                    pushHintHistory();
+                    }
+                else {
+                    mNextHintObjectID = hintObject.resultId;
+                    pushHintHistory();
+                    }
+                }
+            else {
+                if( mCurrentHintObjectID == hintObject.actorId ) {
+                    mNextHintObjectID = hintObject.targetId;
+                    pushHintHistory();
+                    }
+                else {
+                    mNextHintObjectID = hintObject.actorId;
+                    pushHintHistory();
+                    }
+                }
+            mNextHintIndex = 0;
             }
         }
     if( vogMode && inTarget == &mObjectPicker ) {
@@ -22162,242 +22326,242 @@ void LivingLifePage::putInMap( int inMapI, ExtraMapObject *inObj ) {
 
 
 int getRandomIndex( char *inNameList, int inListLen ) {
-	int limit = inListLen - 1;
-	int outIndex = randSource.getRandomBoundedInt( 0, inListLen + 1 );
-	while( outIndex < limit && inNameList[ outIndex ] != '\0' ) {
-		outIndex++;
-	    }
-	if( outIndex == limit ) {
-		while( outIndex > 0 && inNameList[ outIndex ] != '\0' ) {
-			outIndex--;
+    int limit = inListLen - 1;
+    int outIndex = randSource.getRandomBoundedInt( 0, inListLen + 1 );
+    while( outIndex < limit && inNameList[ outIndex ] != '\0' ) {
+        outIndex++;
+        }
+    if( outIndex == limit ) {
+        while( outIndex > 0 && inNameList[ outIndex ] != '\0' ) {
+            outIndex--;
             }
-		if( outIndex == 0 ) {
-			return 0;
-		} else {
-			return outIndex + 1;
+        if( outIndex == 0 ) {
+            return 0;
+        } else {
+            return outIndex + 1;
             }
-	} else {
-		return outIndex + 1;
+    } else {
+        return outIndex + 1;
         }
     }
 
 
 const char *findRandomName( char *inString, char *inNameList, int inListLen ) {
-	if( inNameList == NULL ) { return "WUTFACE"; }
-	char *tempString = stringToUpperCase( inString );
-	int randomIndex = getRandomIndex( inNameList, inListLen );
-	if( ! isalpha(tempString[0]) ) { 
-		return &(inNameList[ randomIndex ]);
+    if( inNameList == NULL ) { return "WUTFACE"; }
+    char *tempString = stringToUpperCase( inString );
+    int randomIndex = getRandomIndex( inNameList, inListLen );
+    if( ! isalpha(tempString[0]) ) { 
+        return &(inNameList[ randomIndex ]);
         }
-	char firstLetterMatches = false;
-	while( ! firstLetterMatches ) {
-		char *testString = &( inNameList[ randomIndex ] );
-		firstLetterMatches = stringStartsWith( testString, tempString );
-		if( ! firstLetterMatches ) {
-			randomIndex = getRandomIndex( inNameList, inListLen );
+    char firstLetterMatches = false;
+    while( ! firstLetterMatches ) {
+        char *testString = &( inNameList[ randomIndex ] );
+        firstLetterMatches = stringStartsWith( testString, tempString );
+        if( ! firstLetterMatches ) {
+            randomIndex = getRandomIndex( inNameList, inListLen );
             }
         }
-	delete [] tempString;
-	return &(inNameList[ randomIndex ]);
+    delete [] tempString;
+    return &(inNameList[ randomIndex ]);
     }
 
 
 const char *LivingLifePage::findRandomFirstName( char *inString ) {
-	return findRandomName( inString, firstNames, firstNamesLen );
+    return findRandomName( inString, firstNames, firstNamesLen );
     }
 
 const char *LivingLifePage::findRandomLastName( char *inString ) {
-	return findRandomName( inString, lastNames, lastNamesLen );
+    return findRandomName( inString, lastNames, lastNamesLen );
     }
 
-	
+    
 // AGEMOD NOTE:  Change 3/3 - Take these changes during the merge process
 void LivingLifePage::agePanel( LiveObject* ourLiveObject, char displayPanel ) {
-	if ( ! displayPanel ) return;
-	setDrawColor( 1, 1, 1, 1 );
-	doublePair agePos = { lastScreenViewCenter.x + ( recalcOffsetX( 85 ) * gui_fov_scale ), 
-						  lastScreenViewCenter.y - ( recalcOffsetY( 300 ) * gui_fov_scale ) };
-	drawSprite( mYumSlipSprites[2], agePos, 1.4 * gui_fov_scale_hud );
-	setDrawColor( 0, 0, 0, 1 );
-	char *ageString = autoSprintf( "AGE: %d", (int)computeCurrentAge( ourLiveObject ) );
-	agePos.y += 18 * gui_fov_scale_hud;
-	handwritingFont->drawString( ageString, agePos, alignCenter);
+    if ( ! displayPanel ) return;
+    setDrawColor( 1, 1, 1, 1 );
+    doublePair agePos = { lastScreenViewCenter.x + ( recalcOffsetX( 85 ) * gui_fov_scale ), 
+                          lastScreenViewCenter.y - ( recalcOffsetY( 300 ) * gui_fov_scale ) };
+    drawSprite( mYumSlipSprites[2], agePos, 1.4 * gui_fov_scale_hud );
+    setDrawColor( 0, 0, 0, 1 );
+    char *ageString = autoSprintf( "AGE: %d", (int)computeCurrentAge( ourLiveObject ) );
+    agePos.y += 18 * gui_fov_scale_hud;
+    handwritingFont->drawString( ageString, agePos, alignCenter);
     }
-	
-	
+    
+    
 // LINEAGEFERTILITYMOD NOTE:  Change 4/4 - Take these lines during the merge process
 char* LivingLifePage::getFertilityStatus( LiveObject* targetObject ) {
-	char *fertilityStatus = autoSprintf("INCAPABLE");
-	char isTargetMale = getObject( targetObject->displayID )->male;
-	if( isTargetMale ) return fertilityStatus;
-	if( targetObject->finalAgeSet ) {
-		setDrawColor( 1, 0, 0, 1 );
-		fertilityStatus = autoSprintf( "DEAD" );
+    char *fertilityStatus = autoSprintf("INCAPABLE");
+    char isTargetMale = getObject( targetObject->displayID )->male;
+    if( isTargetMale ) return fertilityStatus;
+    if( targetObject->finalAgeSet ) {
+        setDrawColor( 1, 0, 0, 1 );
+        fertilityStatus = autoSprintf( "DEAD" );
         }
-	else {
-		double targetAge = computeCurrentAge( targetObject );
-		if( targetAge < 14 ) {
-			setDrawColor( 0.93, 0.46, 0, 1 );
-			fertilityStatus = autoSprintf("TOO YOUNG");
+    else {
+        double targetAge = computeCurrentAge( targetObject );
+        if( targetAge < 14 ) {
+            setDrawColor( 0.93, 0.46, 0, 1 );
+            fertilityStatus = autoSprintf("TOO YOUNG");
             }
-		else if ( targetAge > 40 ) {
-			setDrawColor( 1, 0, 0, 1 );
-			fertilityStatus = autoSprintf("TOO OLD");
+        else if ( targetAge > 40 ) {
+            setDrawColor( 1, 0, 0, 1 );
+            fertilityStatus = autoSprintf("TOO OLD");
             }
-		else {
-			setDrawColor( 0, 0.39, 0, 1 );
-			fertilityStatus = autoSprintf("FERTILE");
-		    }
-	    }
-	return fertilityStatus;
+        else {
+            setDrawColor( 0, 0.39, 0, 1 );
+            fertilityStatus = autoSprintf("FERTILE");
+            }
+        }
+    return fertilityStatus;
     }
 
 
 void LivingLifePage::lineageFertilityPanel( LiveObject* ourLiveObject, char displayPanel ) {
-	// this feature wont work perfectly now
-	if ( true || ! displayPanel ) return;
-	setDrawColor( 1, 1, 1, 1 );
-	doublePair fertPos = { lastScreenViewCenter.x + ( recalcOffsetX( 685, true ) * gui_fov_scale ), 
-						   lastScreenViewCenter.y + ( recalcOffsetY( 305 ) * gui_fov_scale ) };
-	drawSprite( mHintSheetSprites[2], fertPos, gui_fov_scale_hud );
-	setDrawColor( 0, 0, 0, 1 );
-	char *fertStringA = autoSprintf( "MOTHER IS:  " );
-	doublePair fertTextPos = { fertPos.x -= ( 300 * gui_fov_scale_hud ), 
-							   fertPos.y += ( 28 * gui_fov_scale_hud ) };
-	handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
-	SimpleVector<int> ourLin = ourLiveObject->lineage;
-	int relatedYoungFemales = 0;
-	int relatedFertileFemales = 0;
-	char *fertStringB = autoSprintf( "" );
-	if( ourLin.size() > 0 ) {
-		char found = false;
-		for( int i=0; i<ourLin.size(); i++ ) {
-			LiveObject *thisRelative = getLiveObject(ourLin.getElementDirect(i));
-			if( thisRelative != NULL && ! getObject( thisRelative->displayID )->male ) {
-				if( stringCompareIgnoreCase(thisRelative->relationName, "YOUR MOTHER" ) == 0 ) {
-					found = true;
-					fertStringB = autoSprintf( "%s", getFertilityStatus( thisRelative ) );
-				    }
-			    }
-		    }
-		if( ! found ) {
-			setDrawColor( 1, 0, 0, 1 );
-			fertStringB = autoSprintf( "DEAD" );
-		    }
-	} else {
-		setDrawColor( 0, 0, 1, 1 );
-		fertStringB = autoSprintf("NONE (EVE)");
-	    }
-	fertTextPos.x += handwritingFont->measureString( fertStringA );
-	handwritingFont->drawString( fertStringB, fertTextPos, alignLeft );
-	setDrawColor( 0, 0, 0, 1);
-	fertTextPos.x -= handwritingFont->measureString( fertStringA );
-	
-	fertStringA = autoSprintf( "PREGNANCY:  " );
-	fertTextPos.y -= handwritingFont->getFontHeight() / 1.25;
-	handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
-	fertTextPos.x += handwritingFont->measureString( fertStringA );
-	fertStringB = autoSprintf( "%s", getFertilityStatus( ourLiveObject ) );
-	handwritingFont->drawString( fertStringB, fertTextPos, alignLeft );
-	fertTextPos.x -= handwritingFont->measureString( fertStringA );
-	setDrawColor( 0, 0, 0, 1);
-	
-	for( int i=0; i<gameObjects.size(); i++ ) {
-		LiveObject *thisPlayer = gameObjects.getElement( i );
-		if( thisPlayer != NULL ) {
-			char isPlayerMale = getObject( thisPlayer->displayID )->male;
-			if( ! isPlayerMale && thisPlayer->id != ourID && thisPlayer->relationName != NULL) {
-				if( stringCompareIgnoreCase(thisPlayer->relationName, "YOUR" ) > 0 ) {
-					if( thisPlayer->age < 14 ) {
-						relatedYoungFemales++;
-					    }
-					if ( thisPlayer->age > 13 && thisPlayer->age < 40 ) {
-						relatedFertileFemales++;
-					    }
-				    }
-			    }
-		    }
-	    }
-	
-	fertStringA = autoSprintf( "RELATED GIRL KIDS:  %d", relatedYoungFemales );
-	fertTextPos.y -= handwritingFont->getFontHeight() / 1.25;
-	handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
-	
-	fertStringA = autoSprintf( "FERTILE RELATIVES:  %d", relatedFertileFemales );
-	fertTextPos.y -= handwritingFont->getFontHeight() / 1.25;
-	handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
+    // this feature wont work perfectly now
+    if ( true || ! displayPanel ) return;
+    setDrawColor( 1, 1, 1, 1 );
+    doublePair fertPos = { lastScreenViewCenter.x + ( recalcOffsetX( 685, true ) * gui_fov_scale ), 
+                           lastScreenViewCenter.y + ( recalcOffsetY( 305 ) * gui_fov_scale ) };
+    drawSprite( mHintSheetSprites[2], fertPos, gui_fov_scale_hud );
+    setDrawColor( 0, 0, 0, 1 );
+    char *fertStringA = autoSprintf( "MOTHER IS:  " );
+    doublePair fertTextPos = { fertPos.x -= ( 300 * gui_fov_scale_hud ), 
+                               fertPos.y += ( 28 * gui_fov_scale_hud ) };
+    handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
+    SimpleVector<int> ourLin = ourLiveObject->lineage;
+    int relatedYoungFemales = 0;
+    int relatedFertileFemales = 0;
+    char *fertStringB = autoSprintf( "" );
+    if( ourLin.size() > 0 ) {
+        char found = false;
+        for( int i=0; i<ourLin.size(); i++ ) {
+            LiveObject *thisRelative = getLiveObject(ourLin.getElementDirect(i));
+            if( thisRelative != NULL && ! getObject( thisRelative->displayID )->male ) {
+                if( stringCompareIgnoreCase(thisRelative->relationName, "YOUR MOTHER" ) == 0 ) {
+                    found = true;
+                    fertStringB = autoSprintf( "%s", getFertilityStatus( thisRelative ) );
+                    }
+                }
+            }
+        if( ! found ) {
+            setDrawColor( 1, 0, 0, 1 );
+            fertStringB = autoSprintf( "DEAD" );
+            }
+    } else {
+        setDrawColor( 0, 0, 1, 1 );
+        fertStringB = autoSprintf("NONE (EVE)");
+        }
+    fertTextPos.x += handwritingFont->measureString( fertStringA );
+    handwritingFont->drawString( fertStringB, fertTextPos, alignLeft );
+    setDrawColor( 0, 0, 0, 1);
+    fertTextPos.x -= handwritingFont->measureString( fertStringA );
+    
+    fertStringA = autoSprintf( "PREGNANCY:  " );
+    fertTextPos.y -= handwritingFont->getFontHeight() / 1.25;
+    handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
+    fertTextPos.x += handwritingFont->measureString( fertStringA );
+    fertStringB = autoSprintf( "%s", getFertilityStatus( ourLiveObject ) );
+    handwritingFont->drawString( fertStringB, fertTextPos, alignLeft );
+    fertTextPos.x -= handwritingFont->measureString( fertStringA );
+    setDrawColor( 0, 0, 0, 1);
+    
+    for( int i=0; i<gameObjects.size(); i++ ) {
+        LiveObject *thisPlayer = gameObjects.getElement( i );
+        if( thisPlayer != NULL ) {
+            char isPlayerMale = getObject( thisPlayer->displayID )->male;
+            if( ! isPlayerMale && thisPlayer->id != ourID && thisPlayer->relationName != NULL) {
+                if( stringCompareIgnoreCase(thisPlayer->relationName, "YOUR" ) > 0 ) {
+                    if( thisPlayer->age < 14 ) {
+                        relatedYoungFemales++;
+                        }
+                    if ( thisPlayer->age > 13 && thisPlayer->age < 40 ) {
+                        relatedFertileFemales++;
+                        }
+                    }
+                }
+            }
+        }
+    
+    fertStringA = autoSprintf( "RELATED GIRL KIDS:  %d", relatedYoungFemales );
+    fertTextPos.y -= handwritingFont->getFontHeight() / 1.25;
+    handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
+    
+    fertStringA = autoSprintf( "FERTILE RELATIVES:  %d", relatedFertileFemales );
+    fertTextPos.y -= handwritingFont->getFontHeight() / 1.25;
+    handwritingFont->drawString( fertStringA, fertTextPos, alignLeft );
     }
 
 
 
 void LivingLifePage::calcFontScale( float newScale, Font *font ) {
-	float scale = font->getScaleFactor();
-	scale /= gui_fov_scale;
-	scale *= newScale;
-	font->setScaleFactor( scale );
+    float scale = font->getScaleFactor();
+    scale /= gui_fov_scale;
+    scale *= newScale;
+    font->setScaleFactor( scale );
     }
 
 void LivingLifePage::changeFOV( float newScale, bool save ) {
-	if( newScale < 0.667f )
-		newScale = 0.667f;
-	else if( newScale > 1.5f )
-		newScale = 1.5f;
+    if( newScale < 0.667f )
+        newScale = 0.667f;
+    else if( newScale > 1.5f )
+        newScale = 1.5f;
     if( save ) {
-    	SettingsManager::setSetting( "fovScale", newScale );
+        SettingsManager::setSetting( "fovScale", newScale );
         }
 
-	LiveObject *ourLiveObject = getOurLiveObject();
-	if( ourLiveObject != NULL ) {
-		if( ourLiveObject->heldByAdultID != -1 ) {
-			ourLiveObject = getGameObject( ourLiveObject->heldByAdultID );
-			if( ourLiveObject == NULL ) {
-				ourLiveObject = getOurLiveObject();
+    LiveObject *ourLiveObject = getOurLiveObject();
+    if( ourLiveObject != NULL ) {
+        if( ourLiveObject->heldByAdultID != -1 ) {
+            ourLiveObject = getGameObject( ourLiveObject->heldByAdultID );
+            if( ourLiveObject == NULL ) {
+                ourLiveObject = getOurLiveObject();
                 }
             }
-		screenCenterPlayerOffsetX = int( double( screenCenterPlayerOffsetX ) / gui_fov_scale * newScale );
-		screenCenterPlayerOffsetY = int( double( screenCenterPlayerOffsetY ) / gui_fov_scale * newScale );
+        screenCenterPlayerOffsetX = int( double( screenCenterPlayerOffsetX ) / gui_fov_scale * newScale );
+        screenCenterPlayerOffsetY = int( double( screenCenterPlayerOffsetY ) / gui_fov_scale * newScale );
 
-		doublePair centerOffset = sub( lastScreenViewCenter, mult( ourLiveObject->currentPos, CELL_D ) );
-		centerOffset = mult( centerOffset, 1. / gui_fov_scale );
-		centerOffset = mult( centerOffset, newScale );
-		centerOffset = add( mult( ourLiveObject->currentPos, CELL_D ), centerOffset );
-		lastScreenViewCenter.x = round( centerOffset.x );
-		lastScreenViewCenter.y = round( centerOffset.y );
+        doublePair centerOffset = sub( lastScreenViewCenter, mult( ourLiveObject->currentPos, CELL_D ) );
+        centerOffset = mult( centerOffset, 1. / gui_fov_scale );
+        centerOffset = mult( centerOffset, newScale );
+        centerOffset = add( mult( ourLiveObject->currentPos, CELL_D ), centerOffset );
+        lastScreenViewCenter.x = round( centerOffset.x );
+        lastScreenViewCenter.y = round( centerOffset.y );
         }
 
-	calcFontScale( newScale, handwritingFont );
-	calcFontScale( newScale, pencilFont );
+    calcFontScale( newScale, handwritingFont );
+    calcFontScale( newScale, pencilFont );
     calcFontScale( newScale, pencilErasedFont );
-	gui_fov_scale = newScale;
-	gui_fov_scale_hud = gui_fov_scale / gui_fov_target_scale_hud;
+    gui_fov_scale = newScale;
+    gui_fov_scale_hud = gui_fov_scale / gui_fov_target_scale_hud;
 
-	calcOffsetHUD();
+    calcOffsetHUD();
 
-	viewWidth = 1280 * newScale;
-	viewHeight = 720 * newScale;
-	setLetterbox( 1280 * newScale, 720 * newScale );
-	setViewSize( 1280 * newScale );
+    viewWidth = 1280 * newScale;
+    viewHeight = 720 * newScale;
+    setLetterbox( 1280 * newScale, 720 * newScale );
+    setViewSize( 1280 * newScale );
     }
 
 void LivingLifePage::changeHUDFOV( float newScale, bool save ) {
     return;
-	if( newScale < 0.667f ) {
-		newScale = 0.667f;
-	} else if ( newScale > 1.5 ) {
-		newScale = 1.5f;
-	}
+    if( newScale < 0.667f ) {
+        newScale = 0.667f;
+    } else if ( newScale > 1.5 ) {
+        newScale = 1.5f;
+    }
 
-	gui_fov_target_scale_hud = newScale;
+    gui_fov_target_scale_hud = newScale;
     if( save ) {
         SettingsManager::setSetting( "fovScaleHUD", gui_fov_target_scale_hud );
         }
     gui_fov_scale_hud = gui_fov_scale / gui_fov_target_scale_hud;
 
-	calcOffsetHUD();
+    calcOffsetHUD();
 
-	handwritingFont = new Font( "font.ttf", 3, 6, false, 16 * gui_fov_scale_hud );
-	pencilFont->copySpacing( handwritingFont );
-	pencilErasedFont->copySpacing( handwritingFont );
+    handwritingFont = new Font( "font.ttf", 3, 6, false, 16 * gui_fov_scale_hud );
+    pencilFont->copySpacing( handwritingFont );
+    pencilErasedFont->copySpacing( handwritingFont );
     }
 
 void LivingLifePage::calcOffsetHUD() {

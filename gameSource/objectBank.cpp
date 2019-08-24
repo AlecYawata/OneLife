@@ -101,8 +101,10 @@ static float biomeHeatMap[ MAX_BIOME + 1 ];
 
 
 
-static int recomputeObjectHeight(  int inNumSprites, int *inSprites,
-                                   doublePair *inSpritePos );
+static int recomputeObjectHeight(  int inNumSprites, int *inSprites, doublePair *inSpritePos );
+static int recomputeObjectUnder(  int inNumSprites, int *inSprites, doublePair *inSpritePos );
+static int recomputeObjectLeft(  int inNumSprites, int *inSprites, doublePair *inSpritePos );
+static int recomputeObjectRight(  int inNumSprites, int *inSprites, doublePair *inSpritePos );
 
 
 
@@ -1028,6 +1030,9 @@ float initObjectBankStep() {
                 r->thisUseDummyIndex = -1;
                 
                 r->cachedHeight = -1;
+                r->cachedUnder = -1;
+                r->cachedLeft = -1;
+                r->cachedRight = -1;
                 
                 memset( r->spriteUseVanish, false, r->numSprites );
                 memset( r->spriteUseAppear, false, r->numSprites );
@@ -1233,6 +1238,21 @@ float initObjectBankStep() {
                 if( next < numLines ) {
                     sscanf( lines[next], "pixHeight=%d", 
                             &( r->cachedHeight ) );
+                    next++;
+                    }       
+                if( next < numLines ) {
+                    sscanf( lines[next], "pixUnder=%d", 
+                            &( r->cachedUnder ) );
+                    next++;
+                    }       
+                if( next < numLines ) {
+                    sscanf( lines[next], "pixLeft=%d", 
+                            &( r->cachedLeft ) );
+                    next++;
+                    }       
+                if( next < numLines ) {
+                    sscanf( lines[next], "pixRight=%d", 
+                            &( r->cachedRight ) );
                     next++;
                     }       
                 
@@ -2501,8 +2521,10 @@ int addObject( const char *inDescription,
     
     int newID = inReplaceID;
     
-    int newHeight = recomputeObjectHeight( inNumSprites,
-                                           inSprites, inSpritePos );
+    int newHeight = recomputeObjectHeight( inNumSprites, inSprites, inSpritePos );
+    int newUnder = recomputeObjectUnder( inNumSprites, inSprites, inSpritePos );
+    int newLeft = recomputeObjectLeft( inNumSprites, inSprites, inSpritePos );
+    int newRight = recomputeObjectRight( inNumSprites, inSprites, inSpritePos );
 
     // add it to file structure
     File objectsDir( NULL, "objects" );
@@ -2749,6 +2771,12 @@ int addObject( const char *inDescription,
 
         lines.push_back( autoSprintf( "pixHeight=%d",
                                       newHeight ) );
+        lines.push_back( autoSprintf( "pixUnder=%d",
+                                      newUnder ) );
+        lines.push_back( autoSprintf( "pixLeft=%d",
+                                      newLeft ) );
+        lines.push_back( autoSprintf( "pixRight=%d",
+                                      newRight ) );
 
 
         char **linesArray = lines.getElementArray();
@@ -2981,6 +3009,9 @@ int addObject( const char *inDescription,
     r->thisUseDummyIndex = -1;
     
     r->cachedHeight = newHeight;
+    r->cachedUnder = newUnder;
+    r->cachedLeft = newLeft;
+    r->cachedRight = newRight;
     
     r->spriteSkipDrawing = new char[ inNumSprites ];
 
@@ -4225,7 +4256,7 @@ int getObjectHeight( int inObjectID ) {
 int recomputeObjectHeight( int inNumSprites, int *inSprites,
                            doublePair *inSpritePos ) {        
     
-    double maxH = 0;
+    double maxH = -1000;
     
     for( int i=0; i<inNumSprites; i++ ) {
         doublePair pos = inSpritePos[i];
@@ -4281,7 +4312,227 @@ int recomputeObjectHeight( int inNumSprites, int *inSprites,
     return returnH;
     }
 
+int getObjectUnder( int inObjectID ) {
+    ObjectRecord *o = getObject( inObjectID );
+    
+    if( o == NULL ) {
+        return 0;
+        }
+    
+    if( o->cachedUnder == -1 ) {
+        o->cachedUnder =
+            recomputeObjectUnder( o->numSprites, o->sprites, o->spritePos );
+        }
+    
+    return o->cachedUnder;
+    }
 
+int recomputeObjectUnder( int inNumSprites, int *inSprites,
+                           doublePair *inSpritePos ) {        
+    
+    double minH = 1000;
+    
+    for( int i=0; i<inNumSprites; i++ ) {
+        doublePair pos = inSpritePos[i];
+                
+        SpriteRecord *spriteRec = getSpriteRecord( inSprites[i] );
+        
+        int rad = 0;
+        
+        // don't count transparent sprites as part of height
+        if( spriteRec != NULL && ! spriteRec->multiplicativeBlend ) {
+
+            char hit = false;
+            
+            if( spriteRec->hitMap != NULL ) {
+                int h = spriteRec->h;
+                int w = spriteRec->w;
+                char *hitMap = spriteRec->hitMap;
+                
+                for( int y=h; y>=0; y-- ) {
+                    for( int x=0; x<w; x++ ) {
+                     
+                        int p = y * spriteRec->w + x;
+                        
+                        if( hitMap[p] ) {
+                            hit = true;
+                            // can be negative if anchor above top
+                            // pixel
+                            rad = 
+                                ( h/2 + spriteRec->centerAnchorYOffset )
+                                - y;
+                            break;
+                            }
+                        }
+                    if( hit ) {
+                        break;
+                        }
+                    }
+                }
+            else {
+                rad = 0;
+                }
+            }
+        
+        double h = pos.y + rad;
+        
+        if( h < minH ) {
+            minH = h;
+            }
+        }
+
+    int returnH = lrint( minH );
+    
+    return returnH;
+    }
+
+int getObjectLeft( int inObjectID ) {
+    ObjectRecord *o = getObject( inObjectID );
+    
+    if( o == NULL ) {
+        return 0;
+        }
+    
+    if( o->cachedLeft == -1 ) {
+        o->cachedLeft =
+            recomputeObjectLeft( o->numSprites, o->sprites, o->spritePos );
+        }
+    
+    return o->cachedLeft;
+    }
+
+int recomputeObjectLeft( int inNumSprites, int *inSprites,
+                           doublePair *inSpritePos ) {        
+    
+    double minX = 1000;
+    
+    for( int i=0; i<inNumSprites; i++ ) {
+        doublePair pos = inSpritePos[i];
+                
+        SpriteRecord *spriteRec = getSpriteRecord( inSprites[i] );
+        
+        int rad = 0;
+        
+        // don't count transparent sprites as part of height
+        if( spriteRec != NULL && ! spriteRec->multiplicativeBlend ) {
+
+            char hit = false;
+            
+            if( spriteRec->hitMap != NULL ) {
+                int h = spriteRec->h;
+                int w = spriteRec->w;
+                char *hitMap = spriteRec->hitMap;
+                
+                for( int x=0; x<w; x++ ) {
+                    for( int y=h; y>=0; y-- ) {
+                     
+                        int p = y * spriteRec->w + x;
+                        
+                        if( hitMap[p] ) {
+                            hit = true;
+                            // can be negative if anchor above top
+                            // pixel
+                            rad = 
+                                - ( w/2 + spriteRec->centerAnchorXOffset )
+                                + x;
+                            break;
+                            }
+                        }
+                    if( hit ) {
+                        break;
+                        }
+                    }
+                }
+            else {
+                rad = 0;
+                }
+            }
+        
+        double x = pos.x + rad;
+        
+        if( x < minX ) {
+            minX = x;
+            }
+        }
+
+    int returnX = lrint( minX );
+    
+    return returnX;
+    }
+
+int getObjectRight( int inObjectID ) {
+    ObjectRecord *o = getObject( inObjectID );
+    
+    if( o == NULL ) {
+        return 0;
+        }
+    
+    if( o->cachedRight == -1 ) {
+        o->cachedRight =
+            recomputeObjectRight( o->numSprites, o->sprites, o->spritePos );
+        }
+    
+    return o->cachedRight;
+    }
+
+int recomputeObjectRight( int inNumSprites, int *inSprites,
+                           doublePair *inSpritePos ) {        
+    
+    double maxX = -1000;
+    
+    for( int i=0; i<inNumSprites; i++ ) {
+        doublePair pos = inSpritePos[i];
+                
+        SpriteRecord *spriteRec = getSpriteRecord( inSprites[i] );
+        
+        int rad = 0;
+        
+        // don't count transparent sprites as part of height
+        if( spriteRec != NULL && ! spriteRec->multiplicativeBlend ) {
+
+            char hit = false;
+            
+            if( spriteRec->hitMap != NULL ) {
+                int h = spriteRec->h;
+                int w = spriteRec->w;
+                char *hitMap = spriteRec->hitMap;
+                
+                for( int x=w; x>=0; x-- ) {
+                    for( int y=h; y>=0; y-- ) {
+                     
+                        int p = y * spriteRec->w + x;
+                        
+                        if( hitMap[p] ) {
+                            hit = true;
+                            // can be negative if anchor above top
+                            // pixel
+                            rad = 
+                                - ( w/2 + spriteRec->centerAnchorXOffset )
+                                + x;
+                            break;
+                            }
+                        }
+                    if( hit ) {
+                        break;
+                        }
+                    }
+                }
+            else {
+                rad = 0;
+                }
+            }
+        
+        double x = pos.x + rad;
+        
+        if( x > maxX ) {
+            maxX = x;
+            }
+        }
+
+    int returnX = lrint( maxX );
+    
+    return returnX;
+    }
 
 
 double getClosestObjectPart( ObjectRecord *inObject,
