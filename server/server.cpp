@@ -659,6 +659,7 @@ typedef struct LiveObject {
         
         // chain of non-repeating foods eaten
         SimpleVector<int> yummyFoodChain;
+        int maxYumChain;
         
         // how many bonus from yummy food is stored
         // these are used first before food is decremented
@@ -4983,6 +4984,9 @@ static void updateYum( LiveObject *inPlayer, int inFoodEatenID,
         // only get bonus if actually was yummy (whether fed self or not)
         // chain not broken if fed non-yummy by other, but don't get bonus
         inPlayer->yummyBonusStore += currentBonus;
+        if( inPlayer->maxYumChain < inPlayer->yummyFoodChain.size() ) {
+            inPlayer->maxYumChain = inPlayer->yummyFoodChain.size();
+            }
         }
     
     }
@@ -6134,6 +6138,7 @@ int processLoggedInPlayer( char inAllowReconnect,
     newObject.justAteID = 0;
     
     newObject.yummyBonusStore = 0;
+    newObject.maxYumChain = 0;
 
     newObject.clothing = getEmptyClothingSet();
 
@@ -6910,6 +6915,12 @@ int processLoggedInPlayer( char inAllowReconnect,
               newObject.yd,
               players.size(),
               newObject.parentChainLength );
+              
+    recordPlayerBirth( newObject.email,
+                       newObject.id,
+                       newObject.parentID,
+                       newObject.displayID,
+                       ! getFemale( &newObject ) );
     
     AppLog::infoF( "New player %s connected as player %d (tutorial=%d) (%d,%d)"
                    " (maxPlacementX=%d)",
@@ -9790,6 +9801,10 @@ void nameBaby( LiveObject *inNamer, LiveObject *inBaby, char *inName,
              babyO->email,
              babyO->name,
              babyO->lineageEveID );
+             
+    recordPlayerNamed( babyO->email,
+                       babyO->id,
+                       babyO->name );
                                     
     playerIndicesToSendNamesAbout->push_back( 
         getLiveObjectIndex( babyO->id ) );
@@ -10289,6 +10304,8 @@ int main() {
             stepFailureLog();
             
             stepPlayerStats();
+            stepBirthLog();
+            stepNamedLog();
             stepLineageLog();
             stepCurseServerRequests();
             
@@ -12978,11 +12995,16 @@ int main() {
                                 if( !isNameDuplicateForCurses( name ) ) {
                                     nextPlayer->familyName = stringDuplicate( parts[0] );
                                     nextPlayer->name = name;
-                                    logName( nextPlayer->id,
-                                             nextPlayer->email,
-                                             nextPlayer->name,
-                                             nextPlayer->lineageEveID );
-                                    playerIndicesToSendNamesAbout.push_back( i );
+                    			    if( ! nextPlayer->isTutorial ) {    
+                                            logName( nextPlayer->id,
+                                                     nextPlayer->email,
+                                                     nextPlayer->name,
+                                                     nextPlayer->lineageEveID );
+                                            recordPlayerNamed( nextPlayer->email,
+                                                               nextPlayer->id,
+                                                               nextPlayer->name );
+                                            playerIndicesToSendNamesAbout.push_back( i );
+                        			    }
                                     delete [] m.saidText;
                                     m.saidText = autoSprintf( "わたしは%sです", name );
                                     }
@@ -13010,13 +13032,6 @@ int main() {
 				                    }
                                 }
 
-            			    if( ! nextPlayer->isTutorial ) {    
-            			        logName( nextPlayer->id,
-            				         nextPlayer->email,
-            				         nextPlayer->name,
-            				         nextPlayer->lineageEveID );
-            			        playerIndicesToSendNamesAbout.push_back( i );
-            			        }
                             }
 
                         else if( nextPlayer->holdingID < 0 ) {
@@ -15542,7 +15557,8 @@ int main() {
                                      killerID,
                                      nextPlayer->name,
                                      nextPlayer->lastSay,
-                                     male );
+                                     male,
+                                     nextPlayer->maxYumChain);
 
 
                 // both tutorial and non-tutorial players

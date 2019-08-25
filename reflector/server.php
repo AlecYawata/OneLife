@@ -36,6 +36,7 @@ $email = or_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i", "" );
 
 $twin_code = or_requestFilter( "twin_code", "/[A-F0-9]+/i", "" );
 $twin_code = strtoupper( $twin_code );
+$server_type = or_requestFilter( "type", "/[A-Z0-9_]+/i", "" );
 
 
 
@@ -204,11 +205,16 @@ if( $handle ) {
             // process the line read.
             $parts = preg_split( "/\s+/", $line );
         
-            if( count( $parts ) >= 3 ) {
+            if( count( $parts ) >= 4 ) {
             
                 $address = $parts[1];
                 $port = $parts[2];
+                $type = $parts[3];
 
+                if( $server_type && strcmp($server_type, $type) != 0 ) {
+                    continue;
+                    }
+                    
                 $serverAddresses[] = $address;
                 $serverPorts[] = $port;
             
