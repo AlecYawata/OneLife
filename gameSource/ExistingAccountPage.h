@@ -2,6 +2,7 @@
 
 #include "TextField.h"
 #include "TextButton.h"
+#include "RadioButtonSet.h"
 #include "KeyEquivalentTextButton.h"
 
 
@@ -75,6 +76,7 @@ class ExistingAccountPage : public GamePage, public ActionListener {
         TextButton mViewAccountButton;
         
         TextButton mTutorialButton;
+        RadioButtonSet *mGameType;
         
 
         double mPageActiveStartTime;

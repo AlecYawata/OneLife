@@ -6,6 +6,7 @@
 #include "minorGems/util/stringUtils.h"
 
 #include "minorGems/util/stringUtils.h"
+#include "minorGems/util/SettingsManager.h"
 
 #include "minorGems/crypto/hashes/sha1.h"
 
@@ -243,7 +244,20 @@ void ServerActionPage::startRequest() {
         
         delete [] userIDString;
         }
-    
+
+    char* gameTypes[4] = {
+        "normal",
+        "short_x2",
+        "short_x3",
+        "short_x6",
+    };
+    int gameType = SettingsManager::getIntSetting( "gameType", 0 );
+    if( gameType < 0 || 4 <= gameType ) {
+        gameType = 0;
+        }
+    char* gameTypeParam = autoSprintf("&type=%s", gameTypes[gameType] );
+    actionParameterListChars.appendElementString( gameTypeParam );
+    delete[] gameTypeParam;
     
     char *actionParameterListString = 
         actionParameterListChars.getElementString();

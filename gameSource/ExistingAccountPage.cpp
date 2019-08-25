@@ -94,6 +94,20 @@ ExistingAccountPage::ExistingAccountPage()
         mKeyField.setText( accountKey );
         }
 
+    const char *choiceList[4] = { "通常の人生", "1人生30分", "1人生20分", "1人生10分", };
+    mGameType = new RadioButtonSet( mainFont, mGenesButton.getPosition().x, mLoginButton.getPosition().y + 200,
+                                    4, choiceList,
+                                    false, 3 );
+    addComponent( mGameType );
+    mGameType->addActionListener( this );
+    if( SettingsManager::getIntSetting( "useCustomServer_ja", 0 ) ) {
+        mGameType->setVisible( false );
+        }
+    else {
+        mGameType->setSelectedItem( SettingsManager::getIntSetting( "gameType", 0 ) );
+        mGameType->setVisible( true );
+        }
+
     setButtonStyle( &mLoginButton );
     setButtonStyle( &mFriendsButton );
     setButtonStyle( &mGenesButton );
@@ -178,6 +192,7 @@ ExistingAccountPage::ExistingAccountPage()
           
         
 ExistingAccountPage::~ExistingAccountPage() {
+    delete mGameType;
     }
 
 
@@ -226,7 +241,14 @@ void ExistingAccountPage::makeActive( char inFresh ) {
     mLoginButton.setVisible( false );
     mFriendsButton.setVisible( false );
     mGenesButton.setVisible( false );
-    
+
+    if( SettingsManager::getIntSetting( "useCustomServer_ja", 0 ) ) {
+        mGameType->setVisible( false );
+        }
+    else {
+        mGameType->setSelectedItem( SettingsManager::getIntSetting( "gameType", 0 ) );
+        mGameType->setVisible( true );
+        }
     
     int skipFPSMeasure = SettingsManager::getIntSetting( "skipFPSMeasure", 0 );
     
@@ -497,6 +519,9 @@ void ExistingAccountPage::actionPerformed( GUIComponent *inTarget ) {
         mDisableCustomServerButton.setVisible( false );
         processLogin( true, "done" );
         }
+    else if( inTarget == mGameType ) {
+        SettingsManager::setSetting( "gameType", mGameType->getSelectedItem() );
+        }
     }
 
 
@@ -725,14 +750,8 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
         
         drawTokenMessage( pos );
         
-        pos = mEmailField.getPosition();
-        
-        pos.x = 
-            ( mTutorialButton.getPosition().x + 
-              mLoginButton.getPosition().x )
-            / 2;
-
-        pos.x -= 32;
+        pos.x = mGenesButton.getPosition().x;
+        pos.y = mFriendsButton.getPosition().y;
         
         drawFitnessScore( pos );
 
