@@ -209,7 +209,7 @@ void ObjectButton::draw() {
         }
 
     if( mCaption != NULL ) {
-        doublePair textPos = { mSizeX / -2 + 3, mSizeY / 2 - 3 -8, };
+        doublePair textPos = { mSizeX / -2 + 1, mSizeY / 2 - 1 -8, };
 
         float prevScale = gui_fov_scale_hud;
         gui_fov_scale_hud = 1.0f;

@@ -566,7 +566,7 @@ void initDrawString( int inWidth, int inHeight ) {
     middleFont = new Font( getFontTGAFileName(), 6, 16, false, 24 );
     middleFont->setMinimumPositionPrecision( 1 );
 
-    littleFont = new Font( getFontTGAFileName(), 6, 16, false, 16 );
+    littleFont = new Font( getFontTGAFileName(), 6, 16, false, 12 );
     littleFont->setMinimumPositionPrecision( 1 );
 
     setViewCenterPosition( lastScreenViewCenter.x, lastScreenViewCenter.y );
