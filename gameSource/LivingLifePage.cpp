@@ -8215,7 +8215,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
         mLastKnownNoteLines.deallocateStringElements();
         }
     
-
+    if( false )
     for( int i=0; i<NUM_HINT_SHEETS; i++ ) {
         if( ! equal( mHintPosOffset[i], mHintHideOffset[i] ) 
             &&
