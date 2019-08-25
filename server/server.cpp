@@ -55,6 +55,7 @@
 #include "lifeTokens.h"
 #include "fitnessScore.h"
 #include "arcReport.h"
+#include "curseDB.h"
 
 
 #include "minorGems/util/random/JenkinsRandomSource.h"
@@ -163,8 +164,14 @@ static SimpleVector<char*> nameGivingPhrases;
 static SimpleVector<char*> familyNameGivingPhrases;
 static SimpleVector<char*> cursingPhrases;
 
+char *curseYouPhrase = NULL;
+char *curseBabyPhrase = NULL;
+
 static SimpleVector<char*> youGivingPhrases;
 static SimpleVector<char*> namedGivingPhrases;
+
+static SimpleVector<char*> familyGivingPhrases;
+static SimpleVector<char*> offspringGivingPhrases;
 
 
 
@@ -205,6 +212,15 @@ typedef struct PeaceTreaty {
     
 
 static SimpleVector<PeaceTreaty> peaceTreaties;
+
+
+typedef struct WarState {
+        int lineageAEveID;
+        int lineageBEveID;
+    } WarState;
+
+static SimpleVector<WarState> warStates;
+
 
 
 // may be partial
@@ -250,6 +266,26 @@ static char isPeaceTreaty( int inLineageAEveID, int inLineageBEveID,
     }
 
 
+
+static char isWarState( int inLineageAEveID, int inLineageBEveID ) {
+    for( int i=0; i<warStates.size(); i++ ) {
+        WarState *w = warStates.getElement( i );
+        
+        
+        if( ( w->lineageAEveID == inLineageAEveID &&
+              w->lineageBEveID == inLineageBEveID )
+            ||
+            ( w->lineageAEveID == inLineageBEveID &&
+              w->lineageBEveID == inLineageAEveID ) ) {
+            
+            return true;
+            }
+        }
+    return false;
+    }
+
+
+
 void sendPeaceWarMessage( const char *inPeaceOrWar,
                           char inWar,
                           int inLineageAEveID, int inLineageBEveID );
@@ -273,6 +309,23 @@ static void addPeaceTreaty( int inLineageAEveID, int inLineageBEveID ) {
         if( p->dirAToB && p->dirBToA &&
             ! peaceBefore ) {
             // new peace!
+
+            // clear any war state
+            for( int i=0; i<warStates.size(); i++ ) {
+                WarState *w = warStates.getElement( i );
+                
+                
+                if( ( w->lineageAEveID == inLineageAEveID &&
+                      w->lineageBEveID == inLineageBEveID )
+                    ||
+                    ( w->lineageAEveID == inLineageBEveID &&
+                      w->lineageBEveID == inLineageAEveID ) ) {
+                    
+                    warStates.deleteElement( i );
+                    break;
+                    }
+                }
+
             sendPeaceWarMessage( "PEACE", 
                                  false,
                                  p->lineageAEveID, p->lineageBEveID );
@@ -295,6 +348,8 @@ static void removePeaceTreaty( int inLineageAEveID, int inLineageBEveID ) {
     
     char remove = false;
     
+    char messageSent = false;
+    
     if( p != NULL ) {
         if( p->dirAToB && p->dirBToA ) {
             // established
@@ -316,6 +371,7 @@ static void removePeaceTreaty( int inLineageAEveID, int inLineageBEveID ) {
                 sendPeaceWarMessage( "WAR",
                                      true,
                                      p->lineageAEveID, p->lineageBEveID );
+                messageSent = true;
                 }
             }
         else {
@@ -329,7 +385,43 @@ static void removePeaceTreaty( int inLineageAEveID, int inLineageBEveID ) {
             remove = true;
             }
         }
+
     
+    if( remove || p == NULL ) {
+        // no treaty exists, or it will be removed
+        
+        // some elder said "WAR"
+        // war state created if it doesn't exist
+        
+        char found = false;
+        for( int i=0; i<warStates.size(); i++ ) {
+            WarState *w = warStates.getElement( i );
+        
+
+            if( ( w->lineageAEveID == inLineageAEveID &&
+                  w->lineageBEveID == inLineageBEveID )
+                ||
+                ( w->lineageAEveID == inLineageBEveID &&
+                  w->lineageBEveID == inLineageAEveID ) ) {
+                found = true;
+                break;
+                }
+            }
+        
+        if( !found ) {
+            // add new one
+            WarState w = { inLineageAEveID, inLineageBEveID };
+            warStates.push_back( w );
+
+            if( ! messageSent ) {
+                sendPeaceWarMessage( "WAR", 
+                                     true,
+                                     inLineageAEveID, inLineageBEveID );
+                }
+            }
+        }
+    
+
     if( remove ) {
         for( int i=0; i<peaceTreaties.size(); i++ ) {
             PeaceTreaty *otherP = peaceTreaties.getElement( i );
@@ -391,7 +483,10 @@ SimpleVector<FreshConnection> waitingForTwinConnections;
 
 typedef struct LiveObject {
         char *email;
-        
+        // for tracking old email after player has been deleted 
+        // but is still on list
+        char *origEmail;
+
         int id;
         
         // -1 if unknown
@@ -1476,6 +1571,9 @@ void quitCleanup() {
         if( nextPlayer->email != NULL  ) {
             delete [] nextPlayer->email;
             }
+        if( nextPlayer->origEmail != NULL  ) {
+            delete [] nextPlayer->origEmail;
+            }
 
         if( nextPlayer->murderPerpEmail != NULL  ) {
             delete [] nextPlayer->murderPerpEmail;
@@ -1518,6 +1616,8 @@ void quitCleanup() {
     
     freeCurses();
     
+    freeCurseDB();
+
     freeLifeTokens();
 
     freeFitnessScore();
@@ -1566,6 +1666,20 @@ void quitCleanup() {
     youGivingPhrases.deallocateStringElements();
     namedGivingPhrases.deallocateStringElements();
     
+    familyGivingPhrases.deallocateStringElements();
+    offspringGivingPhrases.deallocateStringElements();
+    
+
+    if( curseYouPhrase != NULL ) {
+        delete [] curseYouPhrase;
+        curseYouPhrase = NULL;
+        }
+    if( curseBabyPhrase != NULL ) {
+        delete [] curseBabyPhrase;
+        curseBabyPhrase = NULL;
+        }
+    
+
     if( eveName != NULL ) {
         delete [] eveName;
         eveName = NULL;
@@ -3597,6 +3711,78 @@ void sendPeaceWarMessage( const char *inPeaceOrWar,
 
 
 
+void checkCustomGlobalMessage() {
+    
+    if( ! SettingsManager::getIntSetting( "customGlobalMessageOn", 0 ) ) {
+        return;
+        }
+
+
+    double spacing = 
+        SettingsManager::getDoubleSetting( 
+            "customGlobalMessageSecondsSpacing", 10.0 );
+    
+    double lastTime = 
+        SettingsManager::getDoubleSetting( 
+            "customGlobalMessageLastSendTime", 0.0 );
+
+    double curTime = Time::getCurrentTime();
+    
+    if( curTime - lastTime < spacing ) {
+        return;
+        }
+        
+
+    
+    // check if there's a new custom message waiting
+    char *message = 
+        SettingsManager::getSettingContents( "customGlobalMessage", 
+                                             "" );
+    
+    if( strcmp( message, "" ) != 0 ) {
+        
+
+        int numLines;
+        
+        char **lines = split( message, "\n", &numLines );
+        
+        int nextLine = 
+            SettingsManager::getIntSetting( 
+                "customGlobalMessageNextLine", 0 );
+        
+        if( nextLine < numLines ) {
+            sendGlobalMessage( lines[nextLine] );
+            
+            nextLine++;
+            SettingsManager::setSetting( 
+                "customGlobalMessageNextLine", nextLine );
+
+            SettingsManager::setDoubleSetting( 
+                "customGlobalMessageLastSendTime", curTime );
+            }
+        else {
+            // out of lines
+            SettingsManager::setSetting( "customGlobalMessageOn", 0 );
+            SettingsManager::setSetting( "customGlobalMessageNextLine", 0 );
+            }
+
+        for( int i=0; i<numLines; i++ ) {
+            delete [] lines[i];
+            }
+        delete [] lines;
+        }
+    else {
+        // no message, disable
+        SettingsManager::setSetting( "customGlobalMessageOn", 0 );
+        }
+    
+    delete [] message;
+    }
+
+
+
+
+
 // sets lastSentMap in inO if chunk goes through
 // returns result of send, auto-marks error in inO
 int sendMapChunkMessage( LiveObject *inO, 
@@ -4202,18 +4388,36 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
     char isCurse = false;
 
     char *cursedName = isCurseNamingSay( inToSay );
+
+    char isYouShortcut = false;
+    char isBabyShortcut = false;
+    if( strcmp( inToSay, curseYouPhrase ) == 0 ) {
+        isYouShortcut = true;
+        }
+    if( strcmp( inToSay, curseBabyPhrase ) == 0 ) {
+        isBabyShortcut = true;
+        }
     
-    if( cursedName != NULL ) {
-        int namedPersonLineageEveID = 
-            getCurseReceiverLineageEveID( cursedName );
-                
-        if( namedPersonLineageEveID != inPlayer->lineageEveID ) {
-            // We said the curse in plain English, but
-            // the named person is not in our lineage
-            cursedName = NULL;
+    
+    if( cursedName != NULL || isYouShortcut ) {
+
+        if( ! SettingsManager::getIntSetting( 
+                "allowCrossLineageCursing", 0 ) ) {
             
-            // BUT, check if this cursed phrase is correct in another language
-            // below
+            // cross-lineage cursing in English forbidden
+
+            int namedPersonLineageEveID = 
+                getCurseReceiverLineageEveID( cursedName );
+            
+            if( namedPersonLineageEveID != inPlayer->lineageEveID ) {
+                // We said the curse in plain English, but
+                // the named person is not in our lineage
+                cursedName = NULL;
+                isYouShortcut = false;
+                
+                // BUT, check if this cursed phrase is correct in 
+                // another language below
+                }
             }
         }
     
@@ -4264,6 +4468,11 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
             
             cursedName = isCurseNamingSay( translatedPhrase );
             
+            if( strcmp( translatedPhrase, curseYouPhrase ) == 0 ) {
+                // said CURSE YOU in other language
+                isYouShortcut = true;
+                }
+
             // make copy so we can delete later an delete the underlying
             // translatedPhrase now
             
@@ -4292,6 +4501,89 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
 
 
 
+    LiveObject *youCursePlayer = NULL;
+    LiveObject *babyCursePlayer = NULL;
+
+    if( isYouShortcut ) {
+        // find closest player
+        GridPos speakerPos = getPlayerPos( inPlayer );
+        
+        LiveObject *closestOther = NULL;
+        double closestDist = 9999999;
+        
+        for( int i=0; i<players.size(); i++ ) {
+            LiveObject *otherPlayer = players.getElement( i );
+            
+            if( otherPlayer == inPlayer ||
+                otherPlayer->error ) {
+                continue;
+                }
+            double dist = distance( speakerPos, getPlayerPos( otherPlayer ) );
+
+            if( dist > getMaxChunkDimension() ) {
+                // only consider nearby players
+                continue;
+                }
+            if( dist < closestDist ) {
+                closestDist = dist;
+                closestOther = otherPlayer;
+                }
+            }
+
+
+        if( closestOther != NULL ) {
+            youCursePlayer = closestOther;
+            
+            if( cursedName != NULL ) {
+                delete [] cursedName;
+                cursedName = NULL;
+                }
+
+            if( youCursePlayer->name != NULL ) {
+                // allow name-based curse to go through, if possible
+                cursedName = stringDuplicate( youCursePlayer->name );
+                }
+            }
+        }
+    else if( isBabyShortcut ) {
+        LiveObject *youngestOther = NULL;
+        double youngestAge = 9999;
+        
+        for( int i=0; i<players.size(); i++ ) {
+            LiveObject *otherPlayer = players.getElement( i );
+            
+            if( otherPlayer == inPlayer ) {
+                // allow error players her, to access recently-dead babies
+                continue;
+                }
+            if( otherPlayer->parentID == inPlayer->id ) {
+                double age = computeAge( otherPlayer );
+                
+                if( age < youngestAge ) {
+                    youngestAge = age;
+                    youngestOther = otherPlayer;
+                    }
+                }
+            }
+
+
+        if( youngestOther != NULL ) {
+            babyCursePlayer = youngestOther;
+            
+            if( cursedName != NULL ) {
+                delete [] cursedName;
+                cursedName = NULL;
+                }
+
+            if( babyCursePlayer->name != NULL ) {
+                // allow name-based curse to go through, if possible
+                cursedName = stringDuplicate( babyCursePlayer->name );
+                }
+            }
+        }
+
+    
+
     if( cursedName != NULL && 
         strcmp( cursedName, "" ) != 0 ) {
         
@@ -4301,14 +4593,10 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
                                cursedName );
         
         if( isCurse ) {
-            
-            if( hasCurseToken( inPlayer->email ) ) {
-                inPlayer->curseTokenCount = 1;
+            char *targetEmail = getCurseReceiverEmail( cursedName );
+            if( targetEmail != NULL ) {
+                setDBCurse( inPlayer->email, targetEmail );
                 }
-            else {
-                inPlayer->curseTokenCount = 0;
-                }
-            inPlayer->curseTokenUpdate = true;
             }
         }
     
@@ -4318,6 +4606,44 @@ static void makePlayerSay( LiveObject *inPlayer, char *inToSay ) {
         }
     
 
+    if( !isCurse ) {
+        // named curse didn't happen above
+        // maybe we used a shortcut, and target didn't have name
+        
+        if( isYouShortcut && youCursePlayer != NULL &&
+            spendCurseToken( inPlayer->email ) ) {
+            
+            isCurse = true;
+            setDBCurse( inPlayer->email, youCursePlayer->email );
+            }
+        else if( isBabyShortcut && babyCursePlayer != NULL &&
+            spendCurseToken( inPlayer->email ) ) {
+            
+            isCurse = true;
+            char *targetEmail = babyCursePlayer->email;
+            
+            if( strcmp( targetEmail, "email_cleared" ) == 0 ) {
+                // deleted players allowed here
+                targetEmail = babyCursePlayer->origEmail;
+                }
+            if( targetEmail != NULL ) {
+                setDBCurse( inPlayer->email, targetEmail );
+                }
+            }
+        }
+
+
+    if( isCurse ) {
+        if( hasCurseToken( inPlayer->email ) ) {
+            inPlayer->curseTokenCount = 1;
+            }
+        else {
+            inPlayer->curseTokenCount = 0;
+            }
+        inPlayer->curseTokenUpdate = true;
+        }
+
+    
 
     int curseFlag = 0;
     if( isCurse ) {
@@ -5466,7 +5792,9 @@ static char isEveWindow() {
 
 
 
-static void triggerApocalypseNow() {
+static void triggerApocalypseNow( const char *inMessage ) {
+    AppLog::infoF( "Local apocalypse triggered:  %s\n", inMessage );
+    
     apocalypseTriggered = true;
     
     // restart Eve window, and let this player be the
@@ -5511,6 +5839,30 @@ int processLoggedInPlayer( char inAllowReconnect,
                            int inForceDisplayID = -1,
                            GridPos *inForcePlayerPos = NULL ) {
     
+
+    int usePersonalCurses = SettingsManager::getIntSetting( "usePersonalCurses",
+                                                            0 );
+    
+    if( usePersonalCurses ) {
+        // ignore what old curse system said
+        inCurseStatus.curseLevel = 0;
+        inCurseStatus.excessPoints = 0;
+        initPersonalCurseTest();
+        for( int p=0; p<players.size(); p++ ) {
+            LiveObject *o = players.getElement( p );
+        
+            if( ! o->error && 
+                ! o->isTutorial &&
+                o->curseStatus.curseLevel == 0 &&
+                strcmp( o->email, inEmail ) != 0 ) {
+
+                // non-tutorial, non-cursed, non-us player
+                addPersonToPersonalCurseTest( o->email, getPlayerPos( o ) );
+                }
+            }
+        }
+    
+
 
     // new behavior:
     // allow this new connection from same
@@ -5609,6 +5961,9 @@ int processLoggedInPlayer( char inAllowReconnect,
     int familyLimitAfterEveWindow = SettingsManager::getIntSetting( 
             "familyLimitAfterEveWindow", 15 );
 
+    int minFamiliesAfterEveWindow = SettingsManager::getIntSetting( 
+        "minFamiliesAfterEveWindow", 5 );
+
     int cM = countFertileMothers();
     int cB = countHelplessBabies();
     int cFam = countFamilies();
@@ -5621,7 +5976,7 @@ int processLoggedInPlayer( char inAllowReconnect,
         if( cM == 0 || (float)cB / (float)cM >= ratio ) {
             // too many babies per mother inside barrier
 
-            triggerApocalypseNow();
+            triggerApocalypseNow( "Too many babies per mother inside barrier" );
             }
         else {
             int minFertile = players.size() / 15;
@@ -5644,10 +5999,30 @@ int processLoggedInPlayer( char inAllowReconnect,
                 
                 // that means we've reach a state where no one is surviving
                 // and there are lots of eves scrounging around
-                triggerApocalypseNow();
+                triggerApocalypseNow( 
+                    "Too many families after Eve window closed" );
                 }
             }
+
+        if( !apocalypseTriggered ) {
+            int maxSeconds =
+                SettingsManager::getIntSetting( "arcRunMaxSeconds", 0 );
+
+            if( maxSeconds > 0 &&
+                getArcRunningSeconds() > maxSeconds ) {
+                // players WON and survived past max seconds
+                triggerApocalypseNow( "Arc run exceeded max seconds" );
+                }
+            }    
+
+        if( !apocalypseTriggered && minFamiliesAfterEveWindow > 0 ) {
             
+            if( cFam < minFamiliesAfterEveWindow ) {
+                // too many families have died out
+                triggerApocalypseNow( "Too few families left" );
+                }
+            }    
+
         }
 
     
@@ -5679,6 +6054,7 @@ int processLoggedInPlayer( char inAllowReconnect,
     LiveObject newObject;
 
     newObject.email = inEmail;
+    newObject.origEmail = NULL;
     
     newObject.id = nextID;
     nextID++;
@@ -5830,6 +6206,12 @@ int processLoggedInPlayer( char inAllowReconnect,
 
             if( ! isLinePermitted( newObject.email, motherPos ) ) {
                 // this line forbidden for new player
+                continue;
+                }
+
+            if( usePersonalCurses &&
+                isBirthLocationCurseBlocked( newObject.email, motherPos ) ) {
+                // this spot forbidden because someone nearby cursed new player
                 continue;
                 }
             
@@ -6012,6 +6394,8 @@ int processLoggedInPlayer( char inAllowReconnect,
         //
         // and no mother choices left (based on lineage 
         // bans or birth cooldowns)
+        
+        char anyCurseBlocked = false;
 
         // consider all fertile mothers
         for( int i=0; i<numPlayers; i++ ) {
@@ -6032,19 +6416,36 @@ int processLoggedInPlayer( char inAllowReconnect,
             if( player->curseStatus.curseLevel > 0 ) {
                 continue;
                 }
-
+            
+            if( usePersonalCurses && 
+                isBirthLocationCurseBlocked( newObject.email, 
+                                             getPlayerPos( player ) ) ) {
+                // this spot forbidden because someone nearby cursed new player
+                anyCurseBlocked = true;
+                continue;
+                }
+            
             if( isFertileAge( player ) ) {
                 parentChoices.push_back( player );
                 }
             }
 
         if( parentChoices.size() == 0 ) {
-            // absolutely no fertile mothers on server
-            
-            // the in-barrier mothers we found before must have aged out
-            // along the way
-            
-            triggerApocalypseNow();
+            if( anyCurseBlocked ) {
+                // only fertile mothers are blocked for this cursed player
+                // send this player to donkeytown
+                inCurseStatus.curseLevel = 1;
+                inCurseStatus.excessPoints = 1;
+                }
+            else {
+                
+                // absolutely no fertile mothers on server
+                
+                // the in-barrier mothers we found before must have aged out
+                // along the way
+                
+                triggerApocalypseNow( "No fertile mothers left on server" );
+                }
             }
         }
     
@@ -7221,7 +7622,7 @@ static int getContainerSwapIndex( LiveObject *inPlayer,
             getContained( inContX, inContY, botInd, 0 );
         
         if( bottomItem > 0 &&
-            getObject( bottomItem )->minPickupAge > playerAge ) {
+            ! canPickup( bottomItem, playerAge ) ) {
             // too young to hold!
             same = true;
             }
@@ -7546,8 +7947,7 @@ char removeFromContainerToHold( LiveObject *inPlayer,
                     }
                 
                 while( inSlotNumber > 0 &&
-                       getObject( toRemoveID )->minPickupAge >
-                       playerAge )  {
+                       ! canPickup( toRemoveID, playerAge ) )  {
             
                     inSlotNumber--;
                     
@@ -7588,8 +7988,7 @@ char removeFromContainerToHold( LiveObject *inPlayer,
             if( inPlayer->holdingID == 0 && 
                 numIn > 0 &&
                 // old enough to handle it
-                getObject( toRemoveID )->minPickupAge <= 
-                computeAge( inPlayer ) ) {
+                canPickup( toRemoveID, computeAge( inPlayer ) ) ) {
                 // get from container
 
 
@@ -7844,9 +8243,9 @@ static char removeFromClothingContainerToHold( LiveObject *inPlayer,
         // find top-most object that they can actually pick up
 
         while( slotToRemove > 0 &&
-               getObject( inPlayer->clothingContained[inC].
-                          getElementDirect( slotToRemove ) )->minPickupAge >
-               playerAge ) {
+               ! canPickup( inPlayer->clothingContained[inC].
+                            getElementDirect( slotToRemove ), 
+                            playerAge ) ) {
             
             slotToRemove --;
             }
@@ -7867,7 +8266,7 @@ static char removeFromClothingContainerToHold( LiveObject *inPlayer,
         oldNumContained > slotToRemove &&
         slotToRemove >= 0 &&
         // old enough to handle it
-        getObject( toRemoveID )->minPickupAge <= playerAge ) {
+        canPickup( toRemoveID, playerAge ) ) {
                                     
 
         inPlayer->holdingID = 
@@ -8022,8 +8421,7 @@ static TransRecord *getBareHandClothingTrans( LiveObject *nextPlayer,
                 bareHandClothingTrans->newActor;
             
             if( na > 0 &&
-                getObject( na )->minPickupAge >
-                computeAge( nextPlayer ) ) {
+                ! canPickup( na, computeAge( nextPlayer ) ) ) {
                 // too young for trans
                 bareHandClothingTrans = NULL;
                 }
@@ -8370,7 +8768,8 @@ char *isNamedGivingSay( char *inSaidString ) {
 
 
 
-char isYouGivingSay( char *inSaidString ) {
+static char isWildcardGivingSay( char *inSaidString,
+                                 SimpleVector<char*> *inPhrases ) {
     if( inSaidString[0] == ':' ) {
         // first : indicates reading a written phrase.
         // reading written phrase aloud does not have usual effects
@@ -8378,8 +8777,8 @@ char isYouGivingSay( char *inSaidString ) {
         return false;
         }
 
-    for( int i=0; i<youGivingPhrases.size(); i++ ) {
-        char *testString = youGivingPhrases.getElementDirect( i );
+    for( int i=0; i<inPhrases->size(); i++ ) {
+        char *testString = inPhrases->getElementDirect( i );
         
         char *hitLoc = strstr( inSaidString, testString );
 
@@ -8388,6 +8787,20 @@ char isYouGivingSay( char *inSaidString ) {
             }
         }
     return false;
+    }
+
+
+
+char isYouGivingSay( char *inSaidString ) {
+    return isWildcardGivingSay( inSaidString, &youGivingPhrases );
+    }
+
+char isFamilyGivingSay( char *inSaidString ) {
+    return isWildcardGivingSay( inSaidString, &familyGivingPhrases );
+    }
+
+char isOffspringGivingSay( char *inSaidString ) {
+    return isWildcardGivingSay( inSaidString, &offspringGivingPhrases );
     }
 
 
@@ -8711,7 +9124,8 @@ void apocalypseStep() {
                                Time::getCurrentTime() - startTime );
                 
                 peaceTreaties.deleteAll();
-
+                warStates.deleteAll();
+                
 
                 lastRemoteApocalypseCheckTime = curTime;
                 
@@ -9226,14 +9640,15 @@ typedef struct KillState {
 SimpleVector<KillState> activeKillStates;
 
 
-void addKillState( LiveObject *inKiller, LiveObject *inTarget ) {
+// return true if it worked
+char addKillState( LiveObject *inKiller, LiveObject *inTarget ) {
     char found = false;
     
     
     if( distance( getPlayerPos( inKiller ), getPlayerPos( inTarget ) )
         > 8 ) {
         // out of range
-        return;
+        return false;
         }
     
     
@@ -9260,6 +9675,7 @@ void addKillState( LiveObject *inKiller, LiveObject *inTarget ) {
                         30 };
         activeKillStates.push_back( s );
         }
+    return true;
     }
 
 
@@ -9390,8 +9806,10 @@ void executeKillAction( int inKillerIndex,
                         nextPlayer->lineageEveID
                         || 
                         isPeaceTreaty( hitPlayer->lineageEveID,
-                                       nextPlayer->lineageEveID ) ) {
-                                            
+                                       nextPlayer->lineageEveID )
+                        ||
+                        ! isWarState( hitPlayer->lineageEveID,
+                                      nextPlayer->lineageEveID ) ) {      
                         hitPlayer = NULL;
                         }
                     }
@@ -9740,13 +10158,65 @@ void nameBaby( LiveObject *inNamer, LiveObject *inBaby, char *inName,
     
     char *name = inName;
     
+
+    // NEW:  keep the baby's family name at all costs, even in case
+    // of adoption
+    // (if baby has no family name, then take mother's family name as last
+    // name)
     
     const char *lastName = "";
-    if( nextPlayer->familyName != NULL ) {
-        lastName = nextPlayer->familyName;
+    
+
+    // note that we skip this case now, in favor of keeping baby's family name
+    if( false && nextPlayer->name != NULL ) {
+        lastName = strstr( nextPlayer->name, 
+                           " " );
+                                        
+        if( lastName != NULL ) {
+            // skip space
+            lastName = &( lastName[1] );
+            }
+
+        if( lastName == NULL ) {
+            lastName = "";
+
+            if( nextPlayer->familyName != 
+                NULL ) {
+                lastName = 
+                    nextPlayer->familyName;
+                }    
+            }
+        else if( nextPlayer->nameHasSuffix ) {
+            // only keep last name
+            // if it contains another
+            // space (the suffix is after
+            // the last name).  Otherwise
+            // we are probably confused,
+            // and what we think
+            // is the last name IS the suffix.
+                                            
+            char *suffixPos =
+                strstr( (char*)lastName, " " );
+                                            
+            if( suffixPos == NULL ) {
+                // last name is suffix, actually
+                // don't pass suffix on to baby
+                lastName = "";
+                }
+            else {
+                // last name plus suffix
+                // okay to pass to baby
+                // because we strip off
+                // third part of name
+                // (suffix) below.
+                }
+            }
         }
     else if( babyO->familyName != NULL ) {
         lastName = babyO->familyName;
+        }
+    else if( nextPlayer->familyName != NULL ) {
+        lastName = nextPlayer->familyName;
         }
                                     
 
@@ -10001,7 +10471,20 @@ int main() {
     
     readPhrases( "youGivingPhrases", &youGivingPhrases );
     readPhrases( "namedGivingPhrases", &namedGivingPhrases );
+
+    readPhrases( "familyGivingPhrases", &familyGivingPhrases );
+    readPhrases( "offspringGivingPhrases", &offspringGivingPhrases );
+
     
+    curseYouPhrase = 
+        SettingsManager::getSettingContents( "curseYouPhrase", 
+                                             "CURSE YOU" );
+    
+    curseBabyPhrase = 
+        SettingsManager::getSettingContents( "curseBabyPhrase", 
+                                             "CURSE MY BABY" );
+
+
 
     eveName = 
         SettingsManager::getStringSetting( "eveName", "EVE" );
@@ -10037,6 +10520,9 @@ int main() {
     
     initLineageLimit();
     
+    initCurseDB();
+    
+
 
     char rebuilding;
 
@@ -10323,10 +10809,16 @@ int main() {
                     SettingsManager::getIntSetting( 
                         "familyLimitAfterEveWindow", 15 );
                 
+                int minFamiliesAfterEveWindow = 
+                    SettingsManager::getIntSetting( 
+                        "minFamiliesAfterEveWindow", 5 );
+
+                char eveWindow = isEveWindow();
+
                 char *familyLine;
                 
                 if( familyLimitAfterEveWindow > 0 &&
-                    ! isEveWindow() ) {
+                    ! eveWindow ) {
                     familyLine = autoSprintf( "of %d",
                                               familyLimitAfterEveWindow );
                     }
@@ -10341,20 +10833,36 @@ int main() {
                 if( numFams == 1 ) {
                     familyWord = "FAMILY IS";
                     }
+                
+                char *arcEndMessage;
+                
+                if( !eveWindow && minFamiliesAfterEveWindow > 0 ) {
+                    arcEndMessage = autoSprintf( " (ARC ENDS BELOW %d)",
+                                                 minFamiliesAfterEveWindow );
+                    }
+                else {
+                    arcEndMessage = stringDuplicate( "" );
+                    }
+                
 
                 char *message = autoSprintf( ":%s: ARC HAS LASTED %d YEARS**"
-                                             "%d %s %s ALIVE",
+                                             "%d %s %s ALIVE%s",
                                              getArcName(),
                                              arcMilestone,
                                              numFams,
                                              familyLine,
-                                             familyWord);
+                                             familyWord,
+                                             arcEndMessage );
                 delete [] familyLine;
+                delete [] arcEndMessage;
                 
                 sendGlobalMessage( message );
                 
                 delete [] message;           
                 }
+
+            
+            checkCustomGlobalMessage();
             }
         
         
@@ -12921,7 +13429,8 @@ int main() {
                         
                         if( nextPlayer->ownedPositions.size() > 0 ) {
                             // consider phrases that assign ownership
-                            LiveObject *newOwnerPlayer = NULL;
+                            SimpleVector<LiveObject*> newOwners;
+                            
 
                             char *namedOwner = isNamedGivingSay( m.saidText );
                             
@@ -12936,19 +13445,55 @@ int main() {
                                         strcmp( otherPlayer->name, 
                                                 namedOwner ) == 0 ) {
                                         
-                                        newOwnerPlayer = otherPlayer;
+                                        newOwners.push_back( otherPlayer );
                                         break;
                                         }
                                     }
                                 delete [] namedOwner;
                                 }
-                            else if( isYouGivingSay( m.saidText ) ) {
-                                // find closest other player
-                                newOwnerPlayer = 
-                                    getClosestOtherPlayer( nextPlayer );
+
+                            if( newOwners.size() == 0 ) {
+                                
+                                if( isYouGivingSay( m.saidText ) ) {
+                                    // find closest other player
+                                    LiveObject *newOwnerPlayer = 
+                                        getClosestOtherPlayer( nextPlayer );
+                                    
+                                    if( newOwnerPlayer != NULL ) {
+                                        newOwners.push_back( newOwnerPlayer );
+                                        }
+                                    }
+                                else if( isFamilyGivingSay( m.saidText ) ) {
+                                    // add all family members
+                                    for( int n=0; n<players.size(); n++ ) {
+                                        LiveObject *o = players.getElement( n );
+                                        if( o->error || 
+                                            o->id == nextPlayer->id ) {
+                                            continue;
+                                            }
+                                        if( o->lineageEveID == 
+                                            nextPlayer->lineageEveID ) {
+                                            newOwners.push_back( o );
+                                            }
+                                        }
+                                    }
+                                else if( isOffspringGivingSay( m.saidText ) ) {
+                                    // add all offspring
+                                    for( int n=0; n<players.size(); n++ ) {
+                                        LiveObject *o = players.getElement( n );
+                                        if( o->error || 
+                                            o->id == nextPlayer->id ) {
+                                            continue;
+                                            }
+                                        if( o->parentID == nextPlayer->id ) {
+                                            newOwners.push_back( o );
+                                            }
+                                        }
+                                    }
                                 }
                             
-                            if( newOwnerPlayer != NULL ) {
+                            
+                            if( newOwners.size() > 0 ) {
                                 // find closest spot that this player owns
                                 GridPos thisPos = getPlayerPos( nextPlayer );
 
@@ -12972,12 +13517,17 @@ int main() {
 
                                 if( minDist < DBL_MAX ) {
                                     // found one
-                                    if( ! isOwned( newOwnerPlayer, 
-                                                   closePos ) ) {
-                                        newOwnerPlayer->
-                                            ownedPositions.push_back( 
-                                                closePos );
-                                        newOwnerPos.push_back( closePos );
+                                    for( int n=0; n<newOwners.size(); n++ ) {
+                                        LiveObject *newOwnerPlayer = 
+                                            newOwners.getElementDirect( n );
+                                        
+                                        if( ! isOwned( newOwnerPlayer, 
+                                                       closePos ) ) {
+                                            newOwnerPlayer->
+                                                ownedPositions.push_back( 
+                                                    closePos );
+                                            newOwnerPos.push_back( closePos );
+                                            }
                                         }
                                     }
                                 }
@@ -13156,6 +13706,10 @@ int main() {
                                             ||
                                             isPeaceTreaty( 
                                                 targetPlayer->lineageEveID,
+                                                nextPlayer->lineageEveID )
+                                            ||
+                                            ! isWarState( 
+                                                targetPlayer->lineageEveID,
                                                 nextPlayer->lineageEveID ) ) {
                                             
                                             weaponBlocked = true;
@@ -13164,15 +13718,18 @@ int main() {
                                     
                                     if( ! weaponBlocked ) {
                                         
-                                        nextPlayer->emotFrozen = true;
-                                        newEmotPlayerIDs.push_back( 
-                                            nextPlayer->id );
-                                        newEmotIndices.push_back( 
-                                            killEmotionIndex );
-                                        newEmotTTLs.push_back( 120 );
+                                        char enteredState =
+                                            addKillState( nextPlayer,
+                                                          targetPlayer );
                                         
-                                        addKillState( nextPlayer,
-                                                      targetPlayer );
+                                        if( enteredState ) {
+                                            nextPlayer->emotFrozen = true;
+                                            newEmotPlayerIDs.push_back( 
+                                                nextPlayer->id );
+                                            newEmotIndices.push_back( 
+                                                killEmotionIndex );
+                                            newEmotTTLs.push_back( 120 );
+                                            }
                                         }
                                     }
                                 }
@@ -13477,9 +14034,7 @@ int main() {
                                         playerAge >= defaultActionAge )
                                       || 
                                       ( r->newActor > 0 &&
-                                        getObject( r->newActor )->minPickupAge 
-                                        <= 
-                                        playerAge ) ) 
+                                        canPickup( r->newActor, playerAge ) ) ) 
                                     &&
                                     // does this create a blocking object?
                                     // only consider vertical-blocking
@@ -13689,8 +14244,9 @@ int main() {
                                     }
                                 else if( nextPlayer->holdingID == 0 &&
                                          ! targetObj->permanent &&
-                                         targetObj->minPickupAge <= 
-                                         computeAge( nextPlayer ) ) {
+                                         canPickup( targetObj->id,
+                                                    computeAge( 
+                                                        nextPlayer ) ) ) {
                                     // no bare-hand transition applies to
                                     // this non-permanent target object
                                     
@@ -13811,10 +14367,10 @@ int main() {
                                         // to hold result of on-floor
                                         // transition
                                         ( r->newActor == 0 ||
-                                          getObject( r->newActor )->
-                                             minPickupAge <= 
-                                          computeAge( nextPlayer ) ) ) {
-
+                                          canPickup( 
+                                              r->newActor,
+                                              computeAge( nextPlayer ) ) ) ) {
+                                        
                                         // applies to floor
                                         int resultID = r->newTarget;
                                         
@@ -13888,9 +14444,9 @@ int main() {
                                         // to hold result of bare ground
                                         // transition
                                         ( r->newActor == 0 ||
-                                          getObject( r->newActor )->
-                                             minPickupAge <= 
-                                          computeAge( nextPlayer ) ) ) {
+                                          canPickup( 
+                                              r->newActor,
+                                              computeAge( nextPlayer ) ) ) ) {
                                         
                                         canPlace = true;
                                         
@@ -14316,9 +14872,9 @@ int main() {
                                     int healerWillHold = healTrans->newActor;
                                     
                                     if( healerWillHold > 0 ) {
-                                        if( computeAge( nextPlayer ) < 
-                                            getObject( healerWillHold )->
-                                            minPickupAge ) {
+                                        if( ! canPickup( 
+                                                healerWillHold,
+                                                computeAge( nextPlayer ) ) ) {
                                             oldEnough = false;
                                             }
                                         }
@@ -14427,8 +14983,10 @@ int main() {
                                                 clickedClothingTrans->newActor;
                                             
                                             if( na > 0 &&
-                                                getObject( na )->minPickupAge >
-                                                computeAge( nextPlayer ) ) {
+                                                ! canPickup( 
+                                                    na,
+                                                    computeAge( 
+                                                        nextPlayer ) ) ) {
                                                 // too young for trans
                                                 clickedClothingTrans = NULL;
                                                 }
@@ -14933,8 +15491,8 @@ int main() {
                                             
                                             if( otherID != 
                                                 oldHeld &&
-                                                getObject( otherID )->
-                                                minPickupAge <= playerAge ) {
+                                                canPickup( otherID, 
+                                                           playerAge ) ) {
                                                 
                                               removeFromClothingContainerToHold(
                                                     nextPlayer, m.c, s );
@@ -15085,8 +15643,10 @@ int main() {
                                                  ! canGoIn &&
                                                  ! targetObj->permanent 
                                                  &&
-                                                 targetObj->minPickupAge <=
-                                                 computeAge( nextPlayer ) ) {
+                                                 canPickup( 
+                                                     targetObj->id,
+                                                     computeAge( 
+                                                         nextPlayer ) ) ) {
                                             // drop onto a spot where
                                             // something exists, and it's
                                             // not a container
@@ -15184,8 +15744,9 @@ int main() {
                                         getObject( target );
                                 
                                     if( ! targetObj->permanent &&
-                                        targetObj->minPickupAge <= 
-                                        computeAge( nextPlayer ) ) {
+                                        canPickup( targetObj->id,
+                                                   computeAge( 
+                                                       nextPlayer ) ) ) {
                                     
                                         // treat it like pick up   
                                         pickupToHold( nextPlayer, m.x, m.y, 
@@ -15206,9 +15767,9 @@ int main() {
                                             getObject( handTrans->newTarget )->
                                             numSlots == targetObj->numSlots &&
                                             handTrans->newActor > 0 &&
-                                            getObject( handTrans->newActor )->
-                                            minPickupAge <= 
-                                            computeAge( nextPlayer ) ) {
+                                            canPickup( 
+                                                handTrans->newActor,
+                                                computeAge( nextPlayer ) ) ) {
                                         
                                             handleHoldingChange( 
                                                 nextPlayer,
@@ -15457,7 +16018,64 @@ int main() {
                 nextPlayer->updateGlobal = true;
                 }
             else if( nextPlayer->error && ! nextPlayer->deleteSent ) {
+
                 
+                // check if we should send global message about a family's
+                // demise
+                if( ! isEveWindow() ) {
+                    int minFamiliesAfterEveWindow =
+                        SettingsManager::getIntSetting( 
+                            "minFamiliesAfterEveWindow", 5 );
+                    if( minFamiliesAfterEveWindow > 0 ) {
+                        // is this the last player of this family?
+
+                        if( nextPlayer->familyName != NULL ) {
+                            int otherCount = 0;
+                            
+                            for( int n=0; n<players.size(); n++ ) {
+                                LiveObject *otherPlayer =
+                                    players.getElement( n );
+                                
+                                if( otherPlayer->error ) {
+                                    // don't worry about counting
+                                    // nextPlayer here, b/c they have an
+                                    // error set already
+                                    continue;
+                                    }
+                                if( otherPlayer->lineageEveID ==
+                                    nextPlayer->lineageEveID ) {
+                                    
+                                    otherCount++;
+                                    // actually, only need to count 1
+                                    break;
+                                    }
+                                }
+                            if( otherCount == 0 ) {
+                                // family died out!
+                                int cFam = countFamilies();
+                                
+                                const char *famWord = "FAMILIES";
+                                if( cFam == 1 ) {
+                                    famWord = "FAMILY";
+                                    }
+
+                                char *message = 
+                                    autoSprintf( "%s FAMILY JUST DIED OUT**"
+                                                 "%d %s LEFT "
+                                                 "(ARC ENDS BELOW %d)",
+                                                 nextPlayer->familyName,
+                                                 cFam,
+                                                 famWord,
+                                                 minFamiliesAfterEveWindow );
+                                
+                                sendGlobalMessage( message );
+                                delete [] message;
+                                }
+                            }
+                        }
+                    }
+                    
+
                 removeAllOwnership( nextPlayer );
                 
                 decrementLanguageCount( nextPlayer->lineageEveID );
@@ -15615,7 +16233,8 @@ int main() {
                                 // we're outside the window
                                 // people have been dying young for a long time
                                 
-                                triggerApocalypseNow();
+                                triggerApocalypseNow( 
+                                    "Everyone dying young for too long" );
                                 }
                             else if( lastBabyPassedThresholdTime == 0 ) {
                                 // first baby to die, and we have enough
@@ -15693,6 +16312,11 @@ int main() {
                 // can log in again during the deleteSentDoneETA window
                 
                 if( nextPlayer->email != NULL ) {
+                    if( nextPlayer->origEmail != NULL ) {
+                        delete [] nextPlayer->origEmail;
+                        }
+                    nextPlayer->origEmail = 
+                        stringDuplicate( nextPlayer->email );
                     delete [] nextPlayer->email;
                     }
                 nextPlayer->email = stringDuplicate( "email_cleared" );
@@ -19245,6 +19869,9 @@ int main() {
 
                 if( nextPlayer->email != NULL ) {
                     delete [] nextPlayer->email;
+                    }
+                if( nextPlayer->origEmail != NULL  ) {
+                    delete [] nextPlayer->origEmail;
                     }
 
                 if( nextPlayer->murderPerpEmail != NULL ) {
