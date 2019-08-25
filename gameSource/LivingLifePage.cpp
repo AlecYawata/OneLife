@@ -20115,7 +20115,7 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
                 // went into its (temporary) reaction state. 
                 }
             
-            if( tr == NULL || tr->newTarget == destID ) {
+            if( tr == NULL ) {
                 // give hint about dest object which will be unchanged 
                 mNextHintObjectID = destID;
                 mNextHintIndex = mHintBookmarks[ destID ];
@@ -20132,6 +20132,11 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
                 // give hint about changed target after we act on it
                 mNextHintObjectID = tr->newTarget;
                 mNextHintIndex = mHintBookmarks[ tr->newTarget ];
+                mHintHistories.deleteAll();
+                }
+            else if( tr->newTarget == destID ) {
+                mNextHintObjectID = destID;
+                mNextHintIndex = mHintBookmarks[ destID ];
                 mHintHistories.deleteAll();
                 }
             }
@@ -21907,6 +21912,13 @@ void LivingLifePage::specialKeyDown( int inKeyCode ) {
         }
     if( inKeyCode == MG_KEY_F5 ) {
         showReciptSheet = !showReciptSheet;
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( showReciptSheet && ourLiveObject && ourLiveObject->holdingID > 0 ) {
+            mNextHintObjectID = ourLiveObject->holdingID;
+            mNextHintIndex = 0;
+            mNextHintReverse = false;
+            mHintHistories.deleteAll();
+            }
         /*
         if( lastCursorObjectID != 0 ) {
             ObjectRecord* lastCursorObject = getObject( lastCursorObjectID );
@@ -22217,6 +22229,13 @@ void LivingLifePage::actionPerformed( GUIComponent *inTarget ) {
         }
     if( inTarget == &mReciptButton ) {
         showReciptSheet = !showReciptSheet;
+        LiveObject* ourLiveObject = getOurLiveObject();
+        if( showReciptSheet && ourLiveObject && ourLiveObject->holdingID > 0 ) {
+            mNextHintObjectID = ourLiveObject->holdingID;
+            mNextHintIndex = 0;
+            mNextHintReverse = false;
+            mHintHistories.deleteAll();
+            }
         }
     if( inTarget == &mReciptReverseButton ) {
         mNextHintReverse = !mNextHintReverse;
