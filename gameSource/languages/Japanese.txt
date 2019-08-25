@@ -197,7 +197,7 @@ minuteSingular "分"
 tokenTimeMessage "ログインチケット付与:  "
 
 
-scoreMessage "遺伝スコア:##%s (%d位)"
+scoreMessage "遺伝##スコア:##%s##(%d位)"
 
 scoreMessageNoRank "遺伝##スコア:##%s"
 
