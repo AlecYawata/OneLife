@@ -139,6 +139,12 @@ else if( $action == "get_sequence_number" ) {
 else if( $action == "log_life" ) {
     ls_logLife();
     }
+else if( $action == "log_named" ) {
+    ls_logNamed();
+    }
+else if( $action == "log_birth" ) {
+    ls_logBirth();
+    }
 else if( $action == "show_log" ) {
     ls_showLog();
     }
@@ -928,6 +934,13 @@ function ls_getEveID( $inLifeID ) {
 
     $eve_life_id = ls_mysqli_result( $result, 0, "eve_life_id" );
     
+    if( $eve_life_id == 0 ) {
+        $eve_life_id = $inLifeID;
+        $query = "UPDATE $tableNamePrefix"."lives SET ".
+            "eve_life_id = '$eve_life_id' WHERE id = '$inLifeID';";
+        ls_queryDatabase( $query );
+        }
+    
     if( $eve_life_id == -1 ) {
 
         // compute it, if we can
@@ -1224,6 +1237,301 @@ function ls_formatName( $inName ) {
 
 
 
+function ls_logBirth() {
+    global $tableNamePrefix, $sharedGameServerSecret;
+
+    // no locking is done here, because action is asynchronous anyway
+    // and there's no way to prevent a server from acting on a stale
+    // sequence number if calls for the same email are interleaved
+
+    // however, we only want to support a given email address playing on
+    // one server at a time, so it's okay if some parallel lives are
+    // not logged correctly
+    
+
+    $server = ls_requestFilter( "server", "/[A-Z0-9.\-]+/i", "" );
+    $email = ls_requestFilter( "email", "/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+/i", "" );
+
+    $player_id = ls_requestFilter( "player_id", "/[0-9]+/i", "0" );
+    $parent_id = ls_requestFilter( "parent_id", "/[0-9\-]+/i", "-1" );
+    $display_id = ls_requestFilter( "display_id", "/[0-9]+/i", "0" );
+
+    $male = ls_requestFilter( "male", "/[01]/", "0" );
+    
+    $sequence_number = ls_requestFilter( "sequence_number", "/[0-9]+/i", "0" );
+
+    $hash_value = ls_requestFilter( "hash_value", "/[A-F0-9]+/i", "" );
+
+    $hash_value = strtoupper( $hash_value );
+
+
+    if( $email == "" ||
+        $server == "" ) {
+
+        ls_log( "logBirth denied for bad email or server name" );
+        
+        echo "DENIED";
+        return;
+        }
+    
+    $trueSeq = ls_getSequenceNumberForEmail( $email );
+
+    if( $trueSeq > $sequence_number ) {
+        ls_log( "logBirth denied for stale sequence number" );
+
+        echo "DENIED";
+        return;
+        }
+
+    $computedHashValue =
+        strtoupper( ls_hmac_sha1( $sharedGameServerSecret, $sequence_number ) );
+
+    if( $computedHashValue != $hash_value ) {
+        // ls_log( "logBirth denied for bad hash value" );
+
+        echo "DENIED";
+        return;
+        }
+    
+    // ls_log( "Got valid logBirth call:  " . $_SERVER[ 'QUERY_STRING' ] );
+    
+    
+    if( $trueSeq == 0 ) {
+        // no record exists, add one
+        $query = "INSERT INTO $tableNamePrefix". "users SET " .
+            "email = '$email', ".
+            "email_sha1 = sha1( lower( '$email' ) ), ".
+            "sequence_number = 1, ".
+            "life_count = 1 ".
+            "ON DUPLICATE KEY UPDATE sequence_number = sequence_number + 1, ".
+            "life_count = life_count + 1;";
+        }
+    else {
+        // update the existing one
+        $query = "UPDATE $tableNamePrefix"."users SET " .
+            // our values might be stale, increment values in table
+            "sequence_number = sequence_number + 1, ".
+            "life_count = life_count + 1 " .
+            "WHERE email = '$email'; ";
+        
+        }
+
+    ls_queryDatabase( $query );
+
+    // now log life details
+    
+    $server_id = ls_getServerID( $server );
+    $user_id = ls_getUserID( $email );
+
+    // unknown until we are asked to compute it the first time
+    $generation = -1;
+    $eve_life_id = -1;
+    
+    if( $parent_id == -1 ) {
+        // Eve
+        // we know it
+        $generation = 1;
+        $eve_life_id = 0;
+        }
+    
+    
+    $query = "INSERT INTO $tableNamePrefix". "lives SET " .
+        "birth_time = CURRENT_TIMESTAMP, ".
+        "server_id = '$server_id', ".
+        "user_id = '$user_id', ".
+        "player_id = '$player_id', ".
+        "parent_id = '$parent_id', ".
+        "killer_id = -1, ".
+        "name = '名無し',".
+        // generate this later, as-needed
+        "death_cause = '', ".
+        "display_id = '$display_id', ".
+        "male = '$male', ".
+        // double-quotes, because ' is an allowed character
+        "last_words = \"\", ".
+        "generation = '$generation', " .
+        "eve_life_id = '$eve_life_id', ".
+        "deepest_descendant_generation = -1, ".
+        "deepest_descendant_life_id = -1, ".
+        "lineage_depth = 0;";
+
+    ls_queryDatabase( $query );
+
+    $life_id = ls_getLifeID( $server_id, $player_id );
+    $deepestInfo = ls_computeDeepestGeneration( $life_id );
+
+    ls_getEveID( $life_id );
+
+    $deepest_descendant_generation = $deepestInfo[0];
+    $deepest_descendant_life_id = $deepestInfo[1];
+
+    if( $deepest_descendant_generation <= 0 ) {
+
+        $deepest_descendant_generation = ls_getGeneration( $life_id );
+        $deepest_descendant_life_id = $life_id;
+        }
+    
+    
+    if( $deepest_descendant_generation > 0 ) {
+        // have generation info for this person
+
+        // walk up and set deepest generation for all ancestors
+
+        $parentLifeID = ls_getParentLifeID( $life_id );
+
+        if( $parentLifeID != -1 ) {
+            ls_setDeepestGenerationUp( $parentLifeID,
+                                       $deepest_descendant_generation,
+                                       $deepest_descendant_life_id );
+            }
+        }
+    
+    
+    echo "OK";
+    }
+
+function ls_logNamed() {
+    global $tableNamePrefix, $sharedGameServerSecret;
+
+    // no locking is done here, because action is asynchronous anyway
+    // and there's no way to prevent a server from acting on a stale
+    // sequence number if calls for the same email are interleaved
+
+    // however, we only want to support a given email address playing on
+    // one server at a time, so it's okay if some parallel lives are
+    // not logged correctly
+    
+
+    $server = ls_requestFilter( "server", "/[A-Z0-9.\-]+/i", "" );
+    $email = ls_requestFilter( "email", "/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+/i", "" );
+
+    $player_id = ls_requestFilter( "player_id", "/[0-9]+/i", "0" );
+
+    $name = ls_requestFilter( "name", "/[A-Z 名無ぁ-ん。、！？ー（）”’・＾;:]+/i", "" );
+
+    $name = ls_formatName( $name );
+
+    $sequence_number = ls_requestFilter( "sequence_number", "/[0-9]+/i", "0" );
+    $hash_value = ls_requestFilter( "hash_value", "/[A-F0-9]+/i", "" );
+    $hash_value = strtoupper( $hash_value );
+
+    if( $email == "" ||
+        $server == "" ) {
+
+        ls_log( "logNamed denied for bad email or server name" );
+        
+        echo "DENIED";
+        return;
+        }
+    
+    $trueSeq = ls_getSequenceNumberForEmail( $email );
+
+    if( $trueSeq > $sequence_number ) {
+        ls_log( "logNamed denied for stale sequence number" );
+
+        echo "DENIED";
+        return;
+        }
+
+    $computedHashValue =
+        strtoupper( ls_hmac_sha1( $sharedGameServerSecret, $sequence_number ) );
+
+    if( $computedHashValue != $hash_value ) {
+        // ls_log( "logNamed denied for bad hash value" );
+
+        echo "DENIED";
+        return;
+        }
+    
+    // ls_log( "Got valid logNamed call:  " . $_SERVER[ 'QUERY_STRING' ] );
+    
+    
+    if( $trueSeq == 0 ) {
+        // no record exists, add one
+        $query = "INSERT INTO $tableNamePrefix". "users SET " .
+            "email = '$email', ".
+            "email_sha1 = sha1( lower( '$email' ) ), ".
+            "sequence_number = 1, ".
+            "life_count = 1 ".
+            "ON DUPLICATE KEY UPDATE sequence_number = sequence_number + 1, ".
+            "life_count = life_count + 1;";
+        }
+    else {
+        // update the existing one
+        $query = "UPDATE $tableNamePrefix"."users SET " .
+            // our values might be stale, increment values in table
+            "sequence_number = sequence_number + 1, ".
+            "life_count = life_count + 1 " .
+            "WHERE email = '$email'; ";
+        
+        }
+
+    ls_queryDatabase( $query );
+
+    // now log life details
+    
+    $server_id = ls_getServerID( $server );
+    $user_id = ls_getUserID( $email );
+
+    // unknown until we are asked to compute it the first time
+    $generation = -1;
+    $eve_life_id = -1;
+    
+    $life_id = ls_getLifeID( $server_id, $player_id );
+    if( $parent_id == -1 ) {
+        // Eve
+        // we know it
+        $generation = 1;
+        $eve_life_id = 0;
+        }
+    else {
+        $eve_life_id = ls_getEveID( $life_id ? $life_id : $parent_id );
+        }
+    
+    if( !$life_id ) {
+        return;
+        }
+    $query = "UPDATE $tableNamePrefix". "lives SET " .
+        "server_id = '$server_id', ".
+        "user_id = '$user_id', ".
+        "player_id = '$player_id', ".
+        "name = '$name', ".
+        "eve_life_id = '$eve_life_id' ".
+        "where id = $life_id ;";
+
+    ls_queryDatabase( $query );
+
+    $deepestInfo = ls_computeDeepestGeneration( $life_id );
+
+
+    $deepest_descendant_generation = $deepestInfo[0];
+    $deepest_descendant_life_id = $deepestInfo[1];
+
+    if( $deepest_descendant_generation <= 0 ) {
+
+        $deepest_descendant_generation = ls_getGeneration( $life_id );
+        $deepest_descendant_life_id = $life_id;
+        }
+    
+    
+    if( $deepest_descendant_generation > 0 ) {
+        // have generation info for this person
+
+        // walk up and set deepest generation for all ancestors
+
+        $parentLifeID = ls_getParentLifeID( $life_id );
+
+        if( $parentLifeID != -1 ) {
+            ls_setDeepestGenerationUp( $parentLifeID,
+                                       $deepest_descendant_generation,
+                                       $deepest_descendant_life_id );
+            }
+        }
+    
+    
+    echo "OK";
+    }
+
 function ls_logLife() {
     global $tableNamePrefix, $sharedGameServerSecret;
 
@@ -1244,6 +1552,7 @@ function ls_logLife() {
     $parent_id = ls_requestFilter( "parent_id", "/[0-9\-]+/i", "-1" );
     $killer_id = ls_requestFilter( "killer_id", "/[0-9\-]+/i", "-1" );
     $display_id = ls_requestFilter( "display_id", "/[0-9]+/i", "0" );
+    $yum_chain = ls_requestFilter( "yum_chain", "/[0-9.]+/i", "0" );
 
     $name = ls_requestFilter( "name", "/[A-Z 名無ぁ-ん。、！？ー（）”’・＾;:]+/i", "" );
     $last_words = ls_requestFilter(
@@ -1340,34 +1649,63 @@ function ls_logLife() {
     $generation = -1;
     $eve_life_id = -1;
     
+    $life_id = ls_getLifeID( $server_id, $player_id );
     if( $parent_id == -1 ) {
         // Eve
         // we know it
         $generation = 1;
-        $eve_life_id = 0;
+        $eve_life_id = $life_id;
+        }
+    else {
+        $eve_life_id = ls_getEveID( $life_id ? $life_id : $parent_id );
         }
     
-    
-    $query = "INSERT INTO $tableNamePrefix". "lives SET " .
-        "death_time = CURRENT_TIMESTAMP, ".
-        "server_id = '$server_id', ".
-        "user_id = '$user_id', ".
-        "player_id = '$player_id', ".
-        "parent_id = '$parent_id', ".
-        "killer_id = '$killer_id', ".
-        // generate this later, as-needed
-        "death_cause = '', ".
-        "display_id = '$display_id', ".
-        "age = '$age', ".
-        "name = '$name', ".
-        "male = '$male', ".
-        // double-quotes, because ' is an allowed character
-        "last_words = \"$last_words\", ".
-        "generation = '$generation', " .
-        "eve_life_id = '$eve_life_id', ".
-        "deepest_descendant_generation = -1, ".
-        "deepest_descendant_life_id = -1, ".
-        "lineage_depth = 0;";
+    if( $life_id ) {
+        $query = "UPDATE $tableNamePrefix". "lives SET " .
+            "death_time = CURRENT_TIMESTAMP, ".
+            "server_id = '$server_id', ".
+            "user_id = '$user_id', ".
+            "player_id = '$player_id', ".
+            "parent_id = '$parent_id', ".
+            "killer_id = '$killer_id', ".
+            // generate this later, as-needed
+            "death_cause = '', ".
+            "display_id = '$display_id', ".
+            "age = '$age', ".
+            "name = '$name', ".
+            "male = '$male', ".
+            "max_chain = $yum_chain, ".
+            // double-quotes, because ' is an allowed character
+            "last_words = \"$last_words\", ".
+            "generation = '$generation', " .
+            "eve_life_id = '$eve_life_id', ".
+            "deepest_descendant_generation = -1, ".
+            "deepest_descendant_life_id = -1, ".
+            "lineage_depth = 0 ".
+            "where id = $life_id ;";
+        }
+    else {
+        $query = "INSERT INTO $tableNamePrefix". "lives SET " .
+            "death_time = CURRENT_TIMESTAMP, ".
+            "server_id = '$server_id', ".
+            "user_id = '$user_id', ".
+            "player_id = '$player_id', ".
+            "parent_id = '$parent_id', ".
+            "killer_id = '$killer_id', ".
+            // generate this later, as-needed
+            "death_cause = '', ".
+            "display_id = '$display_id', ".
+            "age = '$age', ".
+            "name = '$name', ".
+            "male = '$male', ".
+            // double-quotes, because ' is an allowed character
+            "last_words = \"$last_words\", ".
+            "generation = '$generation', " .
+            "eve_life_id = '$eve_life_id', ".
+            "deepest_descendant_generation = -1, ".
+            "deepest_descendant_life_id = -1, ".
+            "lineage_depth = 0;";
+        }
 
     ls_queryDatabase( $query );
 
@@ -1756,7 +2094,7 @@ function ls_printFrontPageRows( $inForceIndexClause,
     
 
     $query = "SELECT lives.id, display_id, player_id, name, ".
-        "age, generation, death_time, deepest_descendant_generation, ".
+        "age, generation, death_time, birth_time, deepest_descendant_generation, ".
         "servers.server " .
         "FROM $tableNamePrefix"."lives as lives ".
         " $inForceIndexClause ".
@@ -1783,6 +2121,17 @@ function ls_printFrontPageRows( $inForceIndexClause,
         $age = ls_mysqli_result( $result, $i, "age" );
         $generation = ls_mysqli_result( $result, $i, "generation" );
         $death_time = ls_mysqli_result( $result, $i, "death_time" );
+        $birth_time = ls_mysqli_result( $result, $i, "birth_time" );
+        if( $age == NULL ) {
+            $birthAgoSec = strtotime( "now" ) -
+                strtotime( $birth_time );
+            if( $generation == "1" ) {
+                $age = floor($birthAgoSec / 60) + 14;
+                }
+            else {
+                $age = floor($birthAgoSec / 60);
+                }
+            }
 
         $deepest_descendant_generation =
             ls_mysqli_result( $result, $i, "deepest_descendant_generation" );
@@ -2237,8 +2586,8 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
 
     global $tableNamePrefix;
 
-    $query = "SELECT lives.id, display_id, player_id, name, ".
-        "age, last_words, generation, death_time, death_cause, ".
+    $query = "SELECT lives.id, display_id, player_id, name, max_chain, ".
+        "age, last_words, generation, death_time, birth_time, death_cause, ".
         "servers.server " .
         "FROM $tableNamePrefix"."lives as lives ".
         "INNER JOIN $tableNamePrefix"."servers as servers ".
@@ -2258,15 +2607,27 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
         $age = ls_mysqli_result( $result, 0, "age" );
         $generation = ls_mysqli_result( $result, 0, "generation" );
         $death_time = ls_mysqli_result( $result, 0, "death_time" );
+        $birth_time = ls_mysqli_result( $result, 0, "birth_time" );
         $death_cause = ls_mysqli_result( $result, 0, "death_cause" );
-
-
+        $max_chain = ls_mysqli_result( $result, 0, "max_chain" );
+        $alive = $death_time == NULL;
 
         $deathAgoSec = strtotime( "now" ) -
             strtotime( $death_time );
+        $birthAgoSec = strtotime( "now" ) -
+            strtotime( $birth_time );
         
         $deathAgo = ls_secondsToAgeSummary( $deathAgoSec );
+        $birthAgo = ls_secondsToAgeSummary( $birthAgoSec );
 
+        if( $age == NULL ) {
+            if( $generation == "1" ) {
+                $age = floor($birthAgoSec / 60) + 14;
+                }
+            else {
+                $age = floor($birthAgoSec / 60);
+                }
+            }
 
         $age = floor( $age );
         
@@ -2345,8 +2706,13 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
         if( $relName != "" ) {
             echo "$relName<br>\n";
             }
-        echo "享年 ${age}歳<br>\n";
-        echo "${deathAgo}前に死亡\n";
+        if( $alive ) {
+            echo "${birthAgo}前に誕生<br>\n";
+        }
+        else {
+            echo "享年 ${age}歳<br>\n";
+            echo "${deathAgo}前に死亡<br>\n";
+            }
 
         if( ! $inFullWords ) {
             if( strlen( $last_words ) > 18 ) {
@@ -2375,7 +2741,7 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
 
             
         
-        if( $last_words != "" ) {
+        if( $last_words != "" && !$alive ) {
             echo "<br>\n";
             echo "遺言: 「{$last_words}」\n";
             }
@@ -2444,7 +2810,7 @@ function ls_displayGenRow( $inGenArray, $inCenterID, $inRelID, $inFullWords ) {
 function ls_getDeathHTML( $inID, $inRelID ) {
     global $tableNamePrefix;
     
-    $query = "SELECT age, killer_id, server_id, death_cause ".
+    $query = "SELECT age, killer_id, server_id, death_cause, death_time ".
         "FROM $tableNamePrefix"."lives WHERE id=$inID;";
     
     $result = ls_queryDatabase( $query );
@@ -2465,8 +2831,11 @@ function ls_getDeathHTML( $inID, $inRelID ) {
     $killer_id = ls_mysqli_result( $result, 0, "killer_id" );
     $server_id = ls_mysqli_result( $result, 0, "server_id" );
     $age = ls_mysqli_result( $result, 0, "age" );
+    $alive = ls_mysqli_result( $result, 0, "death_time" ) == NULL;
     
-    
+    if( $alive ) {
+        return "まだ生きている";
+        }
     if( $killer_id > 0 ) {
         $query = "SELECT id, name ".
             "FROM $tableNamePrefix"."lives WHERE player_id=$killer_id ".
@@ -2731,7 +3100,7 @@ function ls_characterPage() {
     $parent = ls_getParentLifeID( $id );
     $ancestor = ls_getEveID( $id );
 
-    if( $ancestor > 0 && $ancestor != $parent ) {
+    if( $parent > 0 && $ancestor > 0 && $ancestor != $parent ) {
         $ancientGen = ls_getSiblings( $ancestor );
         // ancestor in center
         ls_displayGenRow( $ancientGen, ls_getParentLifeID( $ancestor ),
@@ -2778,6 +3147,40 @@ function ls_characterPage() {
             }
         }
     
+    global $tableNamePrefix;
+    $query = "SELECT id, max_chain, name FROM $tableNamePrefix"."lives ".
+        "WHERE max_chain >= 5 AND eve_life_id = $ancestor ORDER BY max_chain DESC;";
+    $result = ls_queryDatabase( $query );
+    $numRows = mysqli_num_rows( $result );
+    echo "<br><table border=2 bordercolor='white' bgcolor='#444'><thead><th>名前</th><th>Yumチェーン<br>最高値</th></thead>";
+    for( $i = 0; $i < $numRows; $i++ ) {
+        $id = ls_mysqli_result( $result, $i, "id" );
+        $max_chain = ls_mysqli_result( $result, $i, "max_chain" );
+        $name = ls_mysqli_result( $result, $i, "name" );
+        echo "<tr><td><a href='server.php?action=character_page&id=$id'>$name</a></td><td>$max_chain</td>";
+        }
+    if( $i == 0 ) {
+        echo "<tr><td colspan='2'>Yumチェーンの高いプレイヤーがいません</td></tr>";
+        }        
+    echo "</table>";
+    
+    $query = "SELECT lives.id, lives.name, count(murdered.id) as cnt FROM $tableNamePrefix"."lives as lives ".
+        "INNER JOIN $tableNamePrefix"."lives as murdered ON lives.player_id = murdered.killer_id AND lives.server_id = murdered.server_id AND lives.id != murdered.id ".
+        "WHERE lives.eve_life_id = $ancestor GROUP BY lives.id ORDER BY cnt DESC;";
+    $result = ls_queryDatabase( $query );
+    $numRows = mysqli_num_rows( $result );
+    echo "<br><table border=2 bordercolor='white' bgcolor='#444'><thead><th>名前</th><th>殺害数</th></thead>";
+    for( $i = 0; $i < $numRows; $i++ ) {
+        $id = ls_mysqli_result( $result, $i, "id" );
+        $cnt = ls_mysqli_result( $result, $i, "cnt" );
+        $name = ls_mysqli_result( $result, $i, "name" );
+        echo "<tr><td><a href='server.php?action=character_page&id=$id'>$name</a><td>$cnt</td></td>";
+        }
+    if( $i == 0 ) {
+        echo "<tr><td colspan='2'>この家系に殺人者はいません</td></tr>";
+        }        
+    echo "</table>";
+
 
     setlocale( LC_CTYPE, "ja_JP.UTF-8" );
     
