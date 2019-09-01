@@ -2586,7 +2586,7 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
 
     global $tableNamePrefix;
 
-    $query = "SELECT lives.id, display_id, player_id, name, max_chain, ".
+    $query = "SELECT lives.id, display_id, server_id, player_id, name, max_chain, ".
         "age, last_words, generation, death_time, birth_time, death_cause, ".
         "servers.server " .
         "FROM $tableNamePrefix"."lives as lives ".
@@ -2744,6 +2744,17 @@ function ls_displayPerson( $inID, $inRelID, $inFullWords ) {
         if( $last_words != "" && !$alive ) {
             echo "<br>\n";
             echo "遺言: 「{$last_words}」\n";
+            }
+
+        if( $generation == 1 ) {
+            // show link to full tree on Wondible server
+            $serverID = ls_mysqli_result( $result, 0, "server_id" );
+            $player_id = ls_mysqli_result( $result, 0, "player_id" );
+            
+            $url = "https://wondible.com/ohol-family-trees/#".
+                "server_id=$serverID&epoch=2&playerid=$player_id";
+
+            echo "<br>[<a href='$url'>Full Tree</a>]\n";
             }
         }
     

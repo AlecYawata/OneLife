@@ -3,10 +3,19 @@ This file only list changes to game code.  Changes to content can be found here:
 http://onehouronelife.com/updateLog.php
 
 
-Unreleased client changes
+Version 260    2019-August-28
 
 --Fixed bug in murder weapon change not showing up on perpetrator until perp
   stops moving (in other clients other than the perp's client).
+
+--Fixed digit in sqrt(2) constant.  Fixes #372
+
+--Editor now highlights naturally-occuring objects and deadly objects in
+  picker, so no more mistakes making something natural during object
+  duplication.
+
+--More kiosk mode features.  Instructions on RebirthChoice page, friends button
+  there, and blocking various things that would return you to the login screen.
 
 
 
@@ -59,6 +68,39 @@ Server Fixes
 --Arc milestone message now includes info about min family end condition.
 
 --Global announcement whenever a family dies out after the Eve window closes.
+
+--Link from Eve on family tree server to full tree on Wondible viewer.
+
+--Fixed rounding errors in move timing that could cause micro-managed moves to
+  be faster than long paths (WASD movment catching up to mouse movement).
+
+--Fixed apocalypse frozen-whiteout bug caused by server waiting for
+  disconnected players to have been sent the map update (they are disconnected,
+  so this is never going to happen).  When this bug was triggered (by a player
+  in the disconnected state during the apocalypse), the apocalypse whiteout
+  would last until that disconnected player died.
+
+--Fixed to no longer send out arc-family death announcements for Tutorial and
+  Donkeytown players.  Fixes #375.
+
+--Can spend YUM bonus to do hungry work.  Hungry worked blocked if it would
+  take you down below 5 food (to give you a safe buffer at the end).  Thus, you
+  need at least 15 food (including food and YUM) to do 10-cost hungry work.
+
+--After Eve window closes, babies are distributed between remaining families
+  round-robin.  Within each family, when it's their turn to get a baby, heat
+  an yum fertility bonuses still affect which mother in the family is chosen.
+  Note that area/lineage bans, birth cooldowns, and other factors still apply.
+  We only send a baby to the next family, round-robin, if we can according to
+  these other factors.
+
+--For analysis:  after Eve window, each family population is tracked separately
+  in a log over time (so we can make graphs showing family fractions of total
+  population, etc).
+
+--Support in lifeTokenServer for manually changing an account's token count
+  (for PAX booth use).
+
 
 
 

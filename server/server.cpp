@@ -193,6 +193,7 @@ static double lastBabyPassedThresholdTime = 0;
 
 
 static double eveWindowStart = 0;
+static char eveWindowOver = false;
 
 
 typedef struct PeaceTreaty {
@@ -592,6 +593,9 @@ typedef struct LiveObject {
         double moveTotalSeconds;
         double moveStartTime;
         
+        double pathDist;
+        
+
         int facingOverride;
         int actionAttempt;
         GridPos actionTarget;
@@ -1391,13 +1395,15 @@ void transferHeldContainedToMap( LiveObject *inPlayer, int inX, int inY ) {
 
 
 
+
+// diags are square root of 2 in length
+static double diagLength = 1.41421356237;
+    
+
+
 // diagonal steps are longer
 static double measurePathLength( int inXS, int inYS, 
                                  GridPos *inPathPos, int inPathLength ) {
-    
-    // diags are square root of 2 in length
-    double diagLength = 1.41421356237;
-    
 
     double totalLength = 0;
     
@@ -1502,6 +1508,17 @@ static void deleteMembers( FreshConnection *inConnection ) {
         delete [] inConnection->twinCode;
         }
     }
+
+
+
+static SimpleVector<char *> familyNamesAfterEveWindow;
+static SimpleVector<int> familyLineageEveIDsAfterEveWindow;
+static SimpleVector<int> familyCountsAfterEveWindow;
+
+static int nextBabyFamilyIndex = 0;
+
+
+static FILE *postWindowFamilyLogFile = NULL;
 
 
 
@@ -1693,6 +1710,16 @@ void quitCleanup() {
     if( familyDataLogFile != NULL ) {
         fclose( familyDataLogFile );
         familyDataLogFile = NULL;
+        }
+
+    familyNamesAfterEveWindow.deallocateStringElements();
+    familyLineageEveIDsAfterEveWindow.deleteAll();
+    familyCountsAfterEveWindow.deleteAll();
+    nextBabyFamilyIndex = 0;
+    
+    if( postWindowFamilyLogFile != NULL ) {
+        fclose( postWindowFamilyLogFile );
+        postWindowFamilyLogFile = NULL;
         }
     }
 
@@ -2291,11 +2318,15 @@ ClientMessage parseMessage( LiveObject *inPlayer, char *inMessage ) {
 
 
 
-// compute closest starting position part way along
-// path
-// (-1 if closest spot is starting spot not included in path steps)
-int computePartialMovePathStep( LiveObject *inPlayer ) {
+// computes a fractional index along path
+// 1.25 means 1/4 way between index 1 and 2 on path
+// thus, this can be as low as -1 (for starting position)
+double computePartialMovePathStepPrecise( LiveObject *inPlayer ) {
     
+    if( inPlayer->pathLength == 0 || inPlayer->pathToDest == NULL ) {
+        return -1;
+        }
+
     double fractionDone = 
         ( Time::getCurrentTime() - 
           inPlayer->moveStartTime )
@@ -2304,12 +2335,107 @@ int computePartialMovePathStep( LiveObject *inPlayer ) {
     if( fractionDone > 1 ) {
         fractionDone = 1;
         }
+
+    if( fractionDone == 1 ) {
+        // at last spot in path, no partial measurment necessary
+        return inPlayer->pathLength - 1;
+        }
+
+    double distDone = fractionDone * inPlayer->pathDist;
+
     
-    int c = 
-        lrint( ( inPlayer->pathLength ) *
-               fractionDone );
-    return c - 1;
+    // walk through path steps until we see dist done
+    double totalLength = 0;
+    
+    GridPos lastPos = { inPlayer->xs, inPlayer->ys };
+    
+    double lastPosDist = 0;
+
+    for( int i=0; i<inPlayer->pathLength; i++ ) {
+
+        GridPos thisPos = inPlayer->pathToDest[i];
+        
+        double stepLen;
+        
+
+        if( thisPos.x != lastPos.x &&
+            thisPos.y != lastPos.y ) {
+            stepLen = diagLength;
+            }
+        else {
+            // not diag
+            stepLen = 1;
+            }
+
+        totalLength += stepLen;
+
+        if( totalLength > distDone ) {
+            // add in extra
+            printf( "Total length = %f at index %d\n",
+                    totalLength, i );
+            return ( i - 1 ) + (distDone - lastPosDist) / stepLen;
+            }
+
+        lastPos = thisPos;
+        lastPosDist += stepLen;
+        }
+    
+    return inPlayer->pathLength - 1;
     }
+
+
+
+
+int computePartialMovePathStep( LiveObject *inPlayer ) {
+    return lrint( computePartialMovePathStepPrecise( inPlayer ) );
+     }
+
+
+
+doublePair computePartialMoveSpotPrecise( LiveObject *inPlayer ) {
+
+    double c = computePartialMovePathStepPrecise( inPlayer );
+    
+    if( c == -1 ) {
+        doublePair result = { (double)inPlayer->xs, 
+                              (double)inPlayer->ys };
+        return result;
+        }
+
+    
+    int aInd = floor( c );
+    int bInd = ceil( c );
+    
+    
+    GridPos aPos;
+    
+    if( aInd >= 0 ) {
+        aPos = inPlayer->pathToDest[ aInd ];
+        }
+    else {
+        aPos.x = inPlayer->xs;
+        aPos.y = inPlayer->ys;
+        }
+    
+    double bMix = c - aInd;
+    
+    doublePair result = { (double)aPos.x, (double)aPos.y };
+    
+    if( bMix > 0 ) {
+        GridPos bPos = inPlayer->pathToDest[ bInd ];
+        
+        double aMix = 1.0 - bMix;
+        
+        result.x *= aMix;
+        result.y *= aMix;
+        
+        result.x += bMix * bPos.x;
+        result.y += bMix * bPos.y;
+        }
+    
+    return result;
+    }
+
 
 
 
@@ -2344,6 +2470,161 @@ GridPos getPlayerPos( LiveObject *inPlayer ) {
         return computePartialMoveSpot( inPlayer );
         }
     }
+
+
+
+
+
+static void restockPostWindowFamilies() {
+    // take stock of families
+    familyNamesAfterEveWindow.deallocateStringElements();
+    familyLineageEveIDsAfterEveWindow.deleteAll();
+    familyCountsAfterEveWindow.deleteAll();
+    nextBabyFamilyIndex = 0;
+    
+    int barrierRadius = SettingsManager::getIntSetting( "barrierRadius", 250 );
+    int barrierOn = SettingsManager::getIntSetting( "barrierOn", 1 );
+
+
+    if( postWindowFamilyLogFile != NULL ) {
+        fclose( postWindowFamilyLogFile );
+        }
+    char *fileName = autoSprintf( "%.f_familyPopLog.txt", Time::timeSec() );
+    
+    File folder( NULL, "familyPopLogs" );
+    
+    if( ! folder.exists() ) {
+        folder.makeDirectory();
+        }
+
+    File *logFile = folder.getChildFile( fileName );
+    delete [] fileName;
+    
+    char *fullPath = logFile->getFullFileName();
+    delete logFile;
+    
+    postWindowFamilyLogFile = fopen( fullPath, "w" );
+    
+    delete [] fullPath;
+    
+
+    for( int i=0; i<players.size(); i++ ) {
+        LiveObject *o = players.getElement( i );
+        
+        if( ! o->error &&
+            ! o->isTutorial &&
+            o->curseStatus.curseLevel == 0 &&
+            o->familyName != NULL &&
+            familyLineageEveIDsAfterEveWindow.getElementIndex( 
+                o->lineageEveID ) == -1 ) {
+            // haven't seen this family before
+
+            if( barrierOn ) {
+                // only fams inside the barrier
+                GridPos pos = getPlayerPos( o );
+                
+                if( abs( pos.x ) >= barrierRadius ||
+                    abs( pos.y ) >= barrierRadius ) {
+                    // player outside barrier
+                    continue;
+                    }
+                }
+
+            familyLineageEveIDsAfterEveWindow.push_back( 
+                o->lineageEveID );
+            familyNamesAfterEveWindow.push_back(
+                stringDuplicate( o->familyName ) );
+
+            // start with estimate of one person per family
+            familyCountsAfterEveWindow.push_back( 1 );
+            
+            
+            if( postWindowFamilyLogFile != NULL ) {
+                fprintf( postWindowFamilyLogFile, "\"%s\" ", o->familyName );
+                }
+            }
+        }
+    
+    if( postWindowFamilyLogFile != NULL ) {
+        fprintf( postWindowFamilyLogFile, "\n" );
+        }
+    }
+
+
+
+static void logFamilyCounts() {
+    if( postWindowFamilyLogFile != NULL ) {
+        int barrierRadius = 
+            SettingsManager::getIntSetting( "barrierRadius", 250 );
+        int barrierOn = SettingsManager::getIntSetting( "barrierOn", 1 );
+        
+
+        fprintf( postWindowFamilyLogFile, "%.2f ", Time::getCurrentTime() );
+        
+        for( int i=0; i<familyLineageEveIDsAfterEveWindow.size(); i++ ) {
+            int lineageEveID = 
+                familyLineageEveIDsAfterEveWindow.getElementDirect( i );
+            
+            int count = 0;
+
+            for( int p=0; p<players.size(); p++ ) {
+                LiveObject *o = players.getElement( p );
+                
+                if( ! o->error &&
+                    ! o->isTutorial &&
+                    o->curseStatus.curseLevel == 0 &&
+                    o->lineageEveID == lineageEveID ) {
+                    
+                    if( barrierOn ) {
+                        GridPos pos = getPlayerPos( o );
+                        
+                        if( abs( pos.x ) >= barrierRadius ||
+                            abs( pos.y ) >= barrierRadius ) {
+                            // player outside barrier
+                            continue;
+                            }
+                        }
+                    count++;
+                    }
+                }
+            fprintf( postWindowFamilyLogFile, "%d ", count );
+            // remember it
+            *( familyCountsAfterEveWindow.getElement( i ) ) = count;
+            }
+        
+        fprintf( postWindowFamilyLogFile, "\n" );
+        }
+    }
+
+
+
+static int getNextBabyFamilyLineageEveID() {
+    nextBabyFamilyIndex++;
+
+    if( nextBabyFamilyIndex >= familyCountsAfterEveWindow.size() ) {
+        nextBabyFamilyIndex = 0;
+        }
+
+    // skip dead fams and wrap around
+    char wrapOnce = false;
+    while( familyCountsAfterEveWindow.
+           getElementDirect( nextBabyFamilyIndex ) == 0 ) {
+        nextBabyFamilyIndex++;
+        
+        if( nextBabyFamilyIndex >= familyCountsAfterEveWindow.size() ) {
+            if( wrapOnce ) {
+                // already wrapped?
+                return -1;
+                }
+            nextBabyFamilyIndex = 0;
+            wrapOnce = true;
+            }
+        }
+
+    return familyLineageEveIDsAfterEveWindow.
+        getElementDirect( nextBabyFamilyIndex );
+    }
+
 
 
 
@@ -5770,6 +6051,7 @@ static char isEveWindow() {
         
         // new window starts if we ever get enough players again
         eveWindowStart = 0;
+        eveWindowOver = false;
         
         return true;
         }
@@ -5777,6 +6059,7 @@ static char isEveWindow() {
     if( eveWindowStart == 0 ) {
         // start window now
         eveWindowStart = Time::getCurrentTime();
+        eveWindowOver = false;
         return true;
         }
     else {
@@ -5784,8 +6067,18 @@ static char isEveWindow() {
         
         if( secSinceStart >
             SettingsManager::getIntSetting( "eveWindowSeconds", 3600 ) ) {
+            
+            if( ! eveWindowOver ) {
+                // eveWindow just ended
+
+                restockPostWindowFamilies();
+                }
+            
+            eveWindowOver = true;
             return false;
             }
+
+        eveWindowOver = false;
         return true;
         }
     }
@@ -5803,6 +6096,17 @@ static void triggerApocalypseNow( const char *inMessage ) {
     
     // reset other apocalypse trigger
     lastBabyPassedThresholdTime = 0;
+    
+    // repopulate this list later when next Eve window ends
+    familyNamesAfterEveWindow.deallocateStringElements();
+    familyLineageEveIDsAfterEveWindow.deleteAll();
+    familyCountsAfterEveWindow.deleteAll();
+    nextBabyFamilyIndex = 0;
+    
+    if( postWindowFamilyLogFile != NULL ) {
+        fclose( postWindowFamilyLogFile );
+        postWindowFamilyLogFile = NULL;
+        }
     }
 
 
@@ -6625,13 +6929,25 @@ int processLoggedInPlayer( char inAllowReconnect,
             
             // max YumMult worth same that perfect temp is worth (0.5 weight)
 
+
+            // after Eve window, give each baby to a different family
+            // round-robin
+            int pickedFamLineageEveID = -1;
+            
+            if( ! eveWindow && familyLimitAfterEveWindow == 0 ) {    
+                pickedFamLineageEveID = getNextBabyFamilyLineageEveID();
+                }
+            
+
             double totalWeight = 0;
+            
+            SimpleVector<double> filteredParentChoiceWeights;
             
             for( int i=0; i<filteredParentChoices.size(); i++ ) {
                 LiveObject *p = filteredParentChoices.getElementDirect( i );
 
                 // temp part of weight
-                totalWeight += 0.5 - fabs( p->heat - 0.5 );
+                double thisMotherWeight = 0.5 - fabs( p->heat - 0.5 );
                 
 
                 int yumMult = p->yummyFoodChain.size() - 1;
@@ -6641,7 +6957,20 @@ int processLoggedInPlayer( char inAllowReconnect,
                     }
 
                 // yum mult part of weight
-                totalWeight += 0.5 * yumMult / (double) maxYumMult;
+                thisMotherWeight += 0.5 * yumMult / (double) maxYumMult;
+                
+                if( pickedFamLineageEveID != -1 &&
+                    p->lineageEveID == pickedFamLineageEveID ) {
+                    // this is chosen family
+                    // multiply their weights by 1000x to make
+                    // them inevitable
+                    // (they will still compete with each other)
+                    thisMotherWeight *= 1000;
+                    }
+                
+                filteredParentChoiceWeights.push_back( thisMotherWeight );
+                
+                totalWeight += thisMotherWeight;
                 }
 
             double choice = 
@@ -6652,18 +6981,9 @@ int processLoggedInPlayer( char inAllowReconnect,
             
             for( int i=0; i<filteredParentChoices.size(); i++ ) {
                 LiveObject *p = filteredParentChoices.getElementDirect( i );
-
-                totalWeight += 0.5 - fabs( p->heat - 0.5 );
-
-
-                int yumMult = p->yummyFoodChain.size() - 1;
-                                
-                if( yumMult < 0 ) {
-                    yumMult = 0;
-                    }
-
-                // yum mult part of weight
-                totalWeight += 0.5 * yumMult / (double) maxYumMult;
+                
+                totalWeight += 
+                    filteredParentChoiceWeights.getElementDirect( i );
 
                 if( totalWeight >= choice ) {
                     parent = p;
@@ -7328,6 +7648,9 @@ int processLoggedInPlayer( char inAllowReconnect,
                    newObject.email, newObject.id,
                    inTutorialNumber, newObject.xs, newObject.ys,
                    maxPlacementX );
+
+    // generate log line whenever a new baby is born
+    logFamilyCounts();
     
     return newObject.id;
     }
@@ -9137,9 +9460,11 @@ void apocalypseStep() {
                 // send everyone update about everyone
                 for( int i=0; i<players.size(); i++ ) {
                     LiveObject *nextPlayer = players.getElement( i );
-                    nextPlayer->firstMessageSent = false;
-                    nextPlayer->firstMapSent = false;
-                    nextPlayer->inFlight = false;
+                    if( nextPlayer->connected ) {    
+                        nextPlayer->firstMessageSent = false;
+                        nextPlayer->firstMapSent = false;
+                        nextPlayer->inFlight = false;
+                        }
                     }
 
                 postApocalypseStarted = true;
@@ -9150,7 +9475,7 @@ void apocalypseStep() {
                 
                 for( int i=0; i<players.size(); i++ ) {
                     LiveObject *nextPlayer = players.getElement( i );
-                    if( ! nextPlayer->firstMapSent ) {
+                    if( nextPlayer->connected && ! nextPlayer->firstMapSent ) {
                         allMapAndUpdate = false;
                         break;
                         }
@@ -12937,6 +13262,12 @@ int main() {
                         char interrupt = false;
                         char pathPrefixAdded = false;
                         
+
+                        // where exactly did we used to be standing?
+                        doublePair startPosPrecise =
+                            computePartialMoveSpotPrecise( nextPlayer );
+                                
+
                         // first, construct a path from any existing
                         // path PLUS path that player is suggesting
                         SimpleVector<GridPos> unfilteredPath;
@@ -13339,6 +13670,48 @@ int main() {
                                                        nextPlayer->pathToDest,
                                                        nextPlayer->pathLength );
  
+                                nextPlayer->pathDist = dist;
+
+                                
+                                // get precise about distance for move timing
+                                // we don't necessarily start right
+                                // at naiveStart, but often some distance
+                                // along (or further behind)
+                                GridPos naiveStart;
+                                
+                                if( startIndex > 0 ) {
+                                    naiveStart = 
+                                        nextPlayer->pathToDest[ startIndex -1 ];
+                                    }
+                                else {
+                                    naiveStart.x = nextPlayer->xs;
+                                    naiveStart.y = nextPlayer->ys;
+                                    }
+                                
+                                double naiveStartDist = 
+                                    distance( 
+                                        naiveStart,
+                                        nextPlayer->pathToDest[startIndex] );
+                                
+                                // subtract out this naive
+                                // first-step distance
+                                // before adding in the true distance
+                                dist -= naiveStartDist;
+                                
+                                doublePair newFirstSpot = 
+                                    { (double)
+                                      nextPlayer->pathToDest[startIndex].x,
+                                      (double)
+                                      nextPlayer->pathToDest[startIndex].y };
+                                
+                                        
+                                // now add in true distance to first spot
+                                dist +=
+                                    distance( startPosPrecise, newFirstSpot );
+  
+
+                                
+
                                 double distAlreadyDone =
                                     measurePathLength( nextPlayer->xs,
                                                        nextPlayer->ys,
@@ -13999,9 +14372,10 @@ int main() {
                                                 &hungryWorkCost );
                                         
                                         if( nextPlayer->foodStore < 
-                                            hungryWorkCost ) {
+                                            hungryWorkCost + 5 ) {
                                             // block transition,
-                                            // not enough food
+                                            // not enough food to have a
+                                            // "safe" buffer after
                                             r = NULL;
                                             }
                                         }
@@ -14156,19 +14530,24 @@ int main() {
                                         }
                                     
                                     if( hungryWorkCost > 0 ) {
-                                        int oldStore = nextPlayer->foodStore;
+                                        if( nextPlayer->yummyBonusStore > 0 ) {
+                                            if( nextPlayer->yummyBonusStore
+                                                >= hungryWorkCost ) {
+                                                nextPlayer->yummyBonusStore -=
+                                                    hungryWorkCost;
+                                                hungryWorkCost = 0;
+                                                }
+                                            else {
+                                                hungryWorkCost -= 
+                                                    nextPlayer->yummyBonusStore;
+                                                nextPlayer->yummyBonusStore = 0;
+                                                }
+                                            }
                                         
                                         nextPlayer->foodStore -= hungryWorkCost;
                                         
-                                        if( nextPlayer->foodStore < 3 ) {
-                                            if( oldStore > 3  ) {
-                                                // generally leave
-                                                // player with 3 food
-                                                // unless they had less than
-                                                // 3 to start
-                                                nextPlayer->foodStore = 3;
-                                                }
-                                            }
+                                        // we checked above, so player
+                                        // never is taken down below 5 here
                                         nextPlayer->foodUpdate = true;
                                         }
                                     
@@ -16018,11 +16397,16 @@ int main() {
                 nextPlayer->updateGlobal = true;
                 }
             else if( nextPlayer->error && ! nextPlayer->deleteSent ) {
-
+                
+                // generate log line whenever player dies
+                logFamilyCounts();
+                
                 
                 // check if we should send global message about a family's
                 // demise
-                if( ! isEveWindow() ) {
+                if( ! nextPlayer->isTutorial && 
+                    nextPlayer->curseStatus.curseLevel == 0 &&
+                    ! isEveWindow() ) {
                     int minFamiliesAfterEveWindow =
                         SettingsManager::getIntSetting( 
                             "minFamiliesAfterEveWindow", 5 );

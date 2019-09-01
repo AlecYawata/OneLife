@@ -1,4 +1,4 @@
-int versionNumber = 5;
+int versionNumber = 6;
 int dataVersionNumber = 0;
 
 int binVersionNumber = versionNumber;
@@ -1875,8 +1875,13 @@ void drawFrame( char inUpdate ) {
             }
         else if( currentGamePage == twinPage ) {
             if( twinPage->checkSignal( "cancel" ) ) {
-                existingAccountPage->setStatus( NULL, false );
-                currentGamePage = existingAccountPage;
+                if( isHardToQuitMode() ) {
+                    currentGamePage = rebirthChoicePage;
+                    }
+                else {
+                    existingAccountPage->setStatus( NULL, false );
+                    currentGamePage = existingAccountPage;
+                    }
                 currentGamePage->base_makeActive( true );
                 }
             else if( twinPage->checkSignal( "done" ) ) {
@@ -2135,15 +2140,19 @@ void drawFrame( char inUpdate ) {
                 }
             else if( livingLifePage->checkSignal( "twinCancel" ) ) {
                 
-                existingAccountPage->setStatus( NULL, false );
-
                 lastScreenViewCenter.x = 0;
                 lastScreenViewCenter.y = 0;
 
                 setViewCenterPosition( lastScreenViewCenter.x, 
                                        lastScreenViewCenter.y );
                 
-                currentGamePage = existingAccountPage;
+                if( isHardToQuitMode() ) {
+                    currentGamePage = rebirthChoicePage;
+                    }
+                else {
+                    existingAccountPage->setStatus( NULL, false );    
+                    currentGamePage = existingAccountPage;
+                    }
                 
                 currentGamePage->base_makeActive( true );
                 }
@@ -2274,6 +2283,10 @@ void drawFrame( char inUpdate ) {
                 }
             else if( rebirthChoicePage->checkSignal( "genes" ) ) {
                 currentGamePage = geneticHistoryPage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( rebirthChoicePage->checkSignal( "friends" ) ) {
+                currentGamePage = twinPage;
                 currentGamePage->base_makeActive( true );
                 }
             else if( rebirthChoicePage->checkSignal( "quit" ) ) {
