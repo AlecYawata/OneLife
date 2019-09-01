@@ -2335,10 +2335,19 @@ double computePartialMovePathStepPrecise( LiveObject *inPlayer ) {
     if( fractionDone > 1 ) {
         fractionDone = 1;
         }
+    
+    if( fractionDone < 0 ) {
+        fractionDone = 0;
+        }
 
     if( fractionDone == 1 ) {
         // at last spot in path, no partial measurment necessary
         return inPlayer->pathLength - 1;
+        }
+    
+    if( fractionDone == 0 ) {
+        // at start location, before first spot in path
+        return -1;
         }
 
     double distDone = fractionDone * inPlayer->pathDist;
@@ -3878,8 +3887,9 @@ static void setPlayerDisconnected( LiveObject *inPlayer,
 
 
 
-
-static void sendGlobalMessage( char *inMessage ) {
+// if inOnePlayerOnly set, we only send to that player
+static void sendGlobalMessage( char *inMessage,
+                               LiveObject *inOnePlayerOnly = NULL ) {
     char found;
     char *noSpaceMessage = replaceAll( inMessage, " ", "_", &found );
 
@@ -3892,6 +3902,10 @@ static void sendGlobalMessage( char *inMessage ) {
     for( int i=0; i<players.size(); i++ ) {
         LiveObject *o = players.getElement( i );
         
+        if( inOnePlayerOnly != NULL && o != inOnePlayerOnly ) {
+            continue;
+            }
+
         if( ! o->error && ! o->isTutorial && o->connected ) {
             int numSent = 
                 o->sock->send( (unsigned char*)fullMessage, 
@@ -7479,6 +7493,15 @@ int processLoggedInPlayer( char inAllowReconnect,
             
             newObject.lineage->push_back( 
                 parent->lineage->getElementDirect( i ) );
+            }
+
+        if( strstr( newObject.email, "paxkiosk" ) ) {
+            // whoa, this baby is a PAX player!
+            // let the mother know
+            sendGlobalMessage( 
+                (char*)"YOUR BABY IS A NEW PLAYER FROM THE PAX EXPO BOOTH.**"
+                "PLEASE HELP THEM LEARN THE GAME.  THANKS!  -JASON",
+                parent );
             }
         }
 
@@ -13726,7 +13749,15 @@ int main() {
                                 
                                 nextPlayer->moveTotalSeconds = dist / 
                                     moveSpeed;
-                           
+                                
+                                if( nextPlayer->moveTotalSeconds <= 0.1 ) {
+                                    // never allow moveTotalSeconds to be
+                                    // 0, too small, or negative
+                                    // (we divide by it in certain 
+                                    // calculations)
+                                    nextPlayer->moveTotalSeconds = 0.1;
+                                    }
+                                
                                 double secondsAlreadyDone = distAlreadyDone / 
                                     moveSpeed;
                                 /*
