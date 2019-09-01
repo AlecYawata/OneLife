@@ -114,6 +114,8 @@ GamePage *currentGamePage = NULL;
 
 
 
+float gui_fov_scale = 1.0f;
+float gui_fov_scale_hud = 1.0f;
 
 
 

@@ -7,6 +7,7 @@
 #include <math.h>
 
 #ifdef _WIN32
+#include <io.h>
 #define fseeko fseeko64
 #define ftello ftello64
 #endif
@@ -627,6 +628,13 @@ int LINEARDB3_open(
             fclose( inDB->file );
             fclose( tempFile );
             
+#ifdef _WIN32
+            if (_access_s(inPath, 0) == 0) {
+                if (remove(inPath) != 0) {
+                    printf( "Failed remove lineardb3 file %s for rename ", inPath );
+                }
+            }
+#endif
             if( rename( tempPath, inPath ) != 0 ) {
                 printf( "Failed overwrite lineardb3 file %s with "
                         "truncation file %s\n", inPath, tempPath );
