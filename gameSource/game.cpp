@@ -601,7 +601,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     postUpdate();
         
 
-    instructionsSprite = loadWhiteSprite( "instructions_ja.tga" );
+    instructionsSprite = loadWhiteSprite( "instructions.tga" );
     
     
 

@@ -1,7 +1,9 @@
 #include "TextField.h"
 
 #include <string.h>
+#ifdef WIN_32
 #include <mbstring.h>
+#endif
 
 #include "minorGems/game/game.h"
 #include "minorGems/game/gameGraphics.h"
@@ -1328,7 +1330,7 @@ unsigned char* TextField::processCharacter( unsigned char* pInASCII ) {
             }
 
         if( mAllowHiragana ) {
-            for ( u_int i=0; i<sizeof(allowedFurigana)/sizeof(allowedFurigana[0]); i++ ) {
+            for ( unsigned int i=0; i<sizeof(allowedFurigana)/sizeof(allowedFurigana[0]); i++ ) {
                 bool isAllowd = true;
                 for ( int j=0; allowedFurigana[i][j] != '\0'; j++ ) {
                     if (pInASCII[j] != allowedFurigana[i][j]) {
