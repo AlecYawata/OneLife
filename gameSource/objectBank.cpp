@@ -505,6 +505,21 @@ static void setupMaxPickupAge( ObjectRecord *inR ) {
 
 
 
+static void setupWall( ObjectRecord *inR ) {
+    inR->wallLayer = inR->floorHugging;
+    
+    if( inR->wallLayer ) {
+        return;
+        }
+
+    char *wallPos = strstr( inR->description, "+wall" );
+    if( wallPos != NULL ) {
+        inR->wallLayer = true;
+        }
+    }
+
+
+
 int getMaxSpeechPipeIndex() {
     return maxSpeechPipeIndex;
     }
@@ -581,6 +596,10 @@ float initObjectBankStep() {
                 
                 setupMaxPickupAge( r );
                 
+                // do this later, after we parse floorHugging
+                // setupWall( r );
+                
+
                 r->horizontalVersionID = -1;
                 r->verticalVersionID = -1;
                 r->cornerVersionID = -1;
@@ -824,6 +843,9 @@ float initObjectBankStep() {
                     
                     next++;
                     }
+
+
+                setupWall( r );
 
                             
                 sscanf( lines[next], "foodValue=%d", 
@@ -3152,6 +3174,8 @@ int addObject( const char *inDescription,
     setupNoHighlight( r );
                 
     setupMaxPickupAge( r );
+
+    setupWall( r );
 
     r->horizontalVersionID = -1;
     r->verticalVersionID = -1;

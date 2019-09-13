@@ -118,6 +118,10 @@ class TextField : public PageComponent, public ActionListenerList {
         // defaults to side
         void setLabelTop( char inLabelOnTop );
         
+        
+        // defaults to off
+        void usePasteShortcut( char inShortcutOn );
+        
 
         
         virtual void setActive( char inActive );
@@ -231,6 +235,7 @@ class TextField : public PageComponent, public ActionListenerList {
         int mCursorFlashSteps;
         
         bool mAllowHiragana;
+        char mUsePasteShortcut;
         
         void fixSelectionStartEnd();
 

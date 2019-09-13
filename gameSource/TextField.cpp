@@ -59,7 +59,8 @@ TextField::TextField( Font *inDisplayFont,
           mSelectionEnd( -1 ),
           mShiftPlusArrowsCanSelect( false ),
           mAllowHiragana( allowHiragana ),
-          mCursorFlashSteps( 0 ) {
+          mCursorFlashSteps( 0 ),
+          mUsePasteShortcut( false ) {
     
     if( inLabelText != NULL ) {
         mLabelText = stringDuplicate( inLabelText );
@@ -1525,6 +1526,38 @@ void TextField::keyDown( unsigned char inASCII ) {
         // not a normal key stroke (command key)
         // ignore it as input
 
+        if( mUsePasteShortcut && ( inASCII == 'v' || inASCII == 22 ) ) {
+            // ctrl-v is SYN on some platforms
+            
+            // paste!
+            if( isClipboardSupported() ) {
+                char *clipboardText = getClipboardText();
+        
+                int len = strlen( clipboardText );
+                
+                for( int i=0; i<len; i++ ) {
+                    
+                    unsigned char processedChar = 
+                        processCharacter( clipboardText[i] );    
+
+                    if( processedChar != 0 ) {
+                        
+                        insertCharacter( processedChar );
+                        }
+                    }
+                delete [] clipboardText;
+                
+                mHoldDeleteSteps = -1;
+                mFirstDeleteRepeatDone = false;
+                
+                clearArrowRepeat();
+                
+                if( mFireOnAnyChange ) {
+                    fireActionPerformed( this );
+                    }
+                }
+            }
+
         // but ONLY if it's an alphabetical key (A-Z,a-z)
         // Some international keyboards use ALT to type certain symbols
 
@@ -2109,4 +2142,11 @@ void TextField::fixSelectionStartEnd() {
 void TextField::setShiftArrowsCanSelect( char inCanSelect ) {
     mShiftPlusArrowsCanSelect = inCanSelect;
     }
+
+
+
+void TextField::usePasteShortcut( char inShortcutOn ) {
+    mUsePasteShortcut = inShortcutOn;
+    }
+
 
