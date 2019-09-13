@@ -1537,12 +1537,12 @@ void TextField::keyDown( unsigned char inASCII ) {
                 
                 for( int i=0; i<len; i++ ) {
                     
-                    unsigned char processedChar = 
-                        processCharacter( clipboardText[i] );    
+                    unsigned char* processedChar = 
+                        processCharacter( (unsigned char*)clipboardText + i );    
 
-                    if( processedChar != 0 ) {
+                    if( *processedChar != 0 ) {
                         
-                        insertCharacter( processedChar );
+                        insertCharacter( *processedChar );
                         }
                     }
                 delete [] clipboardText;
