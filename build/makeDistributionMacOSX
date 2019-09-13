@@ -44,6 +44,9 @@ cd ../..
 
 
 cp -r macOSX/OneLife.app mac/OneLife_$1/OneLife_$1.app
+cp macOSX/font.ttf mac/OneLife_$1
+cp macOSX/GenEiGothicP-Bold_LICENSE.txt mac/OneLife_$1
+cp macOSX/GenEiGothicP-Bold.otf mac/OneLife_$1
 cp ../gameSource/OneLife mac/OneLife_$1/OneLife_$1.app/Contents/MacOS
 
 rm -r mac/OneLife_$1/OneLife_$1.app/Contents/MacOS/empty.txt
@@ -63,6 +66,7 @@ echo "$1 built on $d" > OneLife_$1/binary.txt
 tar cf "OneLife_$1_$2.tar" OneLife_$1
 gzip "OneLife_$1_$2.tar"
 
+tar cf "OneLife_$1_$2" OneLife_$1
 
 
 
