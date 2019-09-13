@@ -9995,7 +9995,8 @@ void LivingLifePage::pushHintHistory() {
             return;
             }
         }
-    mHintHistories.push_back( { mCurrentHintObjectID, mCurrentHintIndex, mCurrentHintReverse, } );
+    HintHistory history = { mCurrentHintObjectID, mCurrentHintIndex, mCurrentHintReverse, };
+    mHintHistories.push_back( history );
     }
 
 void LivingLifePage::popHintHistory() {
@@ -10095,7 +10096,8 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
                 }
             }
         if( !exist ) {
-            existPairList.push_back( { findMainObjectID( tr->actor ), findMainObjectID( tr->target) });
+            TransPair pair = { findMainObjectID( tr->actor ), findMainObjectID( tr->target) };
+            existPairList.push_back( pair );
             queue.insert( tr, depth );
             }
         }
