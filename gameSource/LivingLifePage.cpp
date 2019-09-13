@@ -2279,13 +2279,13 @@ LivingLifePage::LivingLifePage()
           mMapOffsetY( 0 ),
           mEKeyEnabled( false ),
           mEKeyDown( false ),
-          mGuiPanelSprite( loadSprite( "guiPanel_ja.tga", false ) ),
+          mGuiPanelSprite( loadSprite( "guiPanel.tga", false ) ),
           mGuiBloodSprite( loadSprite( "guiBlood.tga", false ) ),
           mNotePaperSprite( loadSprite( "notePaper.tga", false ) ),
           mFloorSplitSprite( loadSprite( "floorSplit.tga", false ) ),
           mCellBorderSprite( loadWhiteSprite( "cellBorder.tga" ) ),
           mCellFillSprite( loadWhiteSprite( "cellFill.tga" ) ),
-          mHomeSlipSprite( loadSprite( "homeSlip_ja.tga", false ) ),
+          mHomeSlipSprite( loadSprite( "homeSlip.tga", false ) ),
           mLastMouseOverID( 0 ),
           mCurMouseOverID( 0 ),
           mChalkBlotSprite( loadWhiteSprite( "chalkBlot.tga" ) ),
@@ -2422,9 +2422,9 @@ LivingLifePage::LivingLifePage()
         }
     
 
-    mHungerSlipSprites[0] = loadSprite( "fullSlip_ja.tga", false );
-    mHungerSlipSprites[1] = loadSprite( "hungrySlip_ja.tga", false );
-    mHungerSlipSprites[2] = loadSprite( "starvingSlip_ja.tga", false );
+    mHungerSlipSprites[0] = loadSprite( "fullSlip.tga", false );
+    mHungerSlipSprites[1] = loadSprite( "hungrySlip.tga", false );
+    mHungerSlipSprites[2] = loadSprite( "starvingSlip.tga", false );
     
 
     // not visible, drawn under world at 0, 0, and doesn't move with camera
@@ -2576,8 +2576,8 @@ LivingLifePage::LivingLifePage()
     // FOVMOD NOTE:  Change 3/26 - Take these lines during the merge process
     calcOffsetHUD();
 
-    Image *tempImage = readTGAFile( "guiPanel_ja.tga" );
-    Image *tempImage2;
+	Image *tempImage = readTGAFile( "guiPanel.tga" );
+	Image *tempImage2;
 
     tempImage2 = tempImage->getSubImage( tempImage->getWidth() / 2 - 640, 0, 512, tempImage->getHeight() );
     guiPanelLeftSprite = fillSprite( tempImage2 );
