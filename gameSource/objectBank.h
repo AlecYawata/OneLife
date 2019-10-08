@@ -377,6 +377,7 @@ typedef struct ObjectRecord {
         
         // for auto-orienting fences, walls, etc
         // all three objects know the IDs of all three objects
+        char isAutoOrienting;
         int horizontalVersionID;
         int verticalVersionID;
         int cornerVersionID;

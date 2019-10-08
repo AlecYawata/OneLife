@@ -116,6 +116,7 @@
 #include <stdarg.h>
 #include <math.h>
 //#include <values.h>
+#include <limits.h>
 #include <stdint.h>
 
 
@@ -6340,9 +6341,7 @@ static int neighborWallAgree( int inX, int inY, ObjectRecord *inSetO,
         int oID = getMapObjectRaw( inX + nX[n], inY + nY[n] );
         
         if( oID > 0 ) {
-            if( oID == inSetO->horizontalVersionID ||
-                oID == inSetO->verticalVersionID ||
-                oID == inSetO->cornerVersionID ) {
+            if( getObject( oID )->isAutoOrienting ) {
                 nSet[n] = true;
                 nID[n] = oID;
                 }

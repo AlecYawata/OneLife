@@ -2289,6 +2289,7 @@ LivingLifePage::LivingLifePage()
           mFloorSplitSprite( loadSprite( "floorSplit.tga", false ) ),
           mCellBorderSprite( loadWhiteSprite( "cellBorder.tga" ) ),
           mCellFillSprite( loadWhiteSprite( "cellFill.tga" ) ),
+          mHintArrowSprite( loadSprite( "hintArrow.tga" ) ),
           mHomeSlipSprite( loadSprite( "homeSlip.tga", false ) ),
           mLastMouseOverID( 0 ),
           mCurMouseOverID( 0 ),
@@ -2540,6 +2541,13 @@ LivingLifePage::LivingLifePage()
 
     mLastHintSortedSourceID = 0;
     mLastHintReverse = false;
+    
+    mCurrentHintTargetObject = 0;
+    mCurrentHintTargetPointerBounce = 0;
+
+    mLastHintTargetPos.x = 0;
+    mLastHintTargetPos.y = 0;
+
 
     int maxObjectID = getMaxObjectID();
     
@@ -2881,7 +2889,8 @@ LivingLifePage::~LivingLifePage() {
     
     freeSprite( mCellBorderSprite );
     freeSprite( mCellFillSprite );
-    
+    freeSprite( mHintArrowSprite );
+
     freeSprite( mNotePaperSprite );
     freeSprite( mChalkBlotSprite );
     freeSprite( mPathMarkSprite );
@@ -3425,7 +3434,8 @@ SimpleVector<OffScreenSound> offScreenSounds;
 
 
 static void addOffScreenSound( double inPosX, double inPosY,
-                               char *inDescription ) {
+                               char *inDescription,
+                               double inFadeSec = 4 ) {
 
     char red = false;
     
@@ -3440,7 +3450,7 @@ static void addOffScreenSound( double inPosX, double inPosY,
             }
         }
     
-    double fadeETATime = game_getCurrentTime() + 4;
+    double fadeETATime = game_getCurrentTime() + inFadeSec;
     
     doublePair pos = { inPosX, inPosY };
     
@@ -3538,7 +3548,8 @@ void LivingLifePage::drawOffScreenSounds() {
 
 
 
-void LivingLifePage::handleAnimSound( int inObjectID, double inAge, 
+void LivingLifePage::handleAnimSound( int inSourcePlayerID, 
+                                      int inObjectID, double inAge, 
                                       AnimType inType,
                                       int inOldFrameCount, int inNewFrameCount,
                                       double inPosX, double inPosY ) {    
@@ -3619,7 +3630,25 @@ void LivingLifePage::handleAnimSound( int inObjectID, double inAge,
                     
                     playSound( u,
                                getVectorFromCamera( inPosX, inPosY ) );
+
+                    char *des = getObject( inObjectID )->description;
                     
+                    if( inSourcePlayerID != ourID &&
+                        strstr( des, "offScreenSound" ) != NULL ) {
+                        // this object has offscreen-visible sounds
+                        // AND its animation has sounds
+                        // renew offscreen sound for each new sound played
+                        
+                        // these have very short fade
+                        // so that we don't have a bunch of overlap
+                        addOffScreenSound(
+                            inPosX *
+                            CELL_D, 
+                            inPosY *
+                            CELL_D,
+                            des,
+                            0.5 );
+                        }
                     }
                 }
             }
@@ -3705,9 +3734,14 @@ void LivingLifePage::drawMapCell( int inMapI,
         doublePair pos = { (double)inScreenX, (double)inScreenY };
         double rot = 0;
         
+        fixWatchedObjectDrawPos( pos );
+
         if( mMapDropOffsets[ inMapI ].x != 0 ||
             mMapDropOffsets[ inMapI ].y != 0 ) {
-                    
+            
+            // ignore objects sliding into place until they come to rest
+            ignoreWatchedObjectDraw( true );
+            
             doublePair nullOffset = { 0, 0 };
                     
 
@@ -3778,6 +3812,8 @@ void LivingLifePage::drawMapCell( int inMapI,
         if( mMapMoveSpeeds[inMapI] > 0 &&
             ( mMapMoveOffsets[ inMapI ].x != 0 ||
               mMapMoveOffsets[ inMapI ].y != 0  ) ) {
+
+            ignoreWatchedObjectDraw( true );
 
             pos = add( pos, mult( mMapMoveOffsets[ inMapI ], CELL_D ) );
             }
@@ -3876,7 +3912,8 @@ void LivingLifePage::drawMapCell( int inMapI,
         
 
         if( !mapPullMode && !inHighlightOnly && !inNoTimeEffects ) {
-            handleAnimSound( oID, 0, mMapCurAnimType[ inMapI ], oldFrameCount, 
+            handleAnimSound( -1,
+                             oID, 0, mMapCurAnimType[ inMapI ], oldFrameCount, 
                              mMapAnimationFrameCount[ inMapI ],
                              pos.x / CELL_D,
                              pos.y / CELL_D );
@@ -4058,6 +4095,7 @@ void LivingLifePage::drawMapCell( int inMapI,
             }
         
         
+        ignoreWatchedObjectDraw( false );
         
         }
     else if( oID == -1 ) {
@@ -5691,7 +5729,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
             
                 if( !mapPullMode ) {                    
-                    handleAnimSound( oID, 0, ground, oldFrameCount, 
+                    handleAnimSound( -1, oID, 0, ground, oldFrameCount, 
                                      mMapFloorAnimationFrameCount[ mapI ],
                                      (double)screenX / CELL_D,
                                      (double)screenY / CELL_D );
@@ -5844,6 +5882,16 @@ void LivingLifePage::draw( doublePair inViewCenter,
     //toggleAdditiveTextureColoring( false );
     toggleAdditiveBlend( false );
     
+
+    LiveObject *ourLiveObject = getOurLiveObject();
+    
+    if( ourLiveObject != NULL ) {
+        startWatchForClosestObjectDraw( mCurrentHintTargetObject,
+                                        mult( ourLiveObject->currentPos,
+                                              CELL_D ) );
+        }
+
+
     
     float maxFullCellFade = 0.5;
     float maxEmptyCellFade = 0.75;
@@ -6011,6 +6059,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
 
     // draw long path for our character
+    
     if( ourLiveObject != NULL ) {
         
         if( ourLiveObject->currentPos.x != ourLiveObject->xd 
@@ -6538,6 +6587,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
             if( drawRec.person ) {
                 LiveObject *o = drawRec.personO;
                 
+                ignoreWatchedObjectDraw( true );
+
                 ObjectAnimPack heldPack =
                     drawLiveObject( o, &speakers, &speakersPos );
                 
@@ -6583,8 +6634,11 @@ void LivingLifePage::draw( doublePair inViewCenter,
                         heldToDrawOnTop.push_back( heldPack );
                         }
                     }
+                ignoreWatchedObjectDraw( false );
                 }
             else if( drawRec.extraMovingObj ) {
+                ignoreWatchedObjectDraw( true );
+                
                 ExtraMapObject *mO = mMapExtraMovingObjects.getElement(
                     drawRec.extraMovingIndex );
                 
@@ -6602,6 +6656,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
                 // put original one back
                 putInMap( drawRec.mapI, &curO );
+                
+                ignoreWatchedObjectDraw( false );
                 }
             else {
                 drawMapCell( drawRec.mapI, drawRec.screenX, drawRec.screenY );
@@ -6689,9 +6745,11 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
         // now draw held flying objects on top of objects in this row
         // but still behind walls in this row
+        ignoreWatchedObjectDraw( true );
         for( int i=0; i<heldToDrawOnTop.size(); i++ ) {
             drawObjectAnim( heldToDrawOnTop.getElementDirect( i ) );
             }
+        ignoreWatchedObjectDraw( false );
 
 
 
@@ -6770,6 +6828,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
     
 
     // finally, draw any highlighted our-placements
+    if( ! takingPhoto )
     if( mCurMouseOverID > 0 && ! mCurMouseOverSelf && mCurMouseOverBehind ) {
         int worldY = mCurMouseOverSpot.y + mMapOffsetY - mMapD / 2;
         
@@ -6782,7 +6841,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
         // highlights only
         drawMapCell( mapI, screenX, screenY, true );
         }
-    
+
+    if( ! takingPhoto )
     for( int i=0; i<mPrevMouseOverSpots.size(); i++ ) {
         if( mPrevMouseOverSpotsBehind.getElementDirect( i ) ) {
                 
@@ -6801,6 +6861,61 @@ void LivingLifePage::draw( doublePair inViewCenter,
             }
         }
     
+
+    char pointerDrawn = false;
+
+    if( ! takingPhoto && mCurrentHintTargetObject > 0 ) {
+        // draw pointer to closest hint target object
+        
+        char drawn = false;
+        doublePair targetPos = getClosestObjectDraw( &drawn );
+
+        
+
+        if( drawn ) {
+            
+            // round to closest cell pos
+            targetPos.x = CELL_D * lrint( targetPos.x / CELL_D );
+            targetPos.y = CELL_D * lrint( targetPos.y / CELL_D );
+            
+            // move up
+            targetPos.y += 64;
+
+            if( !equal( targetPos, mLastHintTargetPos ) ) {
+                // reset bounce when target changes
+                mCurrentHintTargetPointerBounce = 0;
+                mLastHintTargetPos = targetPos;        
+                }
+            
+            
+            targetPos.y += 16 * cos( mCurrentHintTargetPointerBounce );
+            
+            mCurrentHintTargetPointerBounce +=
+                6 * frameRateFactor / 60.0;
+
+            float fade = 1.0f;
+            
+            if( mCurrentHintTargetPointerBounce < 1 ) {
+                fade = mCurrentHintTargetPointerBounce;
+                }
+            
+            setDrawColor( 1, 1, 1, fade );
+
+            drawSprite( mHintArrowSprite, targetPos );
+            
+            pointerDrawn = true;
+            }
+        }
+    if( ! pointerDrawn ) {
+        // reset bounce
+        mCurrentHintTargetPointerBounce = 0;
+        mLastHintTargetPos.x = 0;
+        mLastHintTargetPos.y = 0;
+        }
+    
+        
+
+
     
     if( ! takingPhoto )
     for( int i=0; i<speakers.size(); i++ ) {
@@ -6857,6 +6972,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
 
 
+    if( ! takingPhoto )
     for( int i=0; i<locationSpeech.size(); i++ ) {
         LocationSpeech *ls = locationSpeech.getElement( i );
         
@@ -10043,6 +10159,10 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
         return mLastHintSortedList.size();
         }
     
+    
+    mCurrentHintTargetObject = 0;
+
+
     // else need to regenerated sorted list
 
     mLastHintSortedSourceID = inObjectID;
@@ -10258,7 +10378,7 @@ HintObject LivingLifePage::getHintObject( int inObjectID, int inIndex, bool reve
     return retHint;
     }
 
-char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse ) {
+char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse, int inDoNotPointAtThis ) {
 
     if( inObjectID != mLastHintSortedSourceID ) {
         getNumHints( inObjectID, reverse );
@@ -10295,7 +10415,6 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse 
 
         
         char eventually = false;
-        
         
         char *targetString;
         
@@ -10341,6 +10460,30 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse 
         else {
             targetString = stringDuplicate( "" );
             }
+
+
+        // never show visual pointer toward what we're holding
+        if( target > 0 && target != inObjectID && 
+            target != inDoNotPointAtThis ) {
+            mCurrentHintTargetObject = target;
+            }
+        else if( actor > 0 && actor != inObjectID &&
+                 actor != inDoNotPointAtThis ) {
+            mCurrentHintTargetObject = actor;
+            }
+        else if( actor > 0 && target > 0 &&
+                 actor == target ) {
+            // both actor and target are same
+            // show pointer to ones that are on the ground
+            mCurrentHintTargetObject = actor;
+            }
+        else if( actor == 0 && target > 0 && 
+                 target != inDoNotPointAtThis ) {
+            // bare hand action
+            // show target even if it matches what we're giving hints about
+            mCurrentHintTargetObject = target;
+            }
+        
         
 
         char *resultString;
@@ -11083,6 +11226,18 @@ void LivingLifePage::step() {
             mCurrentHintReverse != mNextHintReverse ||
             mForceHintRefresh ) {
             
+            char autoHint = false;
+            
+            // hide target object indicator unless player picked this hint
+            if( mCurrentHintObjectID != mNextHintObjectID &&
+                mHintFilterString == NULL ) {
+                // they changed what they are holding
+                
+                // and they don't have a filter applied currently
+                autoHint = true;
+                }
+
+            
             mForceHintRefresh = false;
 
             int newLiveSheetIndex = 0;
@@ -11125,9 +11280,16 @@ void LivingLifePage::step() {
             
             mHintMessage[ i ] = getHintMessage( mCurrentHintObjectID, 
                                                 mHintMessageIndex[i],
-                                                mCurrentHintReverse );
-            
+                                                mCurrentHintReverse,
+                                                // don't set pointer
+                                                // to what we're holding
+                                                ourObject->holdingID );
 
+            if( autoHint ) {
+                // hide pointer until they start tabbing again
+                mCurrentHintTargetObject = 0;
+                }
+            
 
             mHintExtraOffset[ i ].x = - getLongestLine( mHintMessage[i] ) / gui_fov_scale_hud;
             }
@@ -15049,7 +15211,8 @@ void LivingLifePage::step() {
                                                     existing->currentPos.y ) );
                                                 creationSoundPlayed = true;
                                                 
-                                                if( strstr( 
+                                                if( existing->id != ourID &&
+                                                    strstr( 
                                                         heldObj->description,
                                                         "offScreenSound" )
                                                     != NULL ) {
@@ -16692,7 +16855,10 @@ void LivingLifePage::step() {
                                 existing->currentEmot != NULL ) {
                                 doublePair playerPos = existing->currentPos;
                                 
-                                for( int i=0; 
+                                // play sounds for this emotion, but only
+                                // if in range
+                                if( !existing->outOfRange ) 
+                                for( int i=0;
                                      i<getEmotionNumObjectSlots(); i++ ) {
                                     
                                     int id =
@@ -16710,6 +16876,21 @@ void LivingLifePage::step() {
                                                 getVectorFromCamera( 
                                                     playerPos.x,
                                                     playerPos.y ) );
+                                            
+                                            if( existing->id != ourID &&
+                                                strstr( 
+                                                    obj->description,
+                                                    "offScreenSound" )
+                                                != NULL ) {
+                                                    
+                                                addOffScreenSound(
+                                                    playerPos.x *
+                                                    CELL_D, 
+                                                    playerPos.y *
+                                                    CELL_D,
+                                                    obj->description );
+                                                }
+
                                             // stop after first sound played
                                             break;
                                             }
@@ -17745,35 +17926,40 @@ void LivingLifePage::step() {
             }
             
         
-        if( o->curAnim != moving || !holdingRideable ) {
-            // don't play player moving sound if riding something
-
+                    
+        // no anim sounds if out of range
+        if( ! o->outOfRange ) {
             AnimType t = o->curAnim;
             doublePair pos = o->currentPos;
-            
-            if( o->heldByAdultID != -1 ) {
-                t = held;
-                
 
-                for( int j=0; j<gameObjects.size(); j++ ) {
+            if( o->curAnim != moving || !holdingRideable ) {
+                // don't play player moving sound if riding something
+                
+                
+                if( o->heldByAdultID != -1 ) {
+                    t = held;
                     
-                    LiveObject *parent = gameObjects.getElement( j );
                     
-                    if( parent->id == o->heldByAdultID ) {
+                    for( int j=0; j<gameObjects.size(); j++ ) {
                         
-                        pos = parent->currentPos;
+                        LiveObject *parent = gameObjects.getElement( j );
+                        
+                        if( parent->id == o->heldByAdultID ) {
+                            
+                            pos = parent->currentPos;
+                            }
                         }
                     }
+                
+                handleAnimSound( o->id, 
+                                 o->displayID,
+                                 computeCurrentAge( o ),
+                                 t,
+                                 oldFrameCount, o->animationFrameCount,
+                                 pos.x,
+                                 pos.y );    
                 }
             
-            
-            handleAnimSound( o->displayID,
-                             computeCurrentAge( o ),
-                             t,
-                             oldFrameCount, o->animationFrameCount,
-                             pos.x,
-                             pos.y );    
-
             if( o->currentEmot != NULL ) {
                 int numSlots = getEmotionNumObjectSlots();
                 
@@ -17783,7 +17969,8 @@ void LivingLifePage::step() {
                     
                     if( oID != 0 ) {
                         
-                        handleAnimSound( oID,
+                        handleAnimSound( o->id,
+                                         oID,
                                          0,
                                          t,
                                          oldFrameCount, o->animationFrameCount,
@@ -17842,7 +18029,8 @@ void LivingLifePage::step() {
             }
         
         if( o->holdingID > 0 ) {
-            handleAnimSound( o->holdingID, 0, o->curHeldAnim,
+            handleAnimSound( o->id,
+                             o->holdingID, 0, o->curHeldAnim,
                              oldFrameCount, o->heldAnimationFrameCount,
                              o->currentPos.x,
                              o->currentPos.y );
@@ -20074,7 +20262,8 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
     int floorDestID = 0;
     
     int destObjInClickedTile = 0;
-
+    char destObjInClickedTilePermanent = false;
+    
     int destNumContained = 0;
     
     int mapX = clickDestX - mMapOffsetX + mMapD / 2;
@@ -20153,6 +20342,11 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
         
         destObjInClickedTile = destID;
 
+        if( destObjInClickedTile > 0 ) {
+            destObjInClickedTilePermanent =
+                getObject( destObjInClickedTile )->permanent;
+            }
+    
         destNumContained = mMapContainedStacks[ mapY * mMapD + mapX ].size();
         
 
@@ -20700,7 +20894,14 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
             mustMove = true;
             }
         }
-    else if( ( modClick && ourLiveObject->holdingID != 0 )
+    else if( ( modClick && 
+               // we can right click on an empty tile or full tile if
+               // we're holding something
+               // we can also right click with empty hand to pick something
+               // up
+               ( ourLiveObject->holdingID != 0 || 
+                 ( destObjInClickedTile > 0 && 
+                   ! destObjInClickedTilePermanent ) ) )
              || killMode
              || tryingToPickUpBaby
              || useOnBabyLater
@@ -20920,10 +21121,17 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
                                      p.hitOtherPersonID );
                 send = true;
                 }
-            else if( modClick && destID == 0 && 
-                     ourLiveObject->holdingID != 0 ) {
-                action = "DROP";
-                nextActionDropping = true;
+            else if( modClick && destID == 0 ) {
+                
+                if( ourLiveObject->holdingID != 0 ) {
+                    action = "DROP";
+                    nextActionDropping = true;
+                    }
+                else {
+                    action = "USE";
+                    nextActionDropping = false;
+                    }
+                
                 send = true;
 
                 // check for other special case
@@ -21049,6 +21257,14 @@ void LivingLifePage::pointerDown( float inX, float inY ) {
                 delete [] extra;
                 nextActionDropping = true;
                 extra = stringDuplicate( " -1" );
+                }
+
+            if( strcmp( action, "USE" ) == 0 &&
+                destID > 0 ) {
+                // optional ID param for USE, specifying that we clicked
+                // on something
+                delete [] extra;
+                extra = autoSprintf( " %d", destID );
                 }
             
             

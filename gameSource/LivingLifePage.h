@@ -619,6 +619,8 @@ class LivingLifePage : public GamePage, public ActionListener {
         SpriteHandle mCellBorderSprite;
         SpriteHandle mCellFillSprite;
         
+        SpriteHandle mHintArrowSprite;
+        
 
         SpriteHandle mHomeSlipSprite;
         SpriteHandle mHomeArrowSprites[ NUM_HOME_ARROWS ];
@@ -712,6 +714,12 @@ class LivingLifePage : public GamePage, public ActionListener {
         void pushHintHistory();
         void popHintHistory();
 
+        int mCurrentHintTargetObject;
+
+        double mCurrentHintTargetPointerBounce;
+        doublePair mLastHintTargetPos;
+
+
         SimpleVector<TransRecord *> mLastHintSortedList;
         int mLastHintSortedSourceID;
         int mLastHintReverse;
@@ -727,7 +735,11 @@ class LivingLifePage : public GamePage, public ActionListener {
 
         int getNumHints( int inObjectID, bool reverse );
         HintObject getHintObject( int inObjectID, int inIndex, bool reverse );
-        char *getHintMessage( int inObjectID, int inIndex, bool reverse );
+        
+        // inDoNotPointAtThis specifies an object that we should never
+        // add a visual pointer to (like what we are holding)
+        char *getHintMessage( int inObjectID, int inIndex, bool reverse,
+                              int inDoNotPointAtThis = -1 );
 
         char *mHintFilterString;
         
@@ -940,7 +952,9 @@ class LivingLifePage : public GamePage, public ActionListener {
         char mShowHighlights;
 
 
-        void handleAnimSound( int inObjectID, double inAge, 
+        // inSourcePlayerID -1 if animation not connected to a player
+        void handleAnimSound( int inSourcePlayerID, 
+                              int inObjectID, double inAge, 
                               AnimType inType,
                               int inOldFrameCount, int inNewFrameCount,
                               double inPosX, double inPosY );
