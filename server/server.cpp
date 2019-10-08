@@ -14979,8 +14979,8 @@ int main() {
                                     
                                     nextPlayer->name = getUniqueCursableName( 
                                         nextPlayer->name, 
-                                        &( nextPlayer->nameHasSuffix ), true );
-				    }
+                                        &( nextPlayer->nameHasSuffix ), true, getFemale( nextPlayer ) );
+                				    }
                                 }
 
                             }
