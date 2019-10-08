@@ -430,7 +430,7 @@ void EditorImportPage::actionPerformed( GUIComponent *inTarget ) {
             }
         
 
-        if( importFile != NULL ) {
+        if( importFile != NULL && false) {
     
             mMovingSheet = false;
 
@@ -438,11 +438,11 @@ void EditorImportPage::actionPerformed( GUIComponent *inTarget ) {
             char imported = false;
             
             if( importFile->exists() ) {
-                PNGImageConverter converter;
+//                PNGImageConverter converter;
                 
                 FileInputStream stream( importFile );
                 
-                Image *image = converter.deformatImage( &stream );
+                Image *image = NULL;//converter.deformatImage( &stream );
                 
                 if( image != NULL ) {
                     

@@ -61,7 +61,7 @@ static SceneCell copyPeopleArea[ copyAreaSize ][ copyAreaSize ];
 EditorScenePage::EditorScenePage()
         : mPlayingTime( false ),
           mRecordingFrames( false ),
-          mAnimEditorButton( mainFont, 210, 260, "Anim" ),
+          mAnimEditorButton( mainFont, 21000, 260, "Anim" ),
           mSaveNewButton( smallFont, -300, 260, "Save New" ),
           mReplaceButton( smallFont, -500, 260, "Replace" ),
           mDeleteButton( smallFont, 500, 260, "Delete" ),

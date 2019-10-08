@@ -3901,16 +3901,16 @@ void EditorObjectPage::draw( doublePair inViewCenter,
         char *name = autoSprintf( "faces/face_%d_%d.png",
                                   mCurrentObject.id,
                                   lrint( mPersonAgeSlider.getValue() ) );
-        
+/*        
         PNGImageConverter pngConv;
         
         File outFile( NULL, name );
         FileOutputStream outStream( &outFile );
         
         pngConv.formatImage( transImage, &outStream );
-
+*/
         delete [] name;
-        delete transImage;
+//        delete transImage;
         
 
         mFacesStep++;
