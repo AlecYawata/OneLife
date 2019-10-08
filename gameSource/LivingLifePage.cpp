@@ -5883,10 +5883,9 @@ void LivingLifePage::draw( doublePair inViewCenter,
     toggleAdditiveBlend( false );
     
 
-    LiveObject *ourLiveObject = getOurLiveObject();
     
     if( ourLiveObject != NULL ) {
-        startWatchForClosestObjectDraw( mCurrentHintTargetObject,
+        startWatchForClosestObjectDraw( mCurrentHintObjectID,
                                         mult( ourLiveObject->currentPos,
                                               CELL_D ) );
         }
@@ -6864,7 +6863,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
     char pointerDrawn = false;
 
-    if( ! takingPhoto && mCurrentHintTargetObject > 0 ) {
+    if( ! takingPhoto && mCurrentHintObjectID > 0 ) {
         // draw pointer to closest hint target object
         
         char drawn = false;
