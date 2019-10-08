@@ -6863,7 +6863,7 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
     char pointerDrawn = false;
 
-    if( ! takingPhoto && mCurrentHintObjectID > 0 ) {
+    if( ! takingPhoto && mCurrentHintObjectID > 0 && showReciptSheet ) {
         // draw pointer to closest hint target object
         
         char drawn = false;
