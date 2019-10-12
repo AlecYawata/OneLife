@@ -5875,7 +5875,8 @@ void LivingLifePage::draw( doublePair inViewCenter,
 
     
     if( ourLiveObject != NULL ) {
-        startWatchForClosestObjectDraw( mCurrentHintObjectID,
+        int hintObjects[2] = { mCurrentHintObjectID, -1, };
+        startWatchForClosestObjectDraw( hintObjects,
                                         mult( ourLiveObject->currentPos,
                                               CELL_D ) );
         }
@@ -6856,74 +6857,66 @@ void LivingLifePage::draw( doublePair inViewCenter,
     if( ! takingPhoto && mCurrentHintObjectID > 0 && showReciptSheet ) {
         // draw pointer to closest hint target object
         
-            char drawn = false;
-            doublePair targetPos = getClosestObjectDraw( &drawn, i );
+        char drawn = false;
+        doublePair targetPos = getClosestObjectDraw( &drawn, 0 );
 
+    
+
+        if( drawn ) {
         
+            // round to closest cell pos
+            targetPos.x = CELL_D * lrint( targetPos.x / CELL_D );
+            targetPos.y = CELL_D * lrint( targetPos.y / CELL_D );
+            
+            // move up
+            targetPos.y += 64;
 
-            if( drawn ) {
-            
-                // round to closest cell pos
-                targetPos.x = CELL_D * lrint( targetPos.x / CELL_D );
-                targetPos.y = CELL_D * lrint( targetPos.y / CELL_D );
-                
-                // move up
-                targetPos.y += 64;
-
-                if( !equal( targetPos, mLastHintTargetPos[i] ) ) {
-                    // reset bounce when target changes
-                    pushOldHintArrow( i );
-                    mCurrentHintTargetPointerBounce[i] = 0;
-                    mCurrentHintTargetPointerFade[i] = 0;
-                    mLastHintTargetPos[i] = targetPos;        
-                    }
-            
-                if( mCurrentHintTargetPointerFade[i] == 0 ) {
-                    // invisible
-                    // take this opportunity to hard-sync with the other
-                    // arrow
-                    if( i == 0 ) {
-                        mCurrentHintTargetPointerBounce[i] =
-                            mCurrentHintTargetPointerBounce[1] +
-                            M_PI / 2;
-                        }
-                    else {
-                        mCurrentHintTargetPointerBounce[i] =
-                            mCurrentHintTargetPointerBounce[0] +
-                            M_PI / 2;
-                        }
-                    }
-                
-            
-                targetPos.y += 16 * cos( mCurrentHintTargetPointerBounce[i] );
-            
-                double deltaRate = 6 * frameRateFactor / 60.0; 
-
-                mCurrentHintTargetPointerBounce[i] += deltaRate;
-                
-                if( mCurrentHintTargetPointerFade[i] < 1 ) {
-                    mCurrentHintTargetPointerFade[i] += deltaRate;
-                    
-                    if( mCurrentHintTargetPointerFade[i] > 1 ) {
-                        mCurrentHintTargetPointerFade[i] = 1;
-                        }
-                    }
-                    
-                setDrawColor( 1, 1, 1, mCurrentHintTargetPointerFade[i] );
-
-                drawSprite( mHintArrowSprite, targetPos );
-            
-                pointerDrawn[i] = true;
+            if( !equal( targetPos, mLastHintTargetPos[0] ) ) {
+                // reset bounce when target changes
+                pushOldHintArrow( 0 );
+                mCurrentHintTargetPointerBounce[0] = 0;
+                mCurrentHintTargetPointerFade[0] = 0;
+                mLastHintTargetPos[0] = targetPos;        
                 }
+        
+            if( mCurrentHintTargetPointerFade[0] == 0 ) {
+                // invisible
+                // take this opportunity to hard-sync with the other
+                // arrow
+                mCurrentHintTargetPointerBounce[0] =
+                    mCurrentHintTargetPointerBounce[1] +
+                    M_PI / 2;
+                }
+            
+        
+            targetPos.y += 16 * cos( mCurrentHintTargetPointerBounce[0] );
+        
+            double deltaRate = 6 * frameRateFactor / 60.0; 
+
+            mCurrentHintTargetPointerBounce[0] += deltaRate;
+            
+            if( mCurrentHintTargetPointerFade[0] < 1 ) {
+                mCurrentHintTargetPointerFade[0] += deltaRate;
+                
+                if( mCurrentHintTargetPointerFade[0] > 1 ) {
+                    mCurrentHintTargetPointerFade[0] = 1;
+                    }
+                }
+                
+            setDrawColor( 1, 1, 1, mCurrentHintTargetPointerFade[0] );
+
+            drawSprite( mHintArrowSprite, targetPos );
+        
+            pointerDrawn[0] = true;
             }
 
-        if( ! pointerDrawn[i] ) {
+        if( ! pointerDrawn[0] ) {
             // reset bounce
-            pushOldHintArrow( i );
-            mCurrentHintTargetPointerBounce[i] = 0;
-            mCurrentHintTargetPointerFade[i] = 0;
-            mLastHintTargetPos[i].x = 0;
-            mLastHintTargetPos[i].y = 0;
+            pushOldHintArrow( 0 );
+            mCurrentHintTargetPointerBounce[0] = 0;
+            mCurrentHintTargetPointerFade[0] = 0;
+            mLastHintTargetPos[0].x = 0;
+            mLastHintTargetPos[0].y = 0;
             }
         }
     
@@ -10639,7 +10632,8 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
         int target;
     };
     SimpleVector<TransPair> existPairList;
-    
+    SimpleVector<char *> otherActorStrings;
+    SimpleVector<char *> otherTargetStrings;
 
     for( int i=0; i<numTrans; i++ ) {
         TransRecord *tr = filteredTrans.getElementDirect( i );
@@ -10698,6 +10692,14 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
                     }    
                 }
 
+            if( !stringAlreadyPresent ) {
+                otherActorStrings.push_back( trimmedDesc );
+                }
+            else {
+                delete [] trimmedDesc;
+                }
+            }
+
         if( reverse && (tr->actor == inObjectID || tr->target == inObjectID ) ) {
             continue;
             }
@@ -10723,6 +10725,14 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
                     }    
                 }
 
+            if( !stringAlreadyPresent ) {
+                otherTargetStrings.push_back( trimmedDesc );
+                }
+            else {
+                delete [] trimmedDesc;
+                }
+            }
+
         bool exist = false;
         for ( int t=0; t<existPairList.size(); t++ ) {
             TransPair trans = existPairList.getElementDirect( t );
@@ -10738,6 +10748,8 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
             }
         }
 
+    otherActorStrings.deallocateStringElements();
+    otherTargetStrings.deallocateStringElements();
     int numInQueue = queue.size();
     
     for( int i=0; i<numInQueue; i++ ) {
