@@ -1000,16 +1000,6 @@ static double computeCurrentAge( LiveObject *inObj ) {
 
 
 
-static void stripDescriptionComment( char *inString ) {
-    // pound sign is used for trailing developer comments
-    // that aren't show to end user, cut them off if they exist
-    char *firstPound = strstr( inString, "#" );
-            
-    if( firstPound != NULL ) {
-        firstPound[0] = '\0';
-        }
-    }
-
 
 
 static char *getDisplayObjectDescription( int inID ) {
@@ -2542,12 +2532,15 @@ LivingLifePage::LivingLifePage()
     mLastHintSortedSourceID = 0;
     mLastHintReverse = false;
     
-    mCurrentHintTargetObject = 0;
-    mCurrentHintTargetPointerBounce = 0;
-
-    mLastHintTargetPos.x = 0;
-    mLastHintTargetPos.y = 0;
-
+    for( int i=0; i<2; i++ ) {
+        mCurrentHintTargetObject[i] = 0;
+        mCurrentHintTargetPointerBounce[i] = 0;
+        mCurrentHintTargetPointerFade[i] = 0;
+        
+        mLastHintTargetPos[i].x = 0;
+        mLastHintTargetPos[i].y = 0;
+        }
+    
 
     int maxObjectID = getMaxObjectID();
     
@@ -3738,9 +3731,6 @@ void LivingLifePage::drawMapCell( int inMapI,
 
         if( mMapDropOffsets[ inMapI ].x != 0 ||
             mMapDropOffsets[ inMapI ].y != 0 ) {
-            
-            // ignore objects sliding into place until they come to rest
-            ignoreWatchedObjectDraw( true );
             
             doublePair nullOffset = { 0, 0 };
                     
@@ -6861,57 +6851,121 @@ void LivingLifePage::draw( doublePair inViewCenter,
         }
     
 
-    char pointerDrawn = false;
+    char pointerDrawn[2] = { false, false };
 
     if( ! takingPhoto && mCurrentHintObjectID > 0 && showReciptSheet ) {
         // draw pointer to closest hint target object
         
-        char drawn = false;
-        doublePair targetPos = getClosestObjectDraw( &drawn );
+            char drawn = false;
+            doublePair targetPos = getClosestObjectDraw( &drawn, i );
 
         
 
-        if( drawn ) {
+            if( drawn ) {
             
-            // round to closest cell pos
-            targetPos.x = CELL_D * lrint( targetPos.x / CELL_D );
-            targetPos.y = CELL_D * lrint( targetPos.y / CELL_D );
-            
-            // move up
-            targetPos.y += 64;
+                // round to closest cell pos
+                targetPos.x = CELL_D * lrint( targetPos.x / CELL_D );
+                targetPos.y = CELL_D * lrint( targetPos.y / CELL_D );
+                
+                // move up
+                targetPos.y += 64;
 
-            if( !equal( targetPos, mLastHintTargetPos ) ) {
-                // reset bounce when target changes
-                mCurrentHintTargetPointerBounce = 0;
-                mLastHintTargetPos = targetPos;        
+                if( !equal( targetPos, mLastHintTargetPos[i] ) ) {
+                    // reset bounce when target changes
+                    pushOldHintArrow( i );
+                    mCurrentHintTargetPointerBounce[i] = 0;
+                    mCurrentHintTargetPointerFade[i] = 0;
+                    mLastHintTargetPos[i] = targetPos;        
+                    }
+            
+                if( mCurrentHintTargetPointerFade[i] == 0 ) {
+                    // invisible
+                    // take this opportunity to hard-sync with the other
+                    // arrow
+                    if( i == 0 ) {
+                        mCurrentHintTargetPointerBounce[i] =
+                            mCurrentHintTargetPointerBounce[1] +
+                            M_PI / 2;
+                        }
+                    else {
+                        mCurrentHintTargetPointerBounce[i] =
+                            mCurrentHintTargetPointerBounce[0] +
+                            M_PI / 2;
+                        }
+                    }
+                
+            
+                targetPos.y += 16 * cos( mCurrentHintTargetPointerBounce[i] );
+            
+                double deltaRate = 6 * frameRateFactor / 60.0; 
+
+                mCurrentHintTargetPointerBounce[i] += deltaRate;
+                
+                if( mCurrentHintTargetPointerFade[i] < 1 ) {
+                    mCurrentHintTargetPointerFade[i] += deltaRate;
+                    
+                    if( mCurrentHintTargetPointerFade[i] > 1 ) {
+                        mCurrentHintTargetPointerFade[i] = 1;
+                        }
+                    }
+                    
+                setDrawColor( 1, 1, 1, mCurrentHintTargetPointerFade[i] );
+
+                drawSprite( mHintArrowSprite, targetPos );
+            
+                pointerDrawn[i] = true;
                 }
-            
-            
-            targetPos.y += 16 * cos( mCurrentHintTargetPointerBounce );
-            
-            mCurrentHintTargetPointerBounce +=
-                6 * frameRateFactor / 60.0;
+            }
 
-            float fade = 1.0f;
-            
-            if( mCurrentHintTargetPointerBounce < 1 ) {
-                fade = mCurrentHintTargetPointerBounce;
-                }
-            
-            setDrawColor( 1, 1, 1, fade );
-
-            drawSprite( mHintArrowSprite, targetPos );
-            
-            pointerDrawn = true;
+        if( ! pointerDrawn[i] ) {
+            // reset bounce
+            pushOldHintArrow( i );
+            mCurrentHintTargetPointerBounce[i] = 0;
+            mCurrentHintTargetPointerFade[i] = 0;
+            mLastHintTargetPos[i].x = 0;
+            mLastHintTargetPos[i].y = 0;
             }
         }
-    if( ! pointerDrawn ) {
-        // reset bounce
-        mCurrentHintTargetPointerBounce = 0;
-        mLastHintTargetPos.x = 0;
-        mLastHintTargetPos.y = 0;
-        }
     
+    if( !takingPhoto ) {
+        for( int i=0; i<mOldHintArrows.size(); i++ ) {
+            OldHintArrow *h = mOldHintArrows.getElement( i );
+
+            // make sure it hasn't been blocked by reposition of real hint arrow
+            if( ( mCurrentHintTargetObject[0] > 0 &&
+                  equal( h->pos, mLastHintTargetPos[0] ) )
+                ||
+                ( mCurrentHintTargetObject[1] > 0 &&
+                  equal( h->pos, mLastHintTargetPos[1] ) ) ) {
+                
+                mOldHintArrows.deleteElement( i );
+                i--;
+                continue;
+                }
+            doublePair targetPos = h->pos;
+            
+            targetPos.y += 16 * cos( h->bounce );
+            
+            // twice as fast as fade-in
+            double deltaRate = 2 * 6 * frameRateFactor / 60.0; 
+
+            h->bounce += deltaRate;
+            
+            if( h->fade > 0 ) {
+                h->fade -= deltaRate;
+                }
+            
+            if( h->fade <= 0 ) {
+                mOldHintArrows.deleteElement( i );
+                i--;
+                continue;
+                }
+            
+            setDrawColor( 1, 1, 1, h->fade );
+
+            drawSprite( mHintArrowSprite, targetPos );
+            }
+        }
         
 
 
@@ -10159,7 +10213,8 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
         }
     
     
-    mCurrentHintTargetObject = 0;
+    mCurrentHintTargetObject[0] = 0;
+    mCurrentHintTargetObject[1] = 0;
 
 
     // else need to regenerated sorted list
@@ -10196,6 +10251,374 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
 
     int numFilterHits = 0;
 
+
+
+    // old logic:
+    // filter hints for held object based on steps along way to filter
+    // target
+    //
+    // see new logic below
+    if( false )
+    if( mLastHintFilterString != NULL && filteredTrans.size() > 0 ) {
+        
+        SimpleVector<int> hitIDs = findObjectsMatchingWords(
+            mLastHintFilterString,
+            inObjectID,
+            200,
+            &numFilterHits );
+        
+
+        int numHits = hitIDs.size();
+
+        // list of IDs that are used to make hit objects
+        SimpleVector<int> precursorIDs;
+        
+        if( numHits > 0 ) {
+            
+            if( numHits < 10 ) {
+                
+                for( int i=0; i<numHits; i++ ) {
+                    precursorIDs.push_back( hitIDs.getElementDirect( i ) );
+                    }
+                // go limited number of steps back
+                
+                SimpleVector<int> lastStep = precursorIDs;
+
+                for( int s=0; s<10; s++ ) {
+                    SimpleVector<int> oldLastStep = lastStep;
+                    
+                    lastStep.deleteAll();
+                    
+                    for( int i=0; i<oldLastStep.size(); i++ ) {
+                        int oldStepID = oldLastStep.getElementDirect( i );
+                        if( oldStepID == inObjectID ) {
+                            // don't follow precursor chains back through
+                            // our object
+                            // don't care about things BEFORE out object
+                            // that lead to filter target
+                            continue;
+                            }
+                        
+                        int oldStepDepth = getObjectDepth( oldStepID );
+
+
+                        int numResults = 0;
+                        int numRemain = 0;
+                        TransRecord **prodTrans =
+                            searchProduces( oldStepID, 
+                                            0,
+                                            200,
+                                            &numResults, &numRemain );
+                        
+                        if( prodTrans != NULL ) {
+                            
+                            int shallowestTransDepth = UNREACHABLE;
+                            int shallowestTransIndex = -1;
+
+                            for( int t=0; t<numResults; t++ ) {
+                                
+                                int actor = prodTrans[t]->actor;
+                                int target = prodTrans[t]->target;
+                                
+                                int transDepth = UNREACHABLE;
+                                
+                                if( actor > 0 ) {
+                                    transDepth = getObjectDepth( actor );
+                                    if( transDepth == UNREACHABLE ) {
+                                        // is this a category?
+                                        CategoryRecord *cat = 
+                                            getCategory( actor );
+                                        
+                                        if( cat != NULL &&
+                                            cat->objectIDSet.size() > 0 &&
+                                            ! cat->isPattern ) {
+                                            continue;
+                                            }
+                                        }
+                                    }
+                                if( target > 0 ) {
+                                    int targetDepth = getObjectDepth( target );
+                                    if( targetDepth == UNREACHABLE ) {
+                                        // must be category
+                                        // is this a category?
+                                        CategoryRecord *cat = 
+                                            getCategory( target );
+                                        
+                                        if( cat != NULL && 
+                                            cat->objectIDSet.size() > 0 &&
+                                            ! cat->isPattern ) {
+                                            continue;
+                                            }
+                                        }
+                                    if( targetDepth > transDepth ||
+                                        transDepth == UNREACHABLE ) {
+                                        transDepth = targetDepth;
+                                        }
+                                    }
+                                
+                                if( transDepth < shallowestTransDepth ) {
+                                    shallowestTransDepth = transDepth;
+                                    shallowestTransIndex = t;
+                                    }
+                                }
+                            
+                            
+                            if( shallowestTransIndex != -1 &&
+                                shallowestTransDepth < oldStepDepth ) {
+                                int actor = 
+                                    prodTrans[shallowestTransIndex]->actor;
+                                int target = 
+                                    prodTrans[shallowestTransIndex]->target;
+                                
+                                if( actor > 0 &&
+                                    precursorIDs.
+                                    getElementIndex( actor ) == -1 ) {
+
+                                    precursorIDs.push_back( actor );
+                                    lastStep.push_back( actor );
+                                    }
+
+                                if( target > 0 && 
+                                    precursorIDs.
+                                    getElementIndex( target ) == -1 ) {
+
+                                    precursorIDs.push_back( target );
+                                    lastStep.push_back( target );
+                                    }
+                                }
+                            
+                            delete [] prodTrans;
+                            }
+                        }
+                    }
+                }
+            
+            int numPrecursors = precursorIDs.size();
+
+            for( int i = 0; i<filteredTrans.size(); i++ ) {
+                char matchesFilter = false;
+                TransRecord *t = filteredTrans.getElementDirect( i );
+                
+                // don't show trans that result in a hit or a precursor of a
+                // hit if the trans doesn't display that hit or precursor
+                // as a result when shown to user (will be confusing if
+                // it only produces the precursor as a "side-effect"
+                // example:  bone needle produced from stitching shoes
+                //           and bone needle is a precursor of bellows
+                //           but it's very odd to show the shoe-producing
+                //           transition when filtering by bellows and
+                //           holding two rabbit furs.
+                int resultOfTrans = getTransMostImportantResult( t );
+                
+                for( int h=0; h<numHits; h++ ) {
+                    int id = hitIDs.getElementDirect( h );    
+                    
+                    if( t->actor != id && t->target != id 
+                        &&
+                        ( resultOfTrans == id ) ) {
+                        matchesFilter = true;
+                        break;
+                        }    
+                    }
+                if( matchesFilter == false ) {
+                    for( int p=0; p<numPrecursors; p++ ) {
+                        int id = precursorIDs.getElementDirect( p );
+                        
+                        if( t->actor != id && t->target != id 
+                            &&
+                            ( resultOfTrans == id ) ) {
+                            // precursors only count if they actually
+                            // make id, not just if they use it
+
+                            // but make sure it doesn't use
+                            // one of our main hits as an ingredient
+                            char hitIsIngredient = false;
+                            
+                            int actor = t->actor;
+                            int target = t->target;
+                            
+                            if( actor > 0 ) {
+                                ObjectRecord *actorO = 
+                                    getObject( actor );
+                                if( actorO->isUseDummy ) {
+                                    actor = actorO->useDummyParent;
+                                    }
+                                }
+                            if( target > 0 ) {
+                                ObjectRecord *targetO = 
+                                    getObject( target );
+                                if( targetO->isUseDummy ) {
+                                    target = targetO->useDummyParent;
+                                    }
+                                }
+                            
+                            for( int h=0; h<numHits; h++ ) {
+                                int hitID = hitIDs.getElementDirect( h ); 
+                                
+                                if( actor == hitID || 
+                                    target == hitID ) {
+                                    hitIsIngredient = true;
+                                    break;
+                                    }
+                                }
+                            if( ! hitIsIngredient ) {
+                                matchesFilter = true;
+                                break;
+                                }
+                            }
+                        }
+                    }
+                
+                if( ! matchesFilter ) {
+                    filteredTrans.deleteElement( i );
+                    i--;
+                    }
+                }
+            }
+
+        }
+    
+
+
+
+    // new logic:
+    // show all trans leading to this target object
+    if( mLastHintFilterString != NULL ) {
+        
+        SimpleVector<int> hitIDs = findObjectsMatchingWords(
+            mLastHintFilterString,
+            0, // don't filter out what we're holding
+            200,
+            &numFilterHits );
+
+        if( hitIDs.size() > 0 && hitIDs.size() < 10 ) {
+            filteredTrans.deleteAll();
+            unfilteredTrans.deleteAll();
+            
+            SimpleVector<int> frontier;
+            
+            SimpleVector<int> alreadySeenObjects;
+
+            frontier.push_back_other( &hitIDs );
+            
+            while( frontier.size() > 0 ) {
+                printf( "Frontier = " );
+                for( int i=0; i<frontier.size(); i++ ) {
+                    printf( " [ %s ]  ",
+                            getObject( frontier.getElementDirect( i ) )->
+                            description );
+                    }
+                printf( "\n" );
+
+                SimpleVector<int> newFrontier;
+                
+                for( int i=0; i<frontier.size(); i++ ) {
+                    int oID = frontier.getElementDirect( i );
+                    int oD = getObjectDepth( oID );
+                    
+                    int numResults = 0;
+                    int numRemain = 0;
+                    TransRecord **prodTrans =
+                        searchProduces( oID, 
+                                        0,
+                                        200,
+                                        &numResults, &numRemain );
+                    
+                    if( prodTrans != NULL ) {
+                        TransRecord *minDepthTrans = NULL;
+                        int minDepth = UNREACHABLE;
+                        
+                        for( int r=0; r<numResults; r++ ) {
+                            
+                            int actor = prodTrans[r]->actor;
+                            int target = prodTrans[r]->target;
+
+                            int actorD = 0;
+                            int targetD = 0;
+                            
+                            if( actor > 0 ) {
+                                actorD = getObjectDepth( actor );
+                                }
+                            if( target > 0 ) {
+                                targetD = getObjectDepth( target );
+                                }
+
+                            if( actor >= -1 && 
+                                ( actor <= 0 || actorD < oD ) 
+                                &&
+                                target != 0 && targetD < oD 
+                                &&
+                                filteredTrans.getElementIndex( prodTrans[r] ) 
+                                == -1 ) {
+                                
+                                if( prodTrans[r]->lastUseTarget ||
+                                    prodTrans[r]->lastUseActor ) {
+                                    // skip last use transitions
+                                    continue;
+                                    }
+
+                                // skip dummy versions of transitions, too
+                                if( actor > 0 &&
+                                    ( getObject( actor )->isUseDummy ||
+                                      getObject( actor )->isVariableDummy ) ) {
+                                    continue;
+                                    }
+                                if( target > 0 &&
+                                    ( getObject( target )->isUseDummy ||
+                                      getObject( target )->isVariableDummy ) ) {
+                                    continue;
+                                    }                                
+                             
+                                
+                                int maxDepth = actorD;
+                                if( targetD > maxDepth ) {
+                                    maxDepth = targetD;
+                                    }
+                                
+                                if( maxDepth < minDepth ) {
+                                    minDepth = maxDepth;
+                                    minDepthTrans = prodTrans[r];
+                                    }
+                                }
+                            }
+                        if( minDepthTrans != NULL ) {
+                            int actor = minDepthTrans->actor;
+                            int target = minDepthTrans->target;
+
+                            if( actor > 0 ) {
+                                if( alreadySeenObjects.getElementIndex( actor )
+                                    == -1 ) {
+                                    newFrontier.push_back( actor );
+                                    alreadySeenObjects.push_back( actor );
+                                    }
+                                }
+                            
+                            if( target > 0 &&
+                                alreadySeenObjects.getElementIndex( target )
+                                == -1 ) {
+                                newFrontier.push_back( target );
+                                alreadySeenObjects.push_back( target );
+                                }
+                            
+                            filteredTrans.push_back( minDepthTrans );
+                            }
+                        
+                        delete [] prodTrans;
+                        }
+                    }
+                frontier.deleteAll();
+                frontier.push_back_other( &newFrontier );
+                }
+            unfilteredTrans.push_back_other( &filteredTrans );
+            }
+        else {
+            // matches too many things, ignore
+            numFilterHits = 0;
+            }
+        }
+    
+
+
     int numTrans = filteredTrans.size();
 
     int numRelevant = numTrans;
@@ -10230,9 +10653,75 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
             depth = getObjectDepth( tr->target );
             }
 
+
+        if( mLastHintFilterString != NULL ) {
+            // new logic:
+            // show all trans leading to this target object
+            
+            // sort by largest depth
+
+            if( tr->actor > 0 ) {
+                depth = getObjectDepth( tr->actor );
+                }
+
+            if( tr->target > 0 ) {
+                int depthT = getObjectDepth( tr->target );
+                if( depthT > depth ) {
+                    depth = depthT;
+                    }
+                }
+            }
+        
+
+            
+            
+        char stringAlreadyPresent = false;
+        
+        // new logic:
+        // show all that we found if filtering
+        // but still remove duplicates if we're not filtering
+        if( mLastHintFilterString == NULL )
+        if( tr->actor > 0 && tr->actor != inObjectID ) {
+            ObjectRecord *otherObj = getObject( tr->actor );
+                
+            char *trimmedDesc = stringDuplicate( otherObj->description );
+            stripDescriptionComment( trimmedDesc );
+
+            for( int s=0; s<otherActorStrings.size(); s++ ) {
+                    
+                if( strcmp( trimmedDesc, 
+                            otherActorStrings.getElementDirect( s ) )
+                    == 0 ) {
+                        
+                    stringAlreadyPresent = true;
+                    break;
+                    }    
+                }
+
         if( reverse && (tr->actor == inObjectID || tr->target == inObjectID ) ) {
             continue;
             }
+            
+        // new logic:
+        // show all that we found if filtering
+        // but still remove duplicates if we're not filtering
+        if( mLastHintFilterString == NULL )
+        if( tr->target > 0 && tr->target != inObjectID ) {
+            ObjectRecord *otherObj = getObject( tr->target );
+                
+            char *trimmedDesc = stringDuplicate( otherObj->description );
+            stripDescriptionComment( trimmedDesc );
+
+            for( int s=0; s<otherTargetStrings.size(); s++ ) {
+                    
+                if( strcmp( trimmedDesc, 
+                            otherTargetStrings.getElementDirect( s ) )
+                    == 0 ) {
+                        
+                    stringAlreadyPresent = true;
+                    break;
+                    }    
+                }
 
         bool exist = false;
         for ( int t=0; t<existPairList.size(); t++ ) {
@@ -10253,6 +10742,17 @@ int LivingLifePage::getNumHints( int inObjectID, bool reverse ) {
     
     for( int i=0; i<numInQueue; i++ ) {
         mLastHintSortedList.push_back( queue.removeMin() );
+        }
+    
+    if( mLastHintFilterString != NULL && numFilterHits > 0 ) {
+        // reverse the order
+        SimpleVector< TransRecord *> revList( mLastHintSortedList.size() );
+        
+        for( int i=mLastHintSortedList.size()-1; i >= 0; i-- ) {
+            revList.push_back( mLastHintSortedList.getElementDirect( i ) );
+            }
+        mLastHintSortedList.deleteAll();
+        mLastHintSortedList.push_back_other( &revList );
         }
     
     
@@ -10405,8 +10905,12 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse,
             actorString = stringToUpperCase( getObject( actor )->localizedName );
             stripDescriptionComment( actorString );
             }
-        else if( actor == 0 ) {
+        else if( actor == 0 || actor == -2 ) {
+            // show bare hand for default actions too
             actorString = stringDuplicate( translate( "bareHandHint" ) );
+            }
+        else if( actor == -1 ) {
+            actorString = stringDuplicate( translate( "timeHint" ) );
             }
         else {
             actorString = stringDuplicate( "" );
@@ -10461,26 +10965,32 @@ char *LivingLifePage::getHintMessage( int inObjectID, int inIndex, bool reverse,
             }
 
 
+        mCurrentHintTargetObject[0] = 0;
+        mCurrentHintTargetObject[1] = 0;
+
         // never show visual pointer toward what we're holding
         if( target > 0 && target != inObjectID && 
             target != inDoNotPointAtThis ) {
-            mCurrentHintTargetObject = target;
+            mCurrentHintTargetObject[1] = target;
             }
-        else if( actor > 0 && actor != inObjectID &&
+        if( actor > 0 && actor != inObjectID &&
                  actor != inDoNotPointAtThis ) {
-            mCurrentHintTargetObject = actor;
+            mCurrentHintTargetObject[0] = actor;
             }
-        else if( actor > 0 && target > 0 &&
-                 actor == target ) {
+        
+        if( actor > 0 && target > 0 &&
+            actor == target ) {
             // both actor and target are same
             // show pointer to ones that are on the ground
-            mCurrentHintTargetObject = actor;
+            mCurrentHintTargetObject[0] = actor;
+            mCurrentHintTargetObject[1] = 0;
             }
         else if( actor == 0 && target > 0 && 
                  target != inDoNotPointAtThis ) {
             // bare hand action
             // show target even if it matches what we're giving hints about
-            mCurrentHintTargetObject = target;
+            mCurrentHintTargetObject[0] = target;
+            mCurrentHintTargetObject[1] = 0;
             }
         
         
@@ -11220,7 +11730,46 @@ void LivingLifePage::step() {
     if( ourObject != NULL && mNextHintObjectID != 0 &&
         getNumHints( mNextHintObjectID, mNextHintReverse ) > 0 ) {
         
-        if( mCurrentHintObjectID != mNextHintObjectID ||
+        if( mHintFilterString != NULL &&
+            mCurrentHintObjectID != mNextHintObjectID ) {
+            // check if we should jump the hint index to hint about this
+            // thing we just picked up relative to our goal object
+            
+            int matchID = mNextHintObjectID;
+            
+            ObjectRecord *o = getObject( matchID );
+            
+            if( o->isUseDummy ) {
+                matchID = o->useDummyParent;
+                }
+            else if( o->isVariableDummy ) {
+                matchID = o->variableDummyParent;
+                }
+
+            // don't switch if we're already matched
+            TransRecord *currHintTrans = 
+                mLastHintSortedList.getElementDirect( mCurrentHintIndex );
+            
+            if( currHintTrans->actor != matchID && 
+                currHintTrans->target != matchID ) {
+                
+                for( int i=0; i<mLastHintSortedList.size(); i++ ) {
+                    TransRecord *t = mLastHintSortedList.getElementDirect( i );
+                    
+                    if( t->actor == matchID ||
+                        t->target == matchID ) {
+                        
+                        mNextHintIndex = i;
+                        break;
+                        }
+                    }
+                }
+            }
+        
+
+
+        if( ( mHintFilterString == NULL &&
+              mCurrentHintObjectID != mNextHintObjectID ) ||
             mCurrentHintIndex != mNextHintIndex ||
             mCurrentHintReverse != mNextHintReverse ||
             mForceHintRefresh ) {
@@ -11268,8 +11817,10 @@ void LivingLifePage::step() {
             mCurrentHintIndex = mNextHintIndex;
             mCurrentHintReverse = mNextHintReverse;
             
-            mHintBookmarks[ mCurrentHintObjectID ] = mCurrentHintIndex;
-
+            if( mHintFilterString == NULL ) {
+                mHintBookmarks[ mCurrentHintObjectID ] = mCurrentHintIndex;
+                }
+            
             mNumTotalHints[ i ] = 
                 getNumHints( mCurrentHintObjectID, mCurrentHintReverse );
 
@@ -11286,12 +11837,40 @@ void LivingLifePage::step() {
 
             if( autoHint ) {
                 // hide pointer until they start tabbing again
-                mCurrentHintTargetObject = 0;
+                mCurrentHintTargetObject[0] = 0;
+                mCurrentHintTargetObject[1] = 0;
                 }
             
 
             mHintExtraOffset[ i ].x = - getLongestLine( mHintMessage[i] ) / gui_fov_scale_hud;
             }
+        else {
+            // even in case where filter set, update this
+            mCurrentHintObjectID = mNextHintObjectID;
+            }
+
+
+
+        if( mHintFilterString != NULL &&
+            mCurrentHintIndex >= 0 ) {
+            // special case
+            // always show pointers to objects for current hint, unless
+            // we're holding one
+            
+            TransRecord *t = 
+                mLastHintSortedList.getElementDirect( mCurrentHintIndex );
+            int heldID = getObjectParent( ourObject->holdingID );
+            
+            
+            if( t->actor != heldID ) {
+                mCurrentHintTargetObject[0] = t->actor;
+                }
+            if( t->target != heldID ) {
+                mCurrentHintTargetObject[1] = t->target;
+                }
+            }
+
+
         }
     else if( ourObject != NULL && mNextHintObjectID != 0 &&
              getNumHints( mNextHintObjectID, mNextHintReverse ) == 0 ) {
@@ -18961,9 +19540,15 @@ void LivingLifePage::makeActive( char inFresh ) {
         return;
         }
 
+    mOldHintArrows.deleteAll();
+
     mGlobalMessageShowing = false;
     mGlobalMessageStartTime = 0;
     mGlobalMessagesToDestroy.deallocateStringElements();
+    
+
+    mCurrentHintTargetObject[0] = 0;
+    mCurrentHintTargetObject[1] = 0;
     
     
     offScreenSounds.deleteAll();
@@ -22968,3 +23553,13 @@ void LivingLifePage::calcOffsetHUD() {
     gui_fov_offset_y = (int)(((720 * gui_fov_target_scale_hud) - 720)/2);
     }
 
+
+void LivingLifePage::pushOldHintArrow( int inIndex ) {
+    int i = inIndex;
+    if( mCurrentHintTargetPointerFade[i] > 0 ) {
+        OldHintArrow h = { mLastHintTargetPos[i],
+                           mCurrentHintTargetPointerBounce[i],
+                           mCurrentHintTargetPointerFade[i] };
+        mOldHintArrows.push_back( h );
+        }
+    }
