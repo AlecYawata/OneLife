@@ -58,6 +58,9 @@ static SimpleVector<int> deathMarkerObjectIDs;
 static SimpleVector<int> allPossibleDeathMarkerIDs;
 
 
+static SimpleVector<TapoutRecord> tapoutRecords;
+
+
 
 
 typedef struct GlobalTrigger {
@@ -523,6 +526,38 @@ static void setupWall( ObjectRecord *inR ) {
 
 
 
+static void setupTapout( ObjectRecord *inR ) {
+    inR->isTapOutTrigger = false;
+    
+    char *triggerPos = strstr( inR->description, "+tapoutTrigger" );
+                
+    if( triggerPos != NULL ) {
+        int xGrid, yGrid;
+        int xLimit, yLimit;
+        int numRead = sscanf( triggerPos, 
+                              "+tapoutTrigger,%d,%d,%d,%d",
+                              &xGrid, &yGrid,
+                              &xLimit, &yLimit );
+        if( numRead == 4 ) {
+            // valid tapout trigger
+            TapoutRecord r;
+            
+            r.triggerID = inR->id;
+            r.gridSpacingX = xGrid;
+            r.gridSpacingY = yGrid;
+            r.limitX = xLimit;
+            r.limitY = yLimit;
+            
+            tapoutRecords.push_back( r );
+            
+            inR->isTapOutTrigger = true;
+            }
+        }
+    }
+
+
+
+
 int getMaxSpeechPipeIndex() {
     return maxSpeechPipeIndex;
     }
@@ -851,6 +886,8 @@ float initObjectBankStep() {
 
                 setupWall( r );
 
+                setupTapout( r );
+                
                             
                 sscanf( lines[next], "foodValue=%d", 
                         &( r->foodValue ) );
@@ -3183,6 +3220,9 @@ int addObject( const char *inDescription,
     setupMaxPickupAge( r );
 
     setupWall( r );
+
+    setupTapout( r );
+    
 
     r->isAutoOrienting = false;
     r->horizontalVersionID = -1;
@@ -6055,3 +6095,20 @@ SimpleVector<int> findObjectsMatchingWords( char *inWords,
 
     return hitIDs;
     }
+
+
+
+
+TapoutRecord *getTapoutRecord( int inObjectID ) {
+    for( int i=0; i<tapoutRecords.size(); i++ ) {
+        TapoutRecord *r = tapoutRecords.getElement( i );
+        
+        if( r->triggerID == inObjectID ) {
+            return r;
+            }
+        }
+    return NULL;
+    }
+
+    
+    

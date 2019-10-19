@@ -17,6 +17,16 @@ void setDrawColor( FloatRGB inColor );
 
 
 
+// tracks when creation of an object taps out nearby objects on a grid
+typedef struct TapoutRecord {
+        int triggerID;
+        int gridSpacingX, gridSpacingY;
+        // how far to reach in +/- x and y when tapping out
+        int limitX, limitY;
+    } TapoutRecord;
+    
+
+
 typedef struct ObjectRecord {
         int id;
         
@@ -381,7 +391,9 @@ typedef struct ObjectRecord {
         int horizontalVersionID;
         int verticalVersionID;
         int cornerVersionID;
+        
 
+        char isTapOutTrigger;
     } ObjectRecord;
 
 
@@ -867,6 +879,11 @@ SimpleVector<int> findObjectsMatchingWords( char *inWords,
 
 // terminates string to remove comment
 void stripDescriptionComment( char *inString );
+
+
+
+TapoutRecord *getTapoutRecord( int inObjectID );
+
 
 
 #endif
